@@ -7,6 +7,7 @@
 #include "CFont.h"
 #include "CGfxCollection.h"
 #include "CMusic.h"
+#include "COptions.h"
 #include "CPlayer.h"
 #include "CWorld.h"
 #include "time.h"
@@ -90,7 +91,7 @@ typedef struct da1saves{
 
 class CDarkages{
 public:
-  CDarkages(CDisplay* d);
+  CDarkages(CDisplay* d, sConf* c);
   ~CDarkages();
 
   void run();
@@ -110,6 +111,7 @@ private:
   vector<int> spellList;
 
   int fps;
+  int actionTile[150];
 
   int curMap;
   int multiFight;
@@ -120,7 +122,6 @@ private:
   bool showCredits;
   bool showMenu;
   bool showLoad;
-  bool showOptions;
   bool showSave;
   bool showSpell;
   bool showStats;
@@ -153,6 +154,11 @@ private:
   int eGreyor;
   int eHelpDwarf;
   int eHorn;
+
+  size_t tmpScreen;
+  SDL_Texture* canvas;
+  int fadeIn;
+  sConf* conf;
 
   void buyArmor(int index);
   void buyArmorB(int index);

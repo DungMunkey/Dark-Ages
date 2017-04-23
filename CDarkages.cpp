@@ -1,11 +1,10 @@
 #include "CDarkages.h"
 
-CDarkages::CDarkages(CDisplay* d){
+CDarkages::CDarkages(CDisplay* d, sConf* c){
   display = d;
   showCredits=false;
   showLoad=false;
   showMenu=false;
-  showOptions=false;
   showSave=false;
   showSpell=false;
   showStats=false;
@@ -21,9 +20,13 @@ CDarkages::CDarkages(CDisplay* d){
   renderCount=0;
   musicVolume=5;
   music.setVolume(musicVolume);
+  conf=c;
+
+  canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 400);
 }
 
 CDarkages::~CDarkages(){
+  SDL_DestroyTexture(canvas);
   display = NULL;
 }
 
@@ -671,7 +674,7 @@ void CDarkages::changeMap(int key){
 }
 
 int CDarkages::checkAction(int map, int x, int y){
-  int i, j;
+  int i, j,k;
 
   //special case magic sword
   if(map==31 && x==12 && y==46 && eFirewand>15){
@@ -686,65 +689,8 @@ int CDarkages::checkAction(int map, int x, int y){
     for (i = x - 1; i <= x + 1; i++){
       if (j != y && i != x) continue;  //do not check corners
       if (i == x && j == y) continue;  //do not check center
-      switch (world[map].getTile(i, j)){
-      case 42: return 42;
-      case 45: return 45;
-      case 46: return 46;
-      case 47: return 47;
-      case 48: return 48;
-      case 49: return 49;
-      case 50: return 50;
-      case 51: return 51;
-      case 52: return 52;
-      case 53: return 53;
-      case 54: return 54;
-      case 55: return 55;
-      case 60: return 60;
-      case 62: return 62;
-      case 63: return 63;
-      case 64: return 64;
-      case 66: return 66;
-      case 67: return 67;
-      case 68: return 68;
-      case 69: return 69;
-      case 70: return 70;
-      case 71: return 71;
-      case 72: return 72;
-      case 73: return 73;
-      case 74: return 74;
-      case 75: return 75;
-      case 76: return 76;
-      case 77: return 77;
-      case 78: return 78;
-      case 79: return 79;
-      case 98: return 98;
-      case 101: return 101;
-      case 102: return 102;
-      case 103: return 103;
-      case 104: return 104;
-      case 105: return 105;
-      case 106: return 106;
-      case 107: return 107;
-      case 108: return 108;
-      case 109: return 109;
-      case 110: return 110;
-      case 111: return 111;
-      case 112: return 112;
-      case 113: return 113;
-      case 114: return 114;
-      case 115: return 115;
-      case 116: return 116;
-      case 117: return 117;
-      case 118: return 118;
-      case 119: return 119;
-      case 120: return 120;
-      case 121: return 121;
-      case 122: return 122;
-      case 123: return 123;
-      case 124: return 124;
-      case 125: return 125;
-      default: break;
-      }
+      k=world[map].getTile(i, j);
+      if(actionTile[k] > 0) return actionTile[k];
     }
   }
   return 0; //nothing found
@@ -1119,6 +1065,7 @@ void CDarkages::init(){
   cam.setPos(40, 12);
   cam.setMax(world[curMap].szX, world[curMap].szY);
   battle.init(display, &font, &gfx, &hero);
+  //SDL_RenderSetIntegerScale(display->renderer, SDL_TRUE);
   SDL_RenderSetLogicalSize(display->renderer, 640, 400);
 
   //load save games (if any)
@@ -1201,6 +1148,17 @@ void CDarkages::init(){
   eGreyor=0;
   eHelpDwarf=0;
   eHorn=0;
+
+  //set tile actions
+  int i;
+  for(i=0;i<150;i++) actionTile[i]=0;
+  actionTile[42]=42;
+  for(i=45; i < 56; i++) actionTile[i]=i;
+  actionTile[60]=60;
+  for(i=62; i < 65; i++) actionTile[i]=i;
+  for(i=66; i < 80; i++) actionTile[i]=i;
+  actionTile[98]=98;
+  for(i=101; i < 126; i++) actionTile[i]=i;
 }
 
 void CDarkages::loadGame(int index){
@@ -1324,6 +1282,14 @@ void CDarkages::run(){
       renderCount++;
       continue;
     }
+    
+    if(fadeIn>0){
+      if(ticks < 40) continue;
+      ticks-=40;
+      render();
+      fadeIn-=5;
+      continue;
+    }
     ticks-=6;
 
     if(showCredits) {
@@ -1395,10 +1361,6 @@ void CDarkages::run(){
             else selection--;
             break;
           }
-          if(showOptions){
-            if(selection > 0) selection--;
-            break;
-          }
           if(showSave){
             if(selection == 0) selection=5;
             else selection--;
@@ -1442,10 +1404,6 @@ void CDarkages::run(){
             else selection++;
             break;
           }
-          if(showOptions){
-            if(selection < 1) selection++;
-            break;
-          }
           if(showSave){
             if(selection == 5) selection=0;
             else selection++;
@@ -1480,13 +1438,6 @@ void CDarkages::run(){
         case SDLK_LEFT: 
           if(showLoad) break;
           if(showMenu) break;
-          if(showOptions){
-            if(selection==1 && musicVolume>0) {
-              musicVolume--;
-              music.setVolume(musicVolume);
-            }
-            break;
-          }
           if(showSave) break;
           if(showSpell) break;
           if(showStats) break;
@@ -1506,13 +1457,6 @@ void CDarkages::run(){
         case SDLK_RIGHT: 
           if(showLoad) break;
           if(showMenu) break;
-          if(showOptions){
-            if(selection==1 && musicVolume<10) {
-              musicVolume++;
-              music.setVolume(musicVolume);
-            }
-            break;
-          }
           if(showSave) break;
           if(showSpell) break;
           if(showTravel) break;
@@ -1532,10 +1476,6 @@ void CDarkages::run(){
         case SDLK_ESCAPE:
           if(showLoad){
             showLoad=false;
-            break;
-          }
-          if(showOptions){
-            showOptions=false;
             break;
           }
           if(showSave){
@@ -1578,34 +1518,26 @@ void CDarkages::run(){
         case SDLK_RETURN:
         case SDLK_SPACE:
           if(showMenu) {
-            switch(selection){
-            case 1:
+            if(selection == 1){
               showMenu=false;
               showSave=true;
               selection=0;
-              break;
-            case 2:
+            } else if(selection == 2){
               showMenu=false;
               showLoad=true;
               selection=0;
-              break;
-            case 3: 
+            } else if(selection == 3){
+              COptions opt(display, &music, &font, &gfx, conf);
+              opt.run();
+            } else if(selection == 4){
+              stop=true; break;
+            } else{
               showMenu=false;
-              showOptions=true;
-              selection=0;
-              break;
-            case 4: stop=true; break;
-            default:
-              showMenu=false;
-              break;
             }
           } else if(showLoad){
             if(selection > 0) loadGame(selection - 1);
             else if(hero.hp < 1) stop=true; //quit if player cancels load after death
             showLoad=false;
-            break;
-          } else if(showOptions){
-            if(selection == 0) showOptions=false;
             break;
           } else if(showSave){
             if(selection > 0) saveGame(selection);
@@ -1764,6 +1696,8 @@ void CDarkages::render(){
 
   //printf("A: %d, B: %d, lowX: %d, lowY: %d\n", a, b, lowX, lowY);
 
+  SDL_SetRenderTarget(display->renderer, canvas);
+
   SDL_RenderClear(display->renderer);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
   for (j = lowY; j<highY; j++){
@@ -1781,6 +1715,16 @@ void CDarkages::render(){
     }
   }
 
+  //special effect to begin game
+  if(fadeIn>0){
+    r.x=0; r.y=0; r.w=640; r.h=400;
+    SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, fadeIn);
+    SDL_RenderFillRect(display->renderer, &r);
+    SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
+    r.h = 40;
+    r.w = 40;
+  }
+
   //draw player
   r.x = 300;
   r.y = 180;
@@ -1795,7 +1739,7 @@ void CDarkages::render(){
     SDL_RenderCopy(display->renderer, gfx.death->texture, gfx.death->getTile(0), &r);
   }
 
-  //show any engame screens
+  //show any endgame screens
   if(eGreyor==4){
     r.x=0; r.y=0; r.h=400; r.w=640;
     SDL_RenderCopy(display->renderer, gfx.endgame1->texture, gfx.endgame1->getTile(0), &r);
@@ -1826,9 +1770,6 @@ void CDarkages::render(){
   //draw game menu
   if(showMenu) renderMenu();
 
-  //draw options menu
-  if(showOptions) renderOptions();
-
   //draw load or save menu
   if(showLoad || showSave) renderSaves();
 
@@ -1839,10 +1780,12 @@ void CDarkages::render(){
   if(showTravel) renderTravelSpell();
 
   //for diagnostics
-  //char str[32];
-  //sprintf(str, "%d %d,%d:%d  %d,%d  %d", curMap, cam.getTileX(), cam.getTileY(), world[curMap].getTile(cam.getTileX(), cam.getTileY()), curMap,eBattleCheck, fps);
-  //font.render(10, 370, str);
-
+  char str[32];
+  sprintf(str, "%d %d,%d:%d  %d,%d  %d", curMap, cam.getTileX(), cam.getTileY(), world[curMap].getTile(cam.getTileX(), cam.getTileY()), curMap,eBattleCheck, fps);
+  font.render(10, 370, str);
+  
+  SDL_SetRenderTarget(display->renderer, NULL);
+  SDL_RenderCopy(display->renderer, canvas, NULL, NULL);
   SDL_RenderPresent(display->renderer);
 
 }
@@ -1948,6 +1891,12 @@ void CDarkages::renderOptions(){
   case 1:
     r.x=36; r.y=80; r.w=260; r.h=26;
     break;
+  case 2:
+    r.x=36; r.y=120; r.w=260; r.h=26;
+    break;
+  case 3:
+    r.x=36; r.y=160; r.w=260; r.h=26;
+    break;
   default:
     break;
   }
@@ -1966,6 +1915,31 @@ void CDarkages::renderOptions(){
     }
   }
 
+  //draw resolution indicators
+  if(selection == 2){
+    r.w=16; r.h=16;
+    if(tmpScreen > 0) {
+      r.x = 400; r.y = 124;
+      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(3), &r);
+    }
+    if(tmpScreen<display->screenModes.size()-1){
+      r.x = 590; r.y = 124;
+      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(2), &r);
+    }
+  }
+
+  //draw fullscreen indicators
+  if(selection==3){
+    r.w=16; r.h=16;
+    if(conf->fullScreen) {
+      r.x = 400; r.y = 164;
+      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(3), &r);
+    } else {
+      r.x = 590; r.y = 164;
+      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(2), &r);
+    }
+  }
+
   font.render(40, 40, "Return to Game");
   font.render(40, 80, "Music");
   r.w = 186; r.h = 24; r.x = 410; r.y = 80;
@@ -1977,13 +1951,19 @@ void CDarkages::renderOptions(){
     r.w = 16; r.h = 16; r.x = 414+(i-1)*18; r.y = 84;
     SDL_RenderFillRect(display->renderer, &r);
   }
+  font.render(40, 120, "Screen Res:");
+  font.render(430, 120, display->screenModes[tmpScreen].name);
 
-  font.render(40, 120, "Keys:");
-  font.render(60, 150, "Cursors = Movement");
-  font.render(60, 180, "SPACE/ENTER = Talk/Action");
-  font.render(60, 210, "C = Cast Spell");
-  font.render(60, 240, "Z = Player Stats");
-  font.render(60, 270, "ESC = Game Menu");
+  font.render(40, 160, "Fullscreen:");
+  if(conf->fullScreen) font.render(450, 160, "Yes");
+  else font.render(460, 160, "No");
+
+  font.render(40, 200, "Keys:");
+  font.render(60, 230, "Cursors = Movement");
+  font.render(60, 260, "SPACE/ENTER = Talk/Action");
+  font.render(60, 290, "C = Cast Spell");
+  font.render(60, 320, "Z = Player Stats");
+  font.render(60, 350, "ESC = Game Menu");
 
 
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
@@ -2297,8 +2277,6 @@ void CDarkages::renderTitle(){
   //draw load or save menu
   if(showLoad) {
     renderSaves();
-  } else if(showOptions){
-    renderOptions();
   } else {
 
     //Menu options
@@ -3596,10 +3574,6 @@ void CDarkages::title(){
             else selection--;
             break;
           }
-          if(showOptions){
-            if(selection == 1) selection--;
-            break;
-          }
           if(selection == 0) selection=3;
           else selection--;
           break;
@@ -3609,24 +3583,8 @@ void CDarkages::title(){
             else selection++;
             break;
           }
-          if(showOptions){
-            if(selection == 0) selection++;
-            break;
-          }
           if(selection == 3) selection=0;
           else selection++;
-          break;
-        case SDLK_LEFT:
-          if(showOptions && selection == 1 && musicVolume > 0) {
-            musicVolume--;
-            music.setVolume(musicVolume);
-          }
-          break;
-        case SDLK_RIGHT:
-          if(showOptions && selection == 1 && musicVolume < 10) {
-            musicVolume++;
-            music.setVolume(musicVolume);
-          }
           break;
         case SDLK_ESCAPE:
           break;
@@ -3645,22 +3603,20 @@ void CDarkages::title(){
               selection=1;
             }
             break;
-          } else if(showOptions){
-            if(selection>0){
-              break;
-            } else {
-              selection=2;
-            }
-            showOptions=false;
-            break;
           }
           if(selection == 0) {
-            if(newGame()) run();
+            if(newGame()) {
+              fadeIn=255;
+              script.clear();
+              script.addText("Your adventure begins!");
+              showText=true;
+              run();
+            }
           } else if(selection == 1) {
             showLoad=true;
           } else if(selection ==2){
-            selection=0;
-            showOptions=true;
+            COptions opt(display, &music, &font, &gfx, conf);
+            opt.run();
           } else if(selection == 3) {
             stop=true;
           }
