@@ -2,6 +2,7 @@
 #define _CMAP_H
 
 #include <iostream>
+#include <string.h>
 
 using namespace std;
 
