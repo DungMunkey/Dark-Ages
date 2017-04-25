@@ -2,6 +2,8 @@
 #define _CPLAYER_H
 
 #include <iostream>
+#include <string.h>
+
 using namespace std;
 
 class CPlayer{
