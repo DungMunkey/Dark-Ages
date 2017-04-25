@@ -159,6 +159,7 @@ private:
   SDL_Texture* canvas;
   int fadeIn;
   sConf* conf;
+  unsigned int ticks;
 
   void buyArmor(int index);
   void buyArmorB(int index);

@@ -1,5 +1,4 @@
 #include "COptions.h"
-#include <iostream>
 
 COptions::COptions(CDisplay* d, CMusic* m, CFont* f, CGfxCollection* g, sConf* c){
   display=d;
@@ -23,8 +22,6 @@ COptions::~COptions(){
 }
 
 bool COptions::logic(optAction a){
-  cout << "logic: " << a << endl;
-
   switch(a){
   case optPress:
     if(selection == 0) return false;
@@ -86,7 +83,6 @@ bool COptions::logic(optAction a){
   case optDown:
     if(active) break;
     if(selection <3) selection++;
-    cout << selection << endl;
     break;
   default:
     break;
@@ -192,8 +188,6 @@ void COptions::render(){
 }
 
 void COptions::run(){
-
-  cout << "Run" << endl;
 
   SDL_Event e;
   bool stop = false;

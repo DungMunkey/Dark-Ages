@@ -21,6 +21,7 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
   musicVolume=5;
   music.setVolume(musicVolume);
   conf=c;
+  fadeIn=0;
 
   canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 400);
 }
@@ -1260,7 +1261,7 @@ void CDarkages::run(){
   bool moving = false;
   stop = false;
 
-  unsigned int ticks =0;
+  /*unsigned int*/ ticks =0;
   unsigned int curTicks;
   unsigned int lastTicks=SDL_GetTicks();
   unsigned int lastFPS=SDL_GetTicks();
@@ -1290,7 +1291,7 @@ void CDarkages::run(){
       fadeIn-=5;
       continue;
     }
-    ticks-=6;
+    while(ticks>=6) ticks-=6;
 
     if(showCredits) {
       selection++;
@@ -2271,7 +2272,7 @@ void CDarkages::renderTitle(){
 
   font.setFontSize(16);
   font.render(10, 380, "Copyright (C) 1997-2017, Dark Knight Software");
-  font.render(10, 370, "version 2.0 alpha 1");
+  font.render(10, 370, "version 2.0 alpha 2");
   font.setFontSize(32);
 
   //draw load or save menu
