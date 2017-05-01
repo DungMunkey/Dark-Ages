@@ -10,7 +10,6 @@ CInput::CInput(){
   lastButton=0;
 
   //cout << "Joysticks: " << SDL_NumJoysticks() << endl;
-  /*
   controller = NULL;
   for(i = 0; i < SDL_NumJoysticks(); i++) {
     controller = SDL_GameControllerOpen(i);
@@ -20,11 +19,10 @@ CInput::CInput(){
       fprintf(stderr, "Could not open gamecontroller %i: %s\n", i, SDL_GetError());
     }
   }
-  */
 }
 
 CInput::~CInput(){
-  //SDL_GameControllerClose(controller);
+  SDL_GameControllerClose(controller);
 }
 
 bool CInput::getButtonState(int k){

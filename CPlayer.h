@@ -36,6 +36,8 @@ public:
   char helm[32];
   char shield[32];
 
+  void clear();
+
 private:
 };
 

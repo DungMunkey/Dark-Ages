@@ -211,6 +211,21 @@ void COptions::run(){
           break;
         default: break;
         }
+      } else if(e.type == SDL_CONTROLLERBUTTONDOWN) {
+        switch(e.cbutton.button){
+        case SDL_CONTROLLER_BUTTON_A:
+          if(!logic(optPress)) stop=true;
+          break;
+        case SDL_CONTROLLER_BUTTON_B:
+        case SDL_CONTROLLER_BUTTON_Y:
+          if(!active) stop = true;
+          break;
+        case SDL_CONTROLLER_BUTTON_DPAD_UP: logic(optUp); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: logic(optDown); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: logic(optLeft); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: logic(optRight); break;
+        default:break;
+        }
       }
     }
 

@@ -15,6 +15,71 @@ CBattle::~CBattle(){
   hero=NULL;
 }
 
+void CBattle::actionCursorDown(){
+  if(showText) return;
+  if(showSpell) {
+    if(spellSelection < (int)(spells.size() - 1)) spellSelection++;
+    return;
+  }
+  if(selection < 2) selection++;
+}
+void CBattle::actionCursorUp(){
+  if(showText) return;
+  if(showSpell) {
+    if(spellSelection > 0) spellSelection--;
+    return;
+  }
+  if(selection > 0) selection--;
+}
+void CBattle::actionEnter(){
+  string s;
+
+  if(showText) {
+    text.clear();
+    showText = false;
+    if(run == 1)run++;
+  } else if(showSpell){
+    showSpell=false;
+    castSpell(spells[spellSelection]);
+  } else {
+    switch(selection){
+    case 0: //attack
+      playerAttack();
+      if(curMon.hp > 0) monsterAttack();
+      showText=true;
+      break;
+    case 1: //spell
+      spellSelection=0;
+      showSpell=true;
+      break;
+    case 2: //run
+      if(noRun){
+        s="There is no running from this battle!";
+        text.push_back(s);
+        s=" ";
+        text.push_back(s);
+        monsterAttack();
+      } else {
+        if(rand() % 100 < 50){ //escape
+          s="You escape!";
+          text.push_back(s);
+          run=1;
+        } else { //fail
+          s="You can't get away!";
+          text.push_back(s);
+          s=" ";
+          text.push_back(s);
+          monsterAttack();
+        }
+      }
+      showText=true;
+      break;
+    default:
+      break;
+    }
+  }
+}
+
 void CBattle::castSpell(int index){
   if(index == -1) return;
 
@@ -168,8 +233,8 @@ int CBattle::fight(int index){
   curMon=monsters[index];
   string s;
 
-  int run=0;
-  int win=0;
+  run=0;
+  win=0;
 
   setHeroSpells();
 
@@ -179,76 +244,23 @@ int CBattle::fight(int index){
       if(e.type == SDL_KEYDOWN)  {
         //Select surfaces based on key press
         switch(e.key.keysym.sym)  {
-        case SDLK_UP:
-          if(showText) break;
-          if(showSpell) {
-            if(spellSelection > 0) spellSelection--;
-            break;
-          }
-          if(selection > 0) selection--;
-          break;
-        case SDLK_DOWN:
-          if(showText) break;
-          if(showSpell) {
-            if(spellSelection < (int)(spells.size()-1)) spellSelection++;
-            break;
-          }
-          if(selection < 2) selection++;
-          break;
-        case SDLK_b: return 0;
+        case SDLK_UP: actionCursorUp(); break;
+        case SDLK_DOWN: actionCursorDown(); break;
+        //case SDLK_b: return 0;
         case SDLK_RETURN:
         case SDLK_SPACE:
-          if(showText) {
-            text.clear();
-            showText = false;
-            if(run == 1)run++;
-          } else if(showSpell){
-            showSpell=false;
-            castSpell(spells[spellSelection]);
-          } else {
-            switch(selection){
-            case 0: //attack
-              playerAttack();
-              if(curMon.hp > 0) monsterAttack();
-              showText=true;
-              break;
-            case 1: //spell
-              spellSelection=0;
-              showSpell=true;
-              //if(curMon.hp > 0) monsterAttack();
-              //showText=true;
-              break;
-            case 2: //run
-              if(noRun){
-                s="There is no running from this battle!";
-                text.push_back(s);
-                s=" ";
-                text.push_back(s);
-                monsterAttack();
-              } else {
-                if(rand() % 100 < 50){ //escape
-                  s="You escape!";
-                  text.push_back(s);
-                  run=1;
-                } else { //fail
-                  s="You can't get away!";
-                  text.push_back(s);
-                  s=" ";
-                  text.push_back(s);
-                  monsterAttack();
-                }
-              }
-              showText=true;
-              break;
-            default:
-              break;
-            }
-          }
+          actionEnter();
           break;
         default: break;
         }
+      } else if(e.type == SDL_CONTROLLERBUTTONDOWN) {
+        switch(e.cbutton.button){
+        case SDL_CONTROLLER_BUTTON_A: actionEnter(); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_UP: actionCursorUp(); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: actionCursorDown(); break;
+        default:break;
+        }
       }
-
     }
 
     if(!showText && curMon.hp<1 && win==0){

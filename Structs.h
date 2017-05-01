@@ -14,4 +14,13 @@ typedef struct sConf{
   }
 }sConf;
 
+typedef struct da1saves{
+  int day;
+  int month;
+  int year;
+  int level;
+  int gold;
+  char name[32];
+} da1save;
+
 #endif

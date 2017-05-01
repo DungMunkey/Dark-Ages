@@ -6,9 +6,11 @@
 #include "CDisplay.h"
 #include "CFont.h"
 #include "CGfxCollection.h"
+#include "CLoadSave.h"
 #include "CMusic.h"
 #include "COptions.h"
 #include "CPlayer.h"
+#include "CTitle.h"
 #include "CWorld.h"
 #include "time.h"
 
@@ -80,15 +82,6 @@ typedef struct da1item{
   int value;
 } da1item;
 
-typedef struct da1saves{
-  int day;
-  int month;
-  int year;
-  int level;
-  int gold;
-  char name[32];
-} da1save;
-
 class CDarkages{
 public:
   CDarkages(CDisplay* d, sConf* c);
@@ -106,6 +99,7 @@ private:
   CMusic music;
   CPlayer hero;
   CWorld world;
+  CLoadSave* loadSave;
 
   da1script script;
   vector<int> spellList;
@@ -161,6 +155,18 @@ private:
   sConf* conf;
   unsigned int ticks;
 
+  void actionCursorDown();
+  void actionCursorDownRel();
+  void actionCursorLeft();
+  void actionCursorLeftRel();
+  void actionCursorRight();
+  void actionCursorRightRel();
+  void actionCursorUp();
+  void actionCursorUpRel();
+  void actionEnter(bool bSpace=false);
+  void actionESC();
+  void actionSpell();
+  void actionStats();
   void buyArmor(int index);
   void buyArmorB(int index);
   void buyHelm(int index);
@@ -189,15 +195,17 @@ private:
   void renderMenu();
   void renderNew();
   void renderOptions();
-  void renderSaves();
+  //void renderSaves();
   void renderSpell();
   void renderStats();
   void renderText();
-  void renderTitle();
+  //void renderTitle();
   void renderTravelSpell();
+  void reset();
   void saveGame(int index);
   void setRandomBanter();
   void setText(int i);
+  int  titleLoad();
   void travel(int index);
 };
 

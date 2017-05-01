@@ -16,6 +16,8 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
   playerDir = 0;
   playerAnim = 0;
   selection=0;
+  loadSave=NULL;
+  
   init();
   renderCount=0;
   musicVolume=5;
@@ -29,6 +31,215 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
 CDarkages::~CDarkages(){
   SDL_DestroyTexture(canvas);
   display = NULL;
+  if(loadSave != NULL) delete loadSave;
+}
+
+void CDarkages::actionCursorDown(){
+  if(showLoad){
+    if(loadSave->selection == 6) loadSave->selection=0;
+    else loadSave->selection++;
+    return;
+  }
+  if(showMenu){
+    if(selection == 4) selection=0;
+    else selection++;
+    return;
+  }
+  if(showSave){
+    if(loadSave->selection == 5) loadSave->selection=0;
+    else loadSave->selection++;
+    return;
+  }
+  if(showSpell){
+    if(selection == spellList.size() - 1) selection=0;
+    else selection++;
+    return;
+  }
+  if(showTravel){
+    if(selection == 12) selection=0;
+    else selection++;
+    return;
+  }
+  if(showStats) return;
+  if(showText) {
+    if(script.selection<script.choices->size() - 1) script.selection++;
+    return;
+  }
+  cam.keyDown(2);
+}
+
+void CDarkages::actionCursorDownRel(){
+  cam.keyUp(2);
+}
+
+void CDarkages::actionCursorLeft(){
+  if(showLoad) return;
+  if(showMenu) return;
+  if(showSave) return;
+  if(showSpell) return;
+  if(showStats) return;
+  if(showTravel) return;
+  if(showText) return;
+  cam.keyDown(3);
+}
+
+void CDarkages::actionCursorLeftRel(){
+  cam.keyUp(3);
+}
+
+void CDarkages::actionCursorRight(){
+  if(showLoad) return;
+  if(showMenu) return;
+  if(showSave) return;
+  if(showSpell) return;
+  if(showTravel) return;
+  if(showStats) return;
+  if(showText) return;
+  cam.keyDown(1);
+}
+
+void CDarkages::actionCursorRightRel(){
+  cam.keyUp(1);
+}
+
+void CDarkages::actionCursorUp(){
+  if(showLoad){
+    if(loadSave->selection == 0) loadSave->selection=6;
+    else loadSave->selection--;
+    return;
+  }
+  if(showMenu){
+    if(selection == 0) selection=4;
+    else selection--;
+    return;
+  }
+  if(showSave){
+    if(loadSave->selection == 0) loadSave->selection=5;
+    else loadSave->selection--;
+    return;
+  }
+  if(showSpell){
+    if(selection == 0) selection=spellList.size() - 1;
+    else selection--;
+    return;
+  }
+  if(showTravel){
+    if(selection == 0) selection=12;
+    else selection--;
+    return;
+  }
+  if(showStats) return;
+  if(showText) {
+    if(script.selection > 0) script.selection--;
+    if(script.selection < script.offset) script.offset--;
+    return;
+  }
+  cam.keyDown(0);
+}
+
+void CDarkages::actionCursorUpRel(){
+  cam.keyUp(0);
+}
+
+void CDarkages::actionEnter(bool bSpace){
+  if(showMenu) {
+    if(selection == 1){
+      showMenu=false;
+      showSave=true;
+      loadSave->showLoad=false;
+      loadSave->selection=0;
+    } else if(selection == 2){
+      showMenu=false;
+      showLoad=true;
+      loadSave->showLoad=true;
+      loadSave->selection=0;
+    } else if(selection == 3){
+      COptions opt(display, &music, &font, &gfx, conf);
+      opt.run();
+    } else if(selection == 4){
+      showMenu=false;
+      stop=true;
+      return;
+    } else{
+      showMenu=false;
+    }
+  } else if(showLoad){
+    if(loadSave->selection > 0) loadGame(loadSave->selection - 1);
+    else if(hero.hp < 1) stop=true; //quit if player cancels load after death
+    showLoad=false;
+    return;
+  } else if(showSave){
+    if(loadSave->selection > 0) saveGame(loadSave->selection);
+    showSave=false;
+    return;
+  } else if(showSpell){
+    castSpell(spellList[selection]);
+    return;
+  } else if(showTravel){
+    travel(selection);
+    showTravel=false;
+    return;
+  } else if(showStats) {
+    showStats=false;
+  } else if(showText) {
+    if(script.text->size()>1){
+      script.text->erase(script.text->begin());
+    } else if(script.choices->size() > 0){
+      setText(script.choices->at(script.selection).result);
+    } else if(showTextInput){
+      if(!bSpace){
+        //check riddle answer
+        setText(224);
+        showTextInput=false;
+        SDL_StopTextInput();
+      }
+    } else {
+      showText = false;
+    }
+  } else {
+    int i = checkAction(curMap, cam.getTileX(), cam.getTileY());
+    if(i > 0) setText(i);
+  }
+
+}
+
+void CDarkages::actionESC(){
+  if(showLoad){
+    showLoad=false;
+    return;
+  } else if(showSave){
+    showSave=false;
+    return;
+  } else if(showSpell){
+    showSpell=false;
+    return;
+  } else if(showTravel){
+    showTravel=false;
+    return;
+  } else  if(showStats) {
+    showStats=false;
+    return;
+  } else if(showText) return;
+  if(showMenu) showMenu=false;
+  else  showMenu=true;
+  selection=0;
+}
+
+void CDarkages::actionSpell(){
+  if(showText) return;
+  castSpell(-2);
+}
+
+void CDarkages::actionStats(){
+  if(showLoad) return;
+  if(showMenu) return;
+  if(showSave) return;
+  if(showSpell) return;
+  if(showTravel) return;
+  if(showText) return;
+  if(showStats) showStats=false;
+  else showStats=true;
+  return;
 }
 
 void CDarkages::buyArmor(int index){
@@ -1063,8 +1274,6 @@ void CDarkages::init(){
   font.setFontSize(32);
   gfx.loadGfx(display->renderer);
   world.loadMaps();
-  cam.setPos(40, 12);
-  cam.setMax(world[curMap].szX, world[curMap].szY);
   battle.init(display, &font, &gfx, &hero);
   //SDL_RenderSetIntegerScale(display->renderer, SDL_TRUE);
   SDL_RenderSetLogicalSize(display->renderer, 640, 400);
@@ -1087,6 +1296,7 @@ void CDarkages::init(){
     fread(&saves, sizeof(da1save), 6, f);
     fclose(f);
   }
+  loadSave = new CLoadSave(display, &font, &saves[0]);
 
   //spell names
   strcpy(spells[0].name, "Heal"); spells[0].cost=50; spells[0].value=2;
@@ -1137,19 +1347,6 @@ void CDarkages::init(){
   strcpy(shields[2].name, "Large Shield"); shields[2].cost=500; shields[2].value=3;
   strcpy(shields[3].name, "Magic Shield"); shields[3].cost=2000; shields[3].value=5;
 
-  //set event variables
-  eAle=0;
-  eBattleCheck=0;
-  eBattleNum=0;
-  eBridge=0;
-  eCave=0;
-  eEmma=0;
-  eEndGame=0;
-  eFirewand=0;
-  eGreyor=0;
-  eHelpDwarf=0;
-  eHorn=0;
-
   //set tile actions
   int i;
   for(i=0;i<150;i++) actionTile[i]=0;
@@ -1160,6 +1357,8 @@ void CDarkages::init(){
   for(i=66; i < 80; i++) actionTile[i]=i;
   actionTile[98]=98;
   for(i=101; i < 126; i++) actionTile[i]=i;
+
+  reset();
 }
 
 void CDarkages::loadGame(int index){
@@ -1194,10 +1393,15 @@ void CDarkages::loadGame(int index){
 }
 
 bool CDarkages::newGame(){
+  //reset game
+  reset();
+
   userText.clear();
   SDL_StartTextInput();
   showTextInput=true;
   showText=true;
+
+  //start at the beginning
 
   script.clear();
   script.addText("Name your hero:");
@@ -1303,276 +1507,53 @@ void CDarkages::run(){
       continue;
     }
 
-    //if(cam.scrollCamera()){
-    //  SDL_FlushEvents(SDL_USEREVENT, SDL_LASTEVENT);
-    //  render();
-    //  continue;
-    //}
-
-    //printf("%d %d\n", world[30].szX, world[30].szY);
     while (SDL_PollEvent(&e) != 0) {
       if(e.type == SDL_TEXTINPUT){
         if(showTextInput && userText.size() < 16 && e.text.text[0] != ' ') userText+=e.text.text;
-      } else if(e.type==SDL_JOYAXISMOTION){
-        cout << "joystick" << endl;
-        if(e.jaxis.axis == 0) {
-          //Left of dead zone
-          if(e.jaxis.value < -12000){
-            cam.keyDown(3);
-            cam.keyUp(1);
-          } else if(e.jaxis.value > 12000){
-            cam.keyDown(1);
-            cam.keyUp(3);
-          } else {
-            cam.keyUp(1);
-            cam.keyUp(3);
-          }
-        } else if(e.jaxis.axis == 1){
-          if(e.jaxis.value < -12000){
-            cam.keyDown(0);
-            cam.keyUp(2);
-          } else if(e.jaxis.value > 12000){
-            cam.keyDown(2);
-            cam.keyUp(0);
-          } else {
-            cam.keyUp(0);
-            cam.keyUp(2);
-          }
+      } else if(e.type == SDL_CONTROLLERBUTTONUP) {
+        switch(e.cbutton.button)  {
+        case SDL_CONTROLLER_BUTTON_DPAD_UP: actionCursorUpRel(); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: actionCursorDownRel(); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: actionCursorLeftRel(); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: actionCursorRightRel(); break;
+        default: break;
+        }
+      } else if(e.type == SDL_CONTROLLERBUTTONDOWN) {
+        switch(e.cbutton.button){
+        case SDL_CONTROLLER_BUTTON_A: actionEnter(); break;
+        case SDL_CONTROLLER_BUTTON_B: actionSpell(); break;
+        case SDL_CONTROLLER_BUTTON_X: actionStats(); break;
+        case SDL_CONTROLLER_BUTTON_Y: actionESC(); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_UP: actionCursorUp(); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: actionCursorDown(); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: actionCursorLeft(); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: actionCursorRight(); break;
+        default:break;
         }
           
       } else if(e.type == SDL_KEYUP){
         switch(e.key.keysym.sym)  {
-        case SDLK_UP: cam.keyUp(0); break;
-        case SDLK_DOWN: cam.keyUp(2); break;
-        case SDLK_LEFT: cam.keyUp(3); break;
-        case SDLK_RIGHT: cam.keyUp(1); break;
+        case SDLK_UP: actionCursorUpRel(); break;
+        case SDLK_DOWN: actionCursorDownRel(); break;
+        case SDLK_LEFT: actionCursorLeftRel(); break;
+        case SDLK_RIGHT: actionCursorRightRel(); break;
         default: break;
         }
-      }else if(e.type == SDL_KEYDOWN)  {
-        //Select surfaces based on key press
+      } else if(e.type == SDL_KEYDOWN)  {
         switch (e.key.keysym.sym)  {
-        case SDLK_UP: 
-          if(showLoad){
-            if(selection == 0) selection=6;
-            else selection--;
-            break;
-          }
-          if(showMenu){
-            if(selection == 0) selection=4;
-            else selection--;
-            break;
-          }
-          if(showSave){
-            if(selection == 0) selection=5;
-            else selection--;
-            break;
-          }
-          if(showSpell){
-            if(selection == 0) selection=spellList.size() - 1;
-            else selection--;
-            break;
-          }
-          if(showTravel){
-            if(selection == 0) selection=12;
-            else selection--;
-            break;
-          }
-          if(showStats) break;
-          if(showText) {
-            if(script.selection > 0) script.selection--;
-            if(script.selection < script.offset) script.offset--;
-            break;
-          }
-          //if(battle.fight(checkBattle())==3) death();
-          //i = checkTile(curMap, cam.getTileX(), cam.getTileY() - 1);
-          //playerDir = 3; 
-          //anim = true;
-          //if (i == 0) {
-            cam.keyDown(0);
-            //cam.bumpCamera(0, -20);
-          //} else if (i > 0){
-          //  chMap = i;
-          //}
-          break;
-        case SDLK_DOWN: 
-          if(showLoad){
-            if(selection == 6) selection=0;
-            else selection++;
-            break;
-          }
-          if(showMenu){
-            if(selection == 4) selection=0;
-            else selection++;
-            break;
-          }
-          if(showSave){
-            if(selection == 5) selection=0;
-            else selection++;
-            break;
-          }
-          if(showSpell){
-            if(selection == spellList.size()-1) selection=0;
-            else selection++;
-            break;
-          }
-          if(showTravel){
-            if(selection == 12) selection=0;
-            else selection++;
-            break;
-          }
-          if(showStats) break;
-          if(showText) {
-            if(script.selection<script.choices->size()-1) script.selection++;
-            break;
-          }
-          //if(battle.fight(checkBattle())==3) death();
-          //i = checkTile(curMap, cam.getTileX(), cam.getTileY() + 1);
-          //playerDir = 0;  
-          //anim = true;
-          //if (i == 0) {
-            cam.keyDown(2);
-            //cam.bumpCamera(0, 20);
-          //} else if (i > 0){
-          //  chMap = i;
-          //}
-          break;
-        case SDLK_LEFT: 
-          if(showLoad) break;
-          if(showMenu) break;
-          if(showSave) break;
-          if(showSpell) break;
-          if(showStats) break;
-          if(showTravel) break;
-          if (showText) break;
-          //if(battle.fight(checkBattle())==3) death();
-          //i = checkTile(curMap, cam.getTileX()-1, cam.getTileY());
-          //playerDir = 1; 
-          //anim = true;
-          //if (i == 0) {
-            cam.keyDown(3);
-            //cam.bumpCamera(-20, 0);
-          //} else if (i > 0){
-          //  chMap = i;
-          //}
-          break;
-        case SDLK_RIGHT: 
-          if(showLoad) break;
-          if(showMenu) break;
-          if(showSave) break;
-          if(showSpell) break;
-          if(showTravel) break;
-          if(showStats) break;
-          if (showText) break;
-          //if(battle.fight(checkBattle())==3) death();
-          //i = checkTile(curMap, cam.getTileX()+1, cam.getTileY());
-          //playerDir = 2;
-          //anim = true;
-          //if (i == 0) {
-            cam.keyDown(1);
-            //cam.bumpCamera(20, 0);
-          //} else if (i > 0){
-          //  chMap = i;
-          //}
-          break; 
-        case SDLK_ESCAPE:
-          if(showLoad){
-            showLoad=false;
-            break;
-          }
-          if(showSave){
-            showSave=false;
-            break;
-          }
-          if(showSpell){
-            showSpell=false;
-            break;
-          }
-          if(showTravel){
-            showTravel=false;
-            break;
-          }
-          if(showStats) {
-            showStats=false;
-            break;
-          }
-          if(showText) break;
-          if(showMenu) showMenu=false;
-          else  showMenu=true;
-          selection=0;
-          break;
+        case SDLK_UP: actionCursorUp(); break;
+        case SDLK_DOWN: actionCursorDown(); break;
+        case SDLK_LEFT: actionCursorLeft(); break;
+        case SDLK_RIGHT: actionCursorRight(); break;
+        case SDLK_ESCAPE: actionESC(); break;
         //case SDLK_b: if(battle.fight(checkBattle())==3) death(); break;
-        case SDLK_c: castSpell(-2); break;
-        //case SDLK_q: stop = true; break;
-        case SDLK_z: 
-          if(showLoad) break;
-          if(showMenu) break;
-          if(showSave) break;
-          if(showSpell) break;
-          if(showTravel) break;
-          if(showText) break;
-          if(showStats) showStats=false;
-          else showStats=true; 
-          break;
+        case SDLK_c: actionSpell(); break;
+        case SDLK_z: actionStats(); break;
         case SDLK_BACKSPACE:
           if(showTextInput && userText.size()>0) userText.pop_back();
           break;
-        case SDLK_RETURN:
-        case SDLK_SPACE:
-          if(showMenu) {
-            if(selection == 1){
-              showMenu=false;
-              showSave=true;
-              selection=0;
-            } else if(selection == 2){
-              showMenu=false;
-              showLoad=true;
-              selection=0;
-            } else if(selection == 3){
-              COptions opt(display, &music, &font, &gfx, conf);
-              opt.run();
-            } else if(selection == 4){
-              stop=true; break;
-            } else{
-              showMenu=false;
-            }
-          } else if(showLoad){
-            if(selection > 0) loadGame(selection - 1);
-            else if(hero.hp < 1) stop=true; //quit if player cancels load after death
-            showLoad=false;
-            break;
-          } else if(showSave){
-            if(selection > 0) saveGame(selection);
-            showSave=false;
-            break;
-          } else if(showSpell){
-            castSpell(spellList[selection]);
-            break;
-          } else if(showTravel){
-            travel(selection);
-            showTravel=false;
-            break;
-          } else if(showStats) {
-            showStats=false;
-          } else if(showText) {
-            if(script.text->size()>1){
-              script.text->erase(script.text->begin());
-            } else if(script.choices->size() > 0){
-              setText(script.choices->at(script.selection).result);
-            } else if(showTextInput){
-              if(e.key.keysym.sym == SDLK_RETURN){
-                //check riddle answer
-                setText(224);
-                showTextInput=false;
-                SDL_StopTextInput();
-              }
-            } else {
-              showText = false;
-            }
-          } else {
-            i = checkAction(curMap, cam.getTileX(), cam.getTileY());
-            if (i > 0) setText(i);
-          }
-          break;
+        case SDLK_RETURN: actionEnter(); break;
+        case SDLK_SPACE: actionEnter(true); break;
         default: break;
         }
       }
@@ -1772,7 +1753,7 @@ void CDarkages::render(){
   if(showMenu) renderMenu();
 
   //draw load or save menu
-  if(showLoad || showSave) renderSaves();
+  if(showLoad || showSave) loadSave->render(); // renderSaves();
 
   //draw spell menu
   if(showSpell) renderSpell();
@@ -1972,6 +1953,7 @@ void CDarkages::renderOptions(){
 
 }
 
+/*
 void CDarkages::renderSaves(){
   SDL_Rect r;
   int i;
@@ -2016,6 +1998,7 @@ void CDarkages::renderSaves(){
   }
 
 }
+*/
 
 void CDarkages::renderSpell(){
   SDL_Rect r;
@@ -2261,6 +2244,7 @@ void CDarkages::renderText(){
 
 }
 
+/*
 void CDarkages::renderTitle(){
   SDL_Rect r;
 
@@ -2299,6 +2283,7 @@ void CDarkages::renderTitle(){
   
 
 }
+*/
 
 void CDarkages::renderTravelSpell(){
   SDL_Rect r;
@@ -2324,6 +2309,44 @@ void CDarkages::renderTravelSpell(){
   font.render(82, 132, "Aaryak");
   font.render(82, 140, "Floating City");
 
+}
+
+void CDarkages::reset(){
+  //reset flags and timers
+  showCredits=false;
+  showLoad=false;
+  showMenu=false;
+  showSave=false;
+  showSpell=false;
+  showStats=false;
+  showText = false;
+  showTextInput = false;
+  showTravel=false;
+  curMap = 30;
+  multiFight=0;
+  playerDir = 0;
+  playerAnim = 0;
+  selection=0;
+
+  //reset player
+  hero.clear();
+
+  //set game start
+  cam.setPos(40, 12);
+  cam.setMax(world[curMap].szX, world[curMap].szY);
+
+  //set event variables
+  eAle=0;
+  eBattleCheck=0;
+  eBattleNum=0;
+  eBridge=0;
+  eCave=0;
+  eEmma=0;
+  eEndGame=0;
+  eFirewand=0;
+  eGreyor=0;
+  eHelpDwarf=0;
+  eHorn=0;
 }
 
 void CDarkages::saveGame(int index){
@@ -3553,85 +3576,75 @@ void CDarkages::setText(int i){
 }
 
 void CDarkages::title(){
-  SDL_Event e;
-  int chMap = -1;
-  bool anim = false;
-  bool moving = false;
-  stop = false;
+  int i;
 
   //music.playSong(TitleSong);
 
+  CTitle title(display, &font, &gfx);
+
   while(true){
 
+    i=title.run();
+    if(i == 1){
+      if(newGame()) {
+        fadeIn=255;
+        script.clear();
+        script.addText("Your adventure begins!");
+        showText=true;
+        run();
+      }
+    } else if(i == 2){
+      if(titleLoad()>0) run();
+    } else if(i == 3){
+      COptions opt(display, &music, &font, &gfx, conf);
+      opt.run();
+    } else if(i==4){
+      return;
+    }
+  }
+
+}
+
+int CDarkages::titleLoad(){
+  SDL_Event e;
+  loadSave->selection=0;
+  loadSave->showLoad=true;
+  showLoad=true;
+  while(true){
     while(SDL_PollEvent(&e) != 0) {
-      if(e.type == SDL_TEXTINPUT){
-        if(showTextInput && userText.size()<16 && e.text.text[0] != ' ') userText+=e.text.text;
+      if(e.type == SDL_CONTROLLERBUTTONDOWN) {
+        switch(e.cbutton.button){
+        case SDL_CONTROLLER_BUTTON_A: 
+          actionEnter();
+          showLoad=false;
+          return 1;
+        case SDL_CONTROLLER_BUTTON_DPAD_UP: actionCursorUp(); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: actionCursorDown(); break;
+        default:break;
+        }
+
       } else if(e.type == SDL_KEYDOWN)  {
-        //Select surfaces based on key press
         switch(e.key.keysym.sym)  {
-        case SDLK_UP:
-          if(showLoad){
-            if(selection == 0) selection=6;
-            else selection--;
-            break;
-          }
-          if(selection == 0) selection=3;
-          else selection--;
-          break;
-        case SDLK_DOWN:
-          if(showLoad){
-            if(selection == 6) selection=0;
-            else selection++;
-            break;
-          }
-          if(selection == 3) selection=0;
-          else selection++;
-          break;
-        case SDLK_ESCAPE:
-          break;
-        case SDLK_q: stop = true; break;
-        case SDLK_BACKSPACE:
-          if(showTextInput && userText.size()>0) userText.pop_back();
-          break;
+        case SDLK_UP: actionCursorUp(); break;
+        case SDLK_DOWN: actionCursorDown(); break;
+        case SDLK_ESCAPE: 
+          showLoad=false; 
+          return 0;
         case SDLK_RETURN:
-        case SDLK_SPACE:
-          if(showLoad){
-            showLoad=false;
-            if(selection > 0) {
-              loadGame(selection - 1);
-              run();
-            } else {
-              selection=1;
-            }
-            break;
-          }
-          if(selection == 0) {
-            if(newGame()) {
-              fadeIn=255;
-              script.clear();
-              script.addText("Your adventure begins!");
-              showText=true;
-              run();
-            }
-          } else if(selection == 1) {
-            showLoad=true;
-          } else if(selection ==2){
-            COptions opt(display, &music, &font, &gfx, conf);
-            opt.run();
-          } else if(selection == 3) {
-            stop=true;
-          }
-          break;
+        case SDLK_SPACE: 
+          actionEnter();
+          showLoad=false;
+          return 1;
         default: break;
         }
       }
     }
 
-    if(stop) break;
-    renderTitle();
-
+    SDL_RenderClear(display->renderer);
+    loadSave->render();
+    SDL_RenderPresent(display->renderer);
   }
-
+  showLoad=false;
 }
 
 void CDarkages::travel(int index){

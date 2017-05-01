@@ -1,6 +1,10 @@
 #include "CPlayer.h"
 
 CPlayer::CPlayer(){
+  clear();
+}
+
+void CPlayer::clear(){
   level=1;
   str=5;
   dex=3;
@@ -20,8 +24,8 @@ CPlayer::CPlayer(){
 
   for(int i=0; i < 11; i++) spells[i]=false;
 
-  strcpy(name,"The Hero");
-  strcpy(weapon,"None");
+  strcpy(name, "The Hero");
+  strcpy(weapon, "None");
   strcpy(armor, "None");
   strcpy(helm, "None");
   strcpy(shield, "None");

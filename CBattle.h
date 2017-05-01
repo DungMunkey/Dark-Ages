@@ -45,12 +45,18 @@ private:
   bool showSpell;
   bool showText;
 
+  int run;
+  int win;
+
   int level[100];
   int selection;
   int spellSelection;
   vector<string> text;
   vector<int> spells;
 
+  void actionCursorDown();
+  void actionCursorUp();
+  void actionEnter();
   void castSpell(int index);
   void getReward();
   void monsterAttack();
