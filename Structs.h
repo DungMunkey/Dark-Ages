@@ -6,11 +6,13 @@ typedef struct sConf{
   int h;
   int vol;
   bool fullScreen;
+  bool vSync;
   sConf(){
     w=1280;
     h=200;
     vol=5;
     fullScreen=false;
+    vSync=true;
   }
 }sConf;
 

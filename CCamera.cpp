@@ -6,6 +6,8 @@ CCamera::CCamera(){
   moveY=0;
   xPos=0;
   yPos=0;
+  dXPos=0;
+  dYPos=0;
   maxX=4000;
   maxY=4000;
   lastTime=SDL_GetTicks();
@@ -26,32 +28,27 @@ CCamera::~CCamera(){
 }
 
 void CCamera::blockMovement(){
-  moveX=0;
-  moveY=0;
+  //moveX=0;
+  //moveY=0;
+  dXPos=xPos;
+  dYPos=yPos;
 }
 
-void CCamera::bumpCamera(int x, int y){
-  if(moveX != 0 || moveY != 0) return;
-
-  moveX=x;
-  moveY=y;
-
-  /*
-  xPos+=x;
-  yPos+=y;
-  if(xPos > maxX) xPos=maxX;
-  if(xPos < 0) xPos=0;
-  if(yPos > maxY) yPos=maxY;
-  if(yPos < 0) yPos=0;
-  */
-
-
-  
-  if(xPos+x > maxX) moveX=0;
-  if(xPos+x < 0) moveX=0;
-  if(yPos+y > maxY) moveY=0;
-  if(yPos+y < 0) moveY=0;
-  
+bool CCamera::bumpCamera(){
+  if(dXPos < xPos) {
+    xPos--;
+    return true;
+  } else if(dXPos>xPos){
+    xPos++;
+    return true;
+  } else if(dYPos<yPos){
+    yPos--;
+    return true;
+  } else if(dYPos>yPos){
+    yPos++;
+    return true;
+  }
+  return false;
 
 }
 
@@ -121,12 +118,24 @@ void CCamera::keyUp(int dir){
   }
 }
 
-bool CCamera::scrollCamera(int& count){
-  if(moveX == 0 && moveY == 0) {
-    //t0=SDL_GetPerformanceCounter();
-    return false;
+bool CCamera::scrollCamera(int count){
+  if(moveX == 0 && moveY == 0) return false;
+  /*
+  if(moveX == 0){
+    dXPos=(double)xPos;
+    if(moveY == 0) {
+      //t0=SDL_GetPerformanceCounter();
+      dYPos=(double)yPos;
+      return false;
+    }
+  }else if(moveY==0){
+    dYPos=(double)yPos;
   }
+  */
+  
 
+  double d=count;
+  d/=6;
   //printf("%d,%d\n", moveX, moveY);
   //deltaTime=(SDL_GetPerformanceCounter() - t0)/(double)freq*1000.0;
   //t0=SDL_GetPerformanceCounter();
@@ -142,26 +151,38 @@ bool CCamera::scrollCamera(int& count){
   //if(curTime - lastTime < 16) return true;
   //else lastTime=curTime;
   if(moveX < 0){
-    xPos--;
-    moveX++;
+    dXPos-=d;
+    while((int)dXPos < xPos){
+      xPos--;
+      moveX++;
+    }
     //if(moveX == 0) setMovement();
     return true;
   }
   if(moveX>0){
-    xPos++;
-    moveX--;
+    dXPos+=d;
+    if((int)dXPos > xPos){
+      xPos++;
+      moveX--;
+    }
     //if(moveX==0) setMovement();
     return true;
   }
   if(moveY < 0){
-    yPos--;
-    moveY++;
+    dYPos-=d;
+    if((int)dYPos < yPos){
+      yPos--;
+      moveY++;
+    }
     //if(moveY == 0) setMovement();
     return true;
   }
   if(moveY>0){
-    yPos++;
-    moveY--;
+    dYPos+=d;
+    if((int)dYPos > yPos){
+      yPos++;
+      moveY--;
+    }
     //if(moveY==0) setMovement();
     return true;
   }
@@ -174,13 +195,13 @@ void CCamera::setMax(int x, int y){
 }
 
 int CCamera::setMovement(){
-  if(moveX != 0 || moveY != 0) return -1;
+  //if(moveX != 0 || moveY != 0) return -1;
   if(keyBuf!=NULL){
     switch(keyBuf->dir){
-    case 0: moveY=-40; return 0;
-    case 1: moveX=40; return 1;
-    case 2: moveY=40; return 2;
-    case 3: moveX=-40; return 3;
+    case 0: dYPos-=40; return 0;
+    case 1: dXPos+=40; return 1;
+    case 2: dYPos+=40; return 2;
+    case 3: dXPos-=40; return 3;
     default: break;
     }
   }
@@ -190,6 +211,8 @@ int CCamera::setMovement(){
 void CCamera::setPos(int x, int y){
   xPos = x * 40;
   yPos = y * 40;
+  dXPos=xPos;
+  dYPos=yPos;
 }
 
 

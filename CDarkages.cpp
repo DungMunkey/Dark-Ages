@@ -24,6 +24,7 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
   music.setVolume(musicVolume);
   conf=c;
   fadeIn=0;
+  step=0;
 
   canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 400);
 }
@@ -1466,6 +1467,7 @@ void CDarkages::run(){
   stop = false;
 
   /*unsigned int*/ ticks =0;
+  unsigned int aTicks;
   unsigned int curTicks;
   unsigned int lastTicks=SDL_GetTicks();
   unsigned int lastFPS=SDL_GetTicks();
@@ -1473,6 +1475,7 @@ void CDarkages::run(){
   while (true){
 
     curTicks=SDL_GetTicks();
+    aTicks=curTicks - lastTicks;
     ticks+=curTicks - lastTicks;
     lastFPS+=curTicks - lastTicks;
     lastTicks=curTicks;
@@ -1482,10 +1485,12 @@ void CDarkages::run(){
       lastFPS-=1000;
     }
     if(ticks<6) {
-      if(showCredits) renderCredits();
-      else render();
-      renderCount++;
-      continue;
+      if(showCredits) {
+        renderCredits();
+        //else render();
+        renderCount++;
+        continue;
+      }
     }
     
     if(fadeIn>0){
@@ -1495,7 +1500,7 @@ void CDarkages::run(){
       fadeIn-=5;
       continue;
     }
-    while(ticks>=6) ticks-=6;
+    //while(ticks>=6) ticks-=6;
 
     if(showCredits) {
       selection++;
@@ -1583,41 +1588,62 @@ void CDarkages::run(){
       }
     }
     
-    moving=cam.scrollCamera(renderCount);
-    if(!moving){
-      
+    //moving=cam.scrollCamera((int)aTicks);
+    //if(!moving){
+    step+=aTicks;
+    while(step > 4){
+
+      if(cam.bumpCamera()){
+        step-=5;
+        continue;
+      }
+
       switch(cam.setMovement()){
       case 0:
         i = checkTile(curMap, cam.getTileX(), cam.getTileY() - 1);
         playerDir = 3;
         anim = true;
         if(i > 0) chMap = i;
-        else if(i < 0) cam.blockMovement();
+        else if(i < 0) {
+          cam.blockMovement();
+          step=0;
+        }
         break;
       case 1:
-        i = checkTile(curMap, cam.getTileX()+1, cam.getTileY());
+        i = checkTile(curMap, cam.getTileX() + 1, cam.getTileY());
         playerDir = 2;
         anim = true;
         if(i > 0) chMap=i;
-        else if(i < 0) cam.blockMovement();
+        else if(i < 0) {
+          cam.blockMovement();
+          step=0;
+        }
         break;
       case 2:
         i = checkTile(curMap, cam.getTileX(), cam.getTileY() + 1);
         playerDir = 0;
         anim = true;
         if(i > 0) chMap=i;
-        else if(i < 0) cam.blockMovement();
+        else if(i < 0) {
+          cam.blockMovement();
+          step=0;
+        }
         break;
       case 3:
-        i = checkTile(curMap, cam.getTileX()-1, cam.getTileY());
+        i = checkTile(curMap, cam.getTileX() - 1, cam.getTileY());
         playerDir = 1;
         anim = true;
         if(i > 0) chMap=i;
-        else if(i < 0) cam.blockMovement();
-        break;  
+        else if(i < 0) {
+          cam.blockMovement();
+          step=0;
+        }
+        break;
       default:
+        step=0;
         break;
       }
+
       //check to see if keypress is buffered. if so, check battle
       if(i==0 && cam.getKeyBuf()){
         if(battle.fight(checkBattle()) == 3) death();
@@ -1635,7 +1661,7 @@ void CDarkages::run(){
       else playerAnim = 0;
       anim = false;
     }
-    if(!moving) cam.scrollCamera(renderCount);
+    //if(!moving) cam.scrollCamera((int)aTicks);
     render();
     renderCount++;
 
@@ -1763,7 +1789,8 @@ void CDarkages::render(){
 
   //for diagnostics
   char str[32];
-  sprintf(str, "%d %d,%d:%d  %d,%d  %d", curMap, cam.getTileX(), cam.getTileY(), world[curMap].getTile(cam.getTileX(), cam.getTileY()), curMap,eBattleCheck, fps);
+  //sprintf(str, "%d %d,%d||%.2lf,%.2lf:%d  %d,%d  %d", curMap, cam.getTileX(), cam.getTileY(), cam.getdX(),cam.getdY(), world[curMap].getTile(cam.getTileX(), cam.getTileY()), curMap,eBattleCheck, fps);
+  sprintf(str, "%d %d,%d", curMap, cam.getX(), cam.getY());
   font.render(10, 370, str);
   
   SDL_SetRenderTarget(display->renderer, NULL);
@@ -1888,11 +1915,11 @@ void CDarkages::renderOptions(){
   if(selection==1){
     r.w=16; r.h=16;
     if(musicVolume > 0) {
-      r.x = 400; r.y = 84;
+      r.x = 400; r.y = 74;
       SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(3), &r);
     }
     if(musicVolume<10){
-      r.x = 590; r.y = 84;
+      r.x = 590; r.y = 74;
       SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(2), &r);
     }
   }
@@ -1901,11 +1928,11 @@ void CDarkages::renderOptions(){
   if(selection == 2){
     r.w=16; r.h=16;
     if(tmpScreen > 0) {
-      r.x = 400; r.y = 124;
+      r.x = 400; r.y = 104;
       SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(3), &r);
     }
     if(tmpScreen<display->screenModes.size()-1){
-      r.x = 590; r.y = 124;
+      r.x = 590; r.y = 104;
       SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(2), &r);
     }
   }
@@ -1914,6 +1941,18 @@ void CDarkages::renderOptions(){
   if(selection==3){
     r.w=16; r.h=16;
     if(conf->fullScreen) {
+      r.x = 400; r.y = 134;
+      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(3), &r);
+    } else {
+      r.x = 590; r.y = 134;
+      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(2), &r);
+    }
+  }
+
+  //draw vsync indicators
+  if(selection == 4){
+    r.w=16; r.h=16;
+    if(conf->vSync) {
       r.x = 400; r.y = 164;
       SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(3), &r);
     } else {
@@ -1922,22 +1961,27 @@ void CDarkages::renderOptions(){
     }
   }
 
+
   font.render(40, 40, "Return to Game");
-  font.render(40, 80, "Music");
-  r.w = 186; r.h = 24; r.x = 410; r.y = 80;
+  font.render(40, 70, "Music");
+  r.w = 186; r.h = 24; r.x = 410; r.y = 70;
   SDL_SetRenderDrawColor(display->renderer, 255,255,255,255);
   SDL_RenderDrawRect(display->renderer, &r);
   r.x++; r.y++; r.w-=2; r.h-=2;
   SDL_RenderDrawRect(display->renderer, &r);
   for(int i=1; i <= musicVolume;i++){
-    r.w = 16; r.h = 16; r.x = 414+(i-1)*18; r.y = 84;
+    r.w = 16; r.h = 16; r.x = 414+(i-1)*18; r.y = 74;
     SDL_RenderFillRect(display->renderer, &r);
   }
-  font.render(40, 120, "Screen Res:");
-  font.render(430, 120, display->screenModes[tmpScreen].name);
+  font.render(40, 100, "Screen Res:");
+  font.render(430, 100, display->screenModes[tmpScreen].name);
 
-  font.render(40, 160, "Fullscreen:");
-  if(conf->fullScreen) font.render(450, 160, "Yes");
+  font.render(40, 130, "Fullscreen:");
+  if(conf->fullScreen) font.render(450, 130, "Yes");
+  else font.render(460, 130, "No");
+
+  font.render(40, 160, "VSync:");
+  if(conf->vSync) font.render(450, 160, "Yes");
   else font.render(460, 160, "No");
 
   font.render(40, 200, "Keys:");

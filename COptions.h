@@ -26,6 +26,7 @@ public:
   int selection;
   int tmpScreen;
   bool tmpFull;
+  bool tmpVSync;
   int tmpVol;
   bool active;
 

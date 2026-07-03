@@ -11,6 +11,7 @@ COptions::COptions(CDisplay* d, CMusic* m, CFont* f, CGfxCollection* g, sConf* c
   tmpVol=conf->vol;
   tmpFull=conf->fullScreen;
   tmpScreen=display->currentScreenMode;
+  tmpVSync=conf->vSync;
 }
 
 COptions::~COptions(){
@@ -42,6 +43,14 @@ bool COptions::logic(optAction a){
           conf->fullScreen=false;
           SDL_SetWindowFullscreen(display->window, 0);
         }
+      } else if(selection == 4){
+        if(tmpVSync){
+          conf->vSync=true;
+          SDL_SetHint(SDL_HINT_RENDER_VSYNC,"1");
+        } else {
+          conf->vSync=false;
+          SDL_SetHint(SDL_HINT_RENDER_VSYNC,"0");
+        }
       }
     } else {
       active=true;
@@ -51,6 +60,8 @@ bool COptions::logic(optAction a){
         tmpScreen=display->currentScreenMode;
       } else if(selection==3){
         tmpFull=conf->fullScreen;
+      } else if(selection == 4){
+        tmpVSync=conf->vSync;
       }
     }
     break;
@@ -63,6 +74,8 @@ bool COptions::logic(optAction a){
       tmpScreen--;
     } else if(selection == 3){
       tmpFull=false;
+    } else if(selection == 4){
+      tmpVSync=false;
     }
     break;
   case optRight:
@@ -74,6 +87,8 @@ bool COptions::logic(optAction a){
       tmpScreen++;
     } else if(selection == 3){
       tmpFull=true;
+    } else if(selection == 4){
+      tmpVSync=true;
     }
     break;
   case optUp:
@@ -82,7 +97,7 @@ bool COptions::logic(optAction a){
     break;
   case optDown:
     if(active) break;
-    if(selection <3) selection++;
+    if(selection <4) selection++;
     break;
   default:
     break;
@@ -108,9 +123,10 @@ void COptions::render(){
   r.h=26;
   switch(selection){
   case 0:   r.x=36; r.y=40;    break;
-  case 1:   r.x=36; r.y=80;    break;
-  case 2:   r.x=36; r.y=120;   break;
-  case 3:   r.x=36; r.y=160;   break;
+  case 1:   r.x=36; r.y=70;    break;
+  case 2:   r.x=36; r.y=100;   break;
+  case 3:   r.x=36; r.y=130;   break;
+  case 4:   r.x=36; r.y=160;   break;
   default:  break;
   }
   SDL_RenderFillRect(display->renderer, &r);
@@ -119,11 +135,11 @@ void COptions::render(){
   if(selection == 1 && active){
     r.w=16; r.h=16;
     if(tmpVol > 0) {
-      r.x = 400; r.y = 84;
+      r.x = 400; r.y = 74;
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(3), &r);
     }
     if(tmpVol<10){
-      r.x = 590; r.y = 84;
+      r.x = 590; r.y = 74;
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
     }
   }
@@ -132,11 +148,11 @@ void COptions::render(){
   if(selection == 2 && active){
     r.w=16; r.h=16;
     if(tmpScreen > 0) {
-      r.x = 400; r.y = 124;
+      r.x = 400; r.y = 104;
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(3), &r);
     }
     if(tmpScreen<display->screenModes.size() - 1){
-      r.x = 590; r.y = 124;
+      r.x = 590; r.y = 104;
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
     }
   }
@@ -145,6 +161,18 @@ void COptions::render(){
   if(selection == 3 && active){
     r.w=16; r.h=16;
     if(tmpFull) {
+      r.x = 400; r.y = 134;
+      SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(3), &r);
+    } else {
+      r.x = 590; r.y = 134;
+      SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
+    }
+  }
+
+  //draw vSync indicators
+  if(selection == 4 && active){
+    r.w=16; r.h=16;
+    if(tmpVSync) {
       r.x = 400; r.y = 164;
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(3), &r);
     } else {
@@ -154,22 +182,27 @@ void COptions::render(){
   }
 
   font->render(40, 40, "Return to Game");
-  font->render(40, 80, "Music");
-  r.w = 186; r.h = 24; r.x = 410; r.y = 80;
+  font->render(40, 70, "Music");
+  r.w = 186; r.h = 24; r.x = 410; r.y = 70;
   SDL_SetRenderDrawColor(display->renderer, 255, 255, 255, 255);
   SDL_RenderDrawRect(display->renderer, &r);
   r.x++; r.y++; r.w-=2; r.h-=2;
   SDL_RenderDrawRect(display->renderer, &r);
   for(int i=1; i <= tmpVol; i++){
-    r.w = 16; r.h = 16; r.x = 414 + (i - 1) * 18; r.y = 84;
+    r.w = 16; r.h = 16; r.x = 414 + (i - 1) * 18; r.y = 74;
     SDL_RenderFillRect(display->renderer, &r);
   }
-  font->render(40, 120, "Screen Res:");
-  font->render(430, 120, display->screenModes[tmpScreen].name);
+  font->render(40, 100, "Screen Res:");
+  font->render(430, 100, display->screenModes[tmpScreen].name);
 
-  font->render(40, 160, "Fullscreen:");
-  if(tmpFull) font->render(450, 160, "Yes");
+  font->render(40, 130, "Fullscreen:");
+  if(tmpFull) font->render(450, 130, "Yes");
+  else font->render(460, 130, "No");
+
+  font->render(40, 160, "VSync:");
+  if(tmpVSync) font->render(450, 160, "Yes");
   else font->render(460, 160, "No");
+
 
   font->render(40, 200, "Keys:");
   font->render(60, 230, "Cursors = Movement");

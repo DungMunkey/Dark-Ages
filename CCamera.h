@@ -21,7 +21,7 @@ public:
   ~CCamera();
 
   void  blockMovement();
-  void  bumpCamera(int x, int y);
+  bool  bumpCamera();
   void  clearMovement();
   bool  getKeyBuf();
   void  getTileUnderMouse(int mx, int my, int& x, int& y);
@@ -31,7 +31,7 @@ public:
   int   getY();
   void  keyDown(int dir);
   void  keyUp(int dir);
-  bool  scrollCamera(int& count);
+  bool  scrollCamera(int count);
   void  setMax(int x, int y); //in tiles
   int   setMovement();
   void  setPos(int x, int y); //in tiles
@@ -46,6 +46,8 @@ private:
   unsigned int lastTime;
   unsigned int curTime;
   bool bKeys[4];
+  int dXPos;
+  int dYPos;
 
   Uint64 freq;
   Uint64 t0;

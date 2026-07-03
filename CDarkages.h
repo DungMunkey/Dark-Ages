@@ -106,6 +106,7 @@ private:
 
   int fps;
   int actionTile[150];
+  int step;
 
   int curMap;
   int multiFight;
