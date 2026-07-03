@@ -18,7 +18,7 @@ public:
   CMap& operator=(const CMap& m);
 
   int getTile(int x, int y);
-  void loadMap(char* fn);
+  void loadMap(const char* fn);
 
 private:
   

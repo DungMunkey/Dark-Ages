@@ -7,7 +7,7 @@ CGraphic::CGraphic(){
   tiles = NULL;
 }
 
-CGraphic::CGraphic(char* fn, SDL_Renderer* rend, bool alpha, Uint8 r, Uint8 g, Uint8 b){
+CGraphic::CGraphic(const char* fn, SDL_Renderer* rend, bool alpha, Uint8 r, Uint8 g, Uint8 b){
   texture = NULL;
   surface = NULL;
   tiles = NULL;
@@ -27,7 +27,7 @@ SDL_Rect* CGraphic::getTile(int index){
   return &tiles[index];
 }
 
-bool CGraphic::loadTexture(char* fn, SDL_Renderer* rend, bool surf, bool alpha, Uint8 r, Uint8 g, Uint8 b) {
+bool CGraphic::loadTexture(const char* fn, SDL_Renderer* rend, bool surf, bool alpha, Uint8 r, Uint8 g, Uint8 b) {
 
   if(texture!=NULL) SDL_DestroyTexture(texture);
   texture=NULL;
@@ -85,7 +85,7 @@ bool CGraphic::createTiles(int szX, int szY, int canX, int canY){
   return true;
 }
 
-bool CGraphic::createTiles(char* fn){
+bool CGraphic::createTiles(const char* fn){
   if(texture==NULL) return false;
 
   char str[256];

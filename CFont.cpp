@@ -63,7 +63,7 @@ int CFont::getStringWidth(string str) {
   return getStringWidth(&str[0]);
 }
 
-bool CFont::loadFont(char* fname) {
+bool CFont::loadFont(const char* fname) {
   int i, j, k;
   for (j = 0; j<1; j++){ //only 1 color so far
     for (i = 6; i<41; i++){

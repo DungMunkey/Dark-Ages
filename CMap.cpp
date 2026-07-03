@@ -45,7 +45,7 @@ int CMap::getTile(int x, int y){
   return map[x][y];
 }
 
-void CMap::loadMap(char* fn){
+void CMap::loadMap(const char* fn){
   char str[16000];
   char* tok;
   int i,j;

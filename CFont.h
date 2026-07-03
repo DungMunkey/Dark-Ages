@@ -24,7 +24,7 @@ public:
   int getStringWidth(char c);
   int getStringWidth(char* str);
   int getStringWidth(string str);
-  bool loadFont(char* fname);
+  bool loadFont(const char* fname);
   void setDisplay(CDisplay* d);
   void setFontSize(int sz);
   bool setText(char c, SDL_Texture*& dest, int color = 0);
