@@ -1,5 +1,7 @@
 #include "CPlayer.h"
 
+using namespace std;
+
 CPlayer::CPlayer(){
   clear();
 }

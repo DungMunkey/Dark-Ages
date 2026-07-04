@@ -1,5 +1,7 @@
 #include "CDisplay.h"
 
+using namespace std;
+
 CDisplay::CDisplay(){
 
   screenHeight = 800; // 1050;

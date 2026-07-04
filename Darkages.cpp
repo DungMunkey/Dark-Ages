@@ -4,6 +4,8 @@
 #include "Structs.h"
 #include <time.h>
 
+using namespace std;
+
 int main(int argc, char* args[]) {
 
   srand(time(NULL));

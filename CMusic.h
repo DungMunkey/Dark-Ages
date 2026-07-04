@@ -2,6 +2,7 @@
 #define _CMUSIC_H
 
 #include <SDL_mixer.h>
+#include <string>
 
 enum eMusic{
   BattleSong,
@@ -16,7 +17,7 @@ public:
   CMusic();
   ~CMusic();
 
-  void loadMusic();
+  void loadMusic(const std::string& modName);
   void playSong(eMusic m, bool restart=false);
   void setVolume(int vol);
 

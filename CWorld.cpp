@@ -1,5 +1,7 @@
 #include "CWorld.h"
 
+using namespace std;
+
 CMap& CWorld::operator[](const int& index){
   return maps[index];
 }

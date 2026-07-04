@@ -11,8 +11,6 @@
 
 #include "CDisplay.h"
 
-using namespace std;
-
 class CFont {
 public:
   CFont();
@@ -23,13 +21,13 @@ public:
   int getFontHeight();
   int getStringWidth(char c);
   int getStringWidth(char* str);
-  int getStringWidth(string str);
+  int getStringWidth(std::string str);
   bool loadFont(const char* fname);
   void setDisplay(CDisplay* d);
   void setFontSize(int sz);
   bool setText(char c, SDL_Texture*& dest, int color = 0);
   void render(int x, int y, char* str, int color = 0, bool rotate = false);
-  void render(int x, int y, string s, int color = 0, bool rotate = false);
+  void render(int x, int y, std::string s, int color = 0, bool rotate = false);
 
 private:
   CDisplay*   display;

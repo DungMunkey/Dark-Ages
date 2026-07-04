@@ -13,20 +13,22 @@
 #include "CTitle.h"
 #include "CWorld.h"
 #include "time.h"
+#include <string>
+#include <vector>
 
 typedef struct da1response {
-  string text;
+  std::string text;
   int result;
 } da1response;
 
 typedef struct da1script {
-  vector<string>* text;
-  vector<da1response>* choices;
+  std::vector<std::string>* text;
+  std::vector<da1response>* choices;
   size_t selection;
   size_t offset;
   da1script() {
-    text = new vector<string>;
-    choices = new vector<da1response>;
+    text = new std::vector<std::string>;
+    choices = new std::vector<da1response>;
     selection = 0;
     offset=0;
   }
@@ -38,8 +40,8 @@ typedef struct da1script {
     size_t i;
     offset=s.offset;
     selection = s.selection;
-    text = new vector<string>;
-    choices = new vector<da1response>;
+    text = new std::vector<std::string>;
+    choices = new std::vector<da1response>;
     for(i = 0; i < s.text->size(); i++) text->push_back(s.text->at(i));
     for(i = 0; i < s.choices->size(); i++) choices->push_back(s.choices->at(i));
   }
@@ -50,27 +52,27 @@ typedef struct da1script {
       selection = s.selection;
       delete text;
       delete choices;
-      text = new vector<string>;
-      choices = new vector<da1response>;
+      text = new std::vector<std::string>;
+      choices = new std::vector<da1response>;
       for(i = 0; i < s.text->size(); i++) text->push_back(s.text->at(i));
       for(i = 0; i < s.choices->size(); i++) choices->push_back(s.choices->at(i));
     }
     return *this;
   }
-  void addChoice(string s, int result){
+  void addChoice(std::string s, int result){
     da1response res;
     res.result=result;
     res.text=s;
     choices->push_back(res);
   }
-  void addText(string s){
+  void addText(std::string s){
     text->push_back(s);
   }
   void clear(){
     delete text;
     delete choices;
-    text = new vector<string>;
-    choices = new vector<da1response>;
+    text = new std::vector<std::string>;
+    choices = new std::vector<da1response>;
     selection=0;
     offset=0;
   }
@@ -102,7 +104,7 @@ private:
   CLoadSave* loadSave;
 
   da1script script;
-  vector<int> spellList;
+  std::vector<int> spellList;
 
   int fps;
   int actionTile[150];
@@ -124,7 +126,7 @@ private:
   bool showTravel;
   bool stop;
   int renderCount;
-  string userText;
+  std::string userText;
 
   //save game information
   da1save saves[6];
