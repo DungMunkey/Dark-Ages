@@ -1,6 +1,8 @@
 #include "CCamera.h"
 #include <cstdio>
 
+using namespace std;
+
 CCamera::CCamera(){
   moveX=0;
   moveY=0;

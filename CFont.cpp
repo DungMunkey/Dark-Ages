@@ -1,5 +1,7 @@
 #include "CFont.h"
 
+using namespace std;
+
 CFont::CFont() {
   fontSize = 16;
   font = NULL;

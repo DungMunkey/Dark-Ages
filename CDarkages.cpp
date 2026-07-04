@@ -1,5 +1,7 @@
 #include "CDarkages.h"
 
+using namespace std;
+
 //maps a curMap index (see CWorld::loadMaps) to the background music for that map
 static const eMusic mapMusicTable[44] = {
   TownSong,    //0  Aaryak
@@ -1335,9 +1337,9 @@ void CDarkages::init(){
   font.setDisplay(display);
   font.loadFont("Font/DA1qb.ttf");
   font.setFontSize(32);
-  gfx.loadGfx(display->renderer);
+  gfx.loadGfx(display->renderer, conf->modName);
   world.loadMaps();
-  music.loadMusic();
+  music.loadMusic(conf->modName);
   battle.init(display, &font, &gfx, &hero);
   //SDL_RenderSetIntegerScale(display->renderer, SDL_TRUE);
   SDL_RenderSetLogicalSize(display->renderer, 640, 400);
@@ -3614,10 +3616,13 @@ int CDarkages::titleLoad(){
     while(SDL_PollEvent(&e) != 0) {
       if(e.type == SDL_CONTROLLERBUTTONDOWN) {
         switch(e.cbutton.button){
-        case SDL_CONTROLLER_BUTTON_A: 
-          actionEnter();
-          showLoad=false;
-          return 1;
+        case SDL_CONTROLLER_BUTTON_A:
+          {
+            bool loaded = (loadSave->selection > 0 && saves[loadSave->selection - 1].level != 0);
+            actionEnter();
+            showLoad=false;
+            return loaded ? 1 : 0;
+          }
         case SDL_CONTROLLER_BUTTON_DPAD_UP: actionCursorUp(); break;
         case SDL_CONTROLLER_BUTTON_DPAD_DOWN: actionCursorDown(); break;
         default:break;
@@ -3627,14 +3632,17 @@ int CDarkages::titleLoad(){
         switch(e.key.keysym.sym)  {
         case SDLK_UP: actionCursorUp(); break;
         case SDLK_DOWN: actionCursorDown(); break;
-        case SDLK_ESCAPE: 
-          showLoad=false; 
+        case SDLK_ESCAPE:
+          showLoad=false;
           return 0;
         case SDLK_RETURN:
-        case SDLK_SPACE: 
-          actionEnter();
-          showLoad=false;
-          return 1;
+        case SDLK_SPACE:
+          {
+            bool loaded = (loadSave->selection > 0 && saves[loadSave->selection - 1].level != 0);
+            actionEnter();
+            showLoad=false;
+            return loaded ? 1 : 0;
+          }
         default: break;
         }
       }

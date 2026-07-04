@@ -5,6 +5,9 @@
 #include "CMusic.h"
 #include "Structs.h"
 #include "CWindow.h"
+#include "CMods.h"
+#include <vector>
+#include <string>
 
 enum optAction{
   optNone,
@@ -28,6 +31,8 @@ public:
   bool tmpFull;
   bool tmpVSync;
   int tmpVol;
+  int tmpMod;
+  std::vector<std::string> mods;
   bool active;
 
   bool logic(optAction a);

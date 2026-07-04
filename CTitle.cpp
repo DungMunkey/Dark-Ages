@@ -1,5 +1,7 @@
 #include "CTitle.h"
 
+using namespace std;
+
 CTitle::CTitle(CDisplay* d, CFont* f, CGfxCollection* g){
   display=d;
   font=f;

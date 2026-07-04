@@ -5,9 +5,8 @@
 #include "CFont.h"
 #include "CGfxCollection.h"
 #include "CPlayer.h"
+#include <string>
 #include <vector>
-
-using namespace std;
 
 typedef struct da1monster{
   int hp;
@@ -40,7 +39,7 @@ private:
 
   da1monster monsters[20];
   da1monster curMon;
-  string spellNames[11];
+  std::string spellNames[11];
 
   bool showSpell;
   bool showText;
@@ -51,8 +50,8 @@ private:
   int level[100];
   int selection;
   int spellSelection;
-  vector<string> text;
-  vector<int> spells;
+  std::vector<std::string> text;
+  std::vector<int> spells;
 
   void actionCursorDown();
   void actionCursorUp();

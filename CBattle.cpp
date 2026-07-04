@@ -1,5 +1,7 @@
 #include "CBattle.h"
 
+using namespace std;
+
 CBattle::CBattle(){
   display=NULL;
   font=NULL;

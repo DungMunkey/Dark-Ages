@@ -1,4 +1,7 @@
 #include "CMusic.h"
+#include "CMods.h"
+
+using namespace std;
 
 CMusic::CMusic(){
 
@@ -19,15 +22,15 @@ CMusic::~CMusic(){
   Mix_CloseAudio();
 }
 
-void CMusic::loadMusic(){
+void CMusic::loadMusic(const string& modName){
   Mix_Init(MIX_INIT_OGG);
   Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
 
-  music[BattleSong]  = Mix_LoadMUS("Music/battle.ogg");
-  music[DungeonSong] = Mix_LoadMUS("Music/dungeon.ogg");
-  music[TitleSong]   = Mix_LoadMUS("Music/title.ogg");
-  music[TownSong]    = Mix_LoadMUS("Music/town.ogg");
-  music[WorldSong]   = Mix_LoadMUS("Music/title.ogg");
+  music[BattleSong]  = Mix_LoadMUS(CMods::resolve(modName, "Music/battle.ogg").c_str());
+  music[DungeonSong] = Mix_LoadMUS(CMods::resolve(modName, "Music/dungeon.ogg").c_str());
+  music[TitleSong]   = Mix_LoadMUS(CMods::resolve(modName, "Music/title.ogg").c_str());
+  music[TownSong]    = Mix_LoadMUS(CMods::resolve(modName, "Music/town.ogg").c_str());
+  music[WorldSong]   = Mix_LoadMUS(CMods::resolve(modName, "Music/title.ogg").c_str());
 
   loaded[BattleSong]  = music[BattleSong]  != NULL;
   loaded[DungeonSong] = music[DungeonSong] != NULL;

@@ -1,5 +1,7 @@
 #include "CWindow.h"
 
+using namespace std;
+
 CWindow::CWindow(){
   display=NULL;
   font=NULL;

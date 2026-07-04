@@ -1,4 +1,7 @@
 #include "CGfxCollection.h"
+#include "CMods.h"
+
+using namespace std;
 
 CGfxCollection::CGfxCollection(){
   tiles = NULL;
@@ -24,7 +27,7 @@ CGfxCollection::~CGfxCollection(){
   if(title != NULL) delete title;
 }
 
-bool CGfxCollection::loadGfx(SDL_Renderer *rend){
+bool CGfxCollection::loadGfx(SDL_Renderer *rend, const string& modName){
   /*
   if(tiles!=NULL) delete tiles;
   tiles = new CGraphic("Gfx/DA1Tiles.bmp",rend);
@@ -44,39 +47,39 @@ bool CGfxCollection::loadGfx(SDL_Renderer *rend){
   */
 
   if(tiles != NULL) delete tiles;
-  tiles = new CGraphic("Gfx/DA1TilesL.bmp", rend);
+  tiles = new CGraphic(CMods::resolve(modName, "Gfx/DA1TilesL.bmp").c_str(), rend);
   tiles->createTiles(40, 40, 640, 400);
 
   if(player != NULL) delete player;
-  player = new CGraphic("Gfx/DA1HeroL.bmp", rend, true, 0, 0, 0);
+  player = new CGraphic(CMods::resolve(modName, "Gfx/DA1HeroL.bmp").c_str(), rend, true, 0, 0, 0);
   player->createTiles(40, 40, 320, 40);
 
   if(extra != NULL) delete extra;
-  extra = new CGraphic("Gfx/DA1ExtraL.bmp", rend, true, 0, 0, 0);
+  extra = new CGraphic(CMods::resolve(modName, "Gfx/DA1ExtraL.bmp").c_str(), rend, true, 0, 0, 0);
   extra->createTiles(16, 16, 64, 16);
 
   if(monster != NULL) delete monster;
-  monster = new CGraphic("Gfx/DA1MonstL.bmp", rend, true, 0, 0, 0);
+  monster = new CGraphic(CMods::resolve(modName, "Gfx/DA1MonstL.bmp").c_str(), rend, true, 0, 0, 0);
   monster->createTiles(100, 100, 1200, 400);
 
   if(death != NULL) delete death;
-  death = new CGraphic("Gfx/death.bmp", rend);
+  death = new CGraphic(CMods::resolve(modName, "Gfx/death.bmp").c_str(), rend);
   death->createTiles(320, 200, 320, 200);
 
   if(endgame1 != NULL) delete endgame1;
-  endgame1 = new CGraphic("Gfx/daend1.bmp", rend);
+  endgame1 = new CGraphic(CMods::resolve(modName, "Gfx/daend1.bmp").c_str(), rend);
   endgame1->createTiles(320, 200, 320, 200);
 
   if(endgame2 != NULL) delete endgame2;
-  endgame2 = new CGraphic("Gfx/daend2.bmp", rend);
+  endgame2 = new CGraphic(CMods::resolve(modName, "Gfx/daend2.bmp").c_str(), rend);
   endgame2->createTiles(320, 200, 320, 200);
 
   if(endgame3 != NULL) delete endgame3;
-  endgame3 = new CGraphic("Gfx/explode.bmp", rend);
+  endgame3 = new CGraphic(CMods::resolve(modName, "Gfx/explode.bmp").c_str(), rend);
   endgame3->createTiles(320, 200, 320, 200);
 
   if(title != NULL) delete title;
-  title = new CGraphic("Gfx/datitle.bmp", rend);
+  title = new CGraphic(CMods::resolve(modName, "Gfx/datitle.bmp").c_str(), rend);
   title->createTiles(640, 400, 640, 400);
 
   return true;

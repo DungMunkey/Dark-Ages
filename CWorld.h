@@ -15,7 +15,7 @@ public:
 
 private:
 
-  vector<CMap> maps;
+  std::vector<CMap> maps;
 };
 
 #endif

@@ -1,5 +1,7 @@
 #include "CMap.h"
 
+using namespace std;
+
 CMap::CMap(){
   map = NULL;
   szX = 0;

@@ -1,6 +1,8 @@
 #include "CGraphic.h"
 #include <iostream>
 
+using namespace std;
+
 CGraphic::CGraphic(){
   texture = NULL;
   surface = NULL;

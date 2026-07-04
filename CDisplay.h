@@ -7,12 +7,10 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 typedef struct sDAVidMode{
   int w;
   int h;
-  string name;
+  std::string name;
 }sDAVidMode;
 
 class CDisplay {
@@ -25,7 +23,7 @@ public:
   SDL_Window*   window;
   
   bool init(sConf& conf);
-  vector<sDAVidMode> screenModes;
+  std::vector<sDAVidMode> screenModes;
   int           screenHeight;
   int           screenWidth;
   size_t        currentScreenMode;

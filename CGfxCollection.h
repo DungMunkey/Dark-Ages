@@ -2,6 +2,7 @@
 #define _CGFXCOLLECTION_H
 
 #include "CGraphic.h"
+#include <string>
 
 class CGfxCollection{
 public:
@@ -18,7 +19,7 @@ public:
   CGraphic* endgame3;
   CGraphic* title;
 
-  bool loadGfx(SDL_Renderer* rend);
+  bool loadGfx(SDL_Renderer* rend, const std::string& modName);
 
 private:
   //CGraphic* bldgs[4];

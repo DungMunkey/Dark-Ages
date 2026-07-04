@@ -1,5 +1,7 @@
 #include "CLoadSave.h"
 
+using namespace std;
+
 CLoadSave::CLoadSave(CDisplay* d, CFont* f, da1save* s){
   display=d;
   font=f;
