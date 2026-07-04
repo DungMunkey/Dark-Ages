@@ -1268,7 +1268,7 @@ void CDarkages::credits(){
   script.addText("      Copyright 2017, DKS");
   script.addText("    http://dk-software.com");
   script.addText(" ");
-  script.addText("Made with SDL and SFML");
+  script.addText("Made with SDL2 and SDL2_mixer");
   script.addText("Open source on GitHub");
   script.addText(" ");
   script.addText(" ");

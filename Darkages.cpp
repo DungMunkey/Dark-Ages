@@ -2,7 +2,6 @@
 #include "CDisplay.h"
 #include "CInput.h"
 #include "Structs.h"
-#include "SFML/Audio.hpp"
 #include <time.h>
 
 int main(int argc, char* args[]) {
