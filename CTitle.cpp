@@ -1,4 +1,5 @@
 #include "CTitle.h"
+#include "Version.h"
 
 using namespace std;
 
@@ -44,8 +45,8 @@ void CTitle::render(){
   SDL_RenderCopy(display->renderer, gfx->title->texture, gfx->title->getTile(0), &r);
 
   font->setFontSize(16);
-  font->render(10, 380, "Copyright (C) 1997-2017, Dark Knight Software");
-  font->render(10, 370, "version 2.0 alpha 2");
+  font->render(10, 380, DA_COPYRIGHT);
+  font->render(10, 370, "version " DA_VERSION);
   font->setFontSize(32);
 
   //Menu options

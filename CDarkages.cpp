@@ -1266,8 +1266,8 @@ void CDarkages::credits(){
   script.clear();
   script.addText("   Dark Ages: The Continents");
   script.addText(" ");
-  script.addText("Version 2.0 by Michael Hoopmann");
-  script.addText("      Copyright 2017, DKS");
+  script.addText("Version " DA_VERSION " by Michael Hoopmann");
+  script.addText(DA_COPYRIGHT);
   script.addText("    http://dk-software.com");
   script.addText(" ");
   script.addText("Made with SDL2 and SDL2_mixer");

@@ -12,6 +12,7 @@
 #include "CPlayer.h"
 #include "CTitle.h"
 #include "CWorld.h"
+#include "Version.h"
 #include "time.h"
 #include <string>
 #include <vector>
