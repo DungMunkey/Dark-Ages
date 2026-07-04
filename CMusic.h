@@ -1,7 +1,7 @@
 #ifndef _CMUSIC_H
 #define _CMUSIC_H
 
-#include "SFML/Audio.hpp"
+#include <SDL_mixer.h>
 
 enum eMusic{
   BattleSong,
@@ -22,7 +22,7 @@ public:
 
 private:
 
-  sf::Music music[5];
+  Mix_Music* music[5];
   eMusic currentSong;
   bool loaded[5];
 
