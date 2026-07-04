@@ -1,5 +1,53 @@
 #include "CDarkages.h"
 
+//maps a curMap index (see CWorld::loadMaps) to the background music for that map
+static const eMusic mapMusicTable[44] = {
+  TownSong,    //0  Aaryak
+  TownSong,    //1  Amber
+  DungeonSong, //2  Crystal1
+  DungeonSong, //3  crystal2
+  DungeonSong, //4  crystal3
+  DungeonSong, //5  dgfort
+  DungeonSong, //6  Dungeon1
+  DungeonSong, //7  Dungeon2
+  DungeonSong, //8  Dungeon3
+  DungeonSong, //9  Dwarf1
+  DungeonSong, //10 Dwarf2
+  DungeonSong, //11 DwarfA
+  DungeonSong, //12 DwarfB
+  DungeonSong, //13 DwarfC
+  DungeonSong, //14 DwarfD
+  DungeonSong, //15 DwarfE
+  TownSong,    //16 Dwarftwn
+  TownSong,    //17 Fcity
+  TownSong,    //18 Fcity2
+  TownSong,    //19 Garrison
+  DungeonSong, //20 Greyor
+  TownSong,    //21 Landlich
+  DungeonSong, //22 ld1
+  DungeonSong, //23 ld2
+  DungeonSong, //24 ld3
+  DungeonSong, //25 ld4
+  DungeonSong, //26 ld5
+  TownSong,    //27 Meadow
+  WorldSong,   //28 newcont1
+  TownSong,    //29 Npost
+  WorldSong,   //30 outside1
+  WorldSong,   //31 outside2
+  TownSong,    //32 Qtower1
+  TownSong,    //33 Qtower2
+  TownSong,    //34 Rhoeyce
+  DungeonSong, //35 Rift1
+  DungeonSong, //36 Rift2
+  DungeonSong, //37 Rift3
+  TownSong,    //38 Temple
+  TownSong,    //39 Tristen
+  TownSong,    //40 Tristen2
+  TownSong,    //41 Trok
+  TownSong,    //42 Wisp
+  DungeonSong, //43 ld1b
+};
+
 CDarkages::CDarkages(CDisplay* d, sConf* c){
   display = d;
   showCredits=false;
@@ -17,12 +65,11 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
   playerAnim = 0;
   selection=0;
   loadSave=NULL;
-  
+  conf=c;
+
   init();
   renderCount=0;
-  musicVolume=5;
-  music.setVolume(musicVolume);
-  conf=c;
+  music.setVolume(conf->vol);
   fadeIn=0;
   step=0;
 
@@ -120,7 +167,7 @@ void CDarkages::actionCursorUp(){
     return;
   }
   if(showSpell){
-    if(selection == 0) selection=spellList.size() - 1;
+    if(selection == 0) selection=(int)spellList.size() - 1;
     else selection--;
     return;
   }
@@ -884,6 +931,20 @@ void CDarkages::changeMap(int key){
   }
   //always reset battle counter when changing maps
   eBattleCheck=0;
+  updateMapMusic();
+}
+
+void CDarkages::updateMapMusic(){
+  music.playSong(mapMusicTable[curMap]);
+}
+
+int CDarkages::doBattle(int index){
+  if(index < 0) return battle.fight(index);
+
+  music.playSong(BattleSong, true); //always restart battle music from the beginning
+  int r = battle.fight(index);
+  updateMapMusic();
+  return r;
 }
 
 int CDarkages::checkAction(int map, int x, int y){
@@ -1255,6 +1316,7 @@ void CDarkages::credits(){
   script.addText(" ");
   script.addText(" ");
   script.addText("Thank you for playing!");
+  music.playSong(TitleSong);
   showCredits=true;
   selection=0;
 }
@@ -1275,6 +1337,7 @@ void CDarkages::init(){
   font.setFontSize(32);
   gfx.loadGfx(display->renderer);
   world.loadMaps();
+  music.loadMusic();
   battle.init(display, &font, &gfx, &hero);
   //SDL_RenderSetIntegerScale(display->renderer, SDL_TRUE);
   SDL_RenderSetLogicalSize(display->renderer, 640, 400);
@@ -1391,6 +1454,7 @@ void CDarkages::loadGame(int index){
 
   cam.setPos(x,y);
   playerDir = 0;
+  updateMapMusic();
 }
 
 bool CDarkages::newGame(){
@@ -1646,7 +1710,7 @@ void CDarkages::run(){
 
       //check to see if keypress is buffered. if so, check battle
       if(i==0 && cam.getKeyBuf()){
-        if(battle.fight(checkBattle()) == 3) death();
+        if(doBattle(checkBattle()) == 3) death();
       }
     }
        
@@ -1835,11 +1899,11 @@ bool CDarkages::renderCredits(){
   SDL_RenderClear(display->renderer);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
 
-  int max=(script.text->size()+25) * 16;
+  int max=((int)script.text->size()+25) * 16;
   if(selection/4 > max) return true;
   int y;
   for(size_t i=0; i < script.text->size(); i++){
-    y=i * 16 - selection/4 + 400;
+    y=(int)i * 16 - selection/4 + 400;
     if(y > 400) break;
     if(y > -16) font.render(20, y, script.text->at(i));
   }
@@ -1884,116 +1948,6 @@ void CDarkages::renderNew(){
   if(showText) renderText();
 
   SDL_RenderPresent(display->renderer);
-
-}
-
-void CDarkages::renderOptions(){
-  SDL_Rect r;
-
-  renderBox(20, 20, 600, 360);
-
-  SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
-  switch(selection){
-  case 0:
-    r.x=36; r.y=40; r.w=260; r.h=26;
-    break;
-  case 1:
-    r.x=36; r.y=80; r.w=260; r.h=26;
-    break;
-  case 2:
-    r.x=36; r.y=120; r.w=260; r.h=26;
-    break;
-  case 3:
-    r.x=36; r.y=160; r.w=260; r.h=26;
-    break;
-  default:
-    break;
-  }
-  SDL_RenderFillRect(display->renderer, &r);
-
-  //draw music indicators
-  if(selection==1){
-    r.w=16; r.h=16;
-    if(musicVolume > 0) {
-      r.x = 400; r.y = 74;
-      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(3), &r);
-    }
-    if(musicVolume<10){
-      r.x = 590; r.y = 74;
-      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(2), &r);
-    }
-  }
-
-  //draw resolution indicators
-  if(selection == 2){
-    r.w=16; r.h=16;
-    if(tmpScreen > 0) {
-      r.x = 400; r.y = 104;
-      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(3), &r);
-    }
-    if(tmpScreen<display->screenModes.size()-1){
-      r.x = 590; r.y = 104;
-      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(2), &r);
-    }
-  }
-
-  //draw fullscreen indicators
-  if(selection==3){
-    r.w=16; r.h=16;
-    if(conf->fullScreen) {
-      r.x = 400; r.y = 134;
-      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(3), &r);
-    } else {
-      r.x = 590; r.y = 134;
-      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(2), &r);
-    }
-  }
-
-  //draw vsync indicators
-  if(selection == 4){
-    r.w=16; r.h=16;
-    if(conf->vSync) {
-      r.x = 400; r.y = 164;
-      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(3), &r);
-    } else {
-      r.x = 590; r.y = 164;
-      SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(2), &r);
-    }
-  }
-
-
-  font.render(40, 40, "Return to Game");
-  font.render(40, 70, "Music");
-  r.w = 186; r.h = 24; r.x = 410; r.y = 70;
-  SDL_SetRenderDrawColor(display->renderer, 255,255,255,255);
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.x++; r.y++; r.w-=2; r.h-=2;
-  SDL_RenderDrawRect(display->renderer, &r);
-  for(int i=1; i <= musicVolume;i++){
-    r.w = 16; r.h = 16; r.x = 414+(i-1)*18; r.y = 74;
-    SDL_RenderFillRect(display->renderer, &r);
-  }
-  font.render(40, 100, "Screen Res:");
-  font.render(430, 100, display->screenModes[tmpScreen].name);
-
-  font.render(40, 130, "Fullscreen:");
-  if(conf->fullScreen) font.render(450, 130, "Yes");
-  else font.render(460, 130, "No");
-
-  font.render(40, 160, "VSync:");
-  if(conf->vSync) font.render(450, 160, "Yes");
-  else font.render(460, 160, "No");
-
-  font.render(40, 200, "Keys:");
-  font.render(60, 230, "Cursors = Movement");
-  font.render(60, 260, "SPACE/ENTER = Talk/Action");
-  font.render(60, 290, "C = Cast Spell");
-  font.render(60, 320, "Z = Player Stats");
-  font.render(60, 350, "ESC = Game Menu");
-
-
-  SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
-
 
 }
 
@@ -2077,7 +2031,7 @@ void CDarkages::renderStats(){
 
   //Draw Nameplate
   renderBox(0, 8, 640, 30);
-  font.render((640 - 16 * strlen(hero.name)) / 2, 10, hero.name);
+  font.render((640 - 16 * (int)strlen(hero.name)) / 2, 10, hero.name);
 
   //Draw Player Stats
   renderBox(0, 40, 370, 158);
@@ -2244,7 +2198,7 @@ void CDarkages::renderText(){
   if(showTextInput && script.text->size()==1) {
     font.render(16, 8 + 16 * lineNum, "You say: ");
     font.render(160, 8 + 16 * lineNum, userText);
-    font.render(160 + 16 * userText.size(), 8 + 16 * lineNum, "_");
+    font.render(160 + 16 * (int)userText.size(), 8 + 16 * lineNum, "_");
   }
 
   //render choices if necessary
@@ -2391,6 +2345,8 @@ void CDarkages::reset(){
   eGreyor=0;
   eHelpDwarf=0;
   eHorn=0;
+
+  updateMapMusic();
 }
 
 void CDarkages::saveGame(int index){
@@ -3024,7 +2980,7 @@ void CDarkages::setText(int i){
     }
     break;
   case 79: //Demon spider boss
-    r=battle.fight(18);
+    r=doBattle(18);
     if(r == 2){
       curMap=6;
       eBattleNum=0;
@@ -3323,7 +3279,7 @@ void CDarkages::setText(int i){
     multiFight=0;
     while(multiFight < 3){
       battle.noRun=true;
-      r=battle.fight(17);
+      r=doBattle(17);
       battle.noRun=false;
       if(r == 3) {
         death();
@@ -3477,7 +3433,7 @@ void CDarkages::setText(int i){
   case 222: //northern post goblin battle
     multiFight=0;
     while(multiFight < 5){
-      r=battle.fight(6);
+      r=doBattle(6);
       if(r == 1){
         script.addText("(Bonebreaker)                         Whoa, that was rough. You had to fall back, eh? Well, we still held them off, but too many got away. You will have to help us when they return.");
         break;
@@ -3622,7 +3578,7 @@ void CDarkages::setText(int i){
 void CDarkages::title(){
   int i;
 
-  //music.playSong(TitleSong);
+  music.playSong(TitleSong);
 
   CTitle title(display, &font, &gfx);
 

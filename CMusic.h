@@ -16,13 +16,15 @@ public:
   CMusic();
   ~CMusic();
 
-  void playSong(eMusic m);
+  void loadMusic();
+  void playSong(eMusic m, bool restart=false);
   void setVolume(int vol);
 
 private:
 
   sf::Music music[5];
   eMusic currentSong;
+  bool loaded[5];
 
 };
 

@@ -110,7 +110,6 @@ private:
 
   int curMap;
   int multiFight;
-  int musicVolume;
   int playerDir;
   int playerAnim;
   int selection;
@@ -150,7 +149,6 @@ private:
   int eHelpDwarf;
   int eHorn;
 
-  size_t tmpScreen;
   SDL_Texture* canvas;
   int fadeIn;
   sConf* conf;
@@ -187,6 +185,7 @@ private:
   int  checkTile(int map, int x, int y);
   void credits();
   void death();
+  int  doBattle(int index);
   void init();
   void loadGame(int index);
   bool newGame();
@@ -195,7 +194,6 @@ private:
   bool renderCredits();
   void renderMenu();
   void renderNew();
-  void renderOptions();
   //void renderSaves();
   void renderSpell();
   void renderStats();
@@ -208,6 +206,7 @@ private:
   void setText(int i);
   int  titleLoad();
   void travel(int index);
+  void updateMapMusic();
 };
 
 #endif
