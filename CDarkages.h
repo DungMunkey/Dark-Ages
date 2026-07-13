@@ -85,6 +85,19 @@ typedef struct da1item{
   int value;
 } da1item;
 
+enum eShopItemType{
+  ShopWeapon,
+  ShopArmor,
+  ShopHelm,
+  ShopShield
+};
+
+typedef struct sShopItem{
+  eShopItemType type;
+  int index;
+  sShopItem(eShopItemType t, int i):type(t),index(i){}
+} sShopItem;
+
 class CDarkages{
 public:
   CDarkages(CDisplay* d, sConf* c);
@@ -120,12 +133,18 @@ private:
   bool showMenu;
   bool showLoad;
   bool showSave;
+  bool showShop;
+  bool showEquipShop;
+  bool showSpellShop;
   bool showSpell;
   bool showStats;
   bool showText;
   bool showTextInput;
   bool showTravel;
   bool stop;
+  int curShopCase;
+  std::vector<sShopItem> curShopItems;
+  std::vector<int> curSpellItems;
   int renderCount;
   std::string userText;
 
@@ -186,7 +205,10 @@ private:
   int  checkAction(int map, int x, int y);
   int  checkBattle();
   int  checkTile(int map, int x, int y);
+  int  currentEquipValue(eShopItemType type);
   void credits();
+  da1item* shopItemData(sShopItem item);
+  std::string shopItemTypeName(eShopItemType type);
   void death();
   int  doBattle(int index);
   void init();
@@ -195,10 +217,12 @@ private:
   void render();
   void renderBox(int x, int y, int w, int h);
   bool renderCredits();
+  void renderEquipShop(int shopCase, std::string greeting, std::vector<sShopItem> items);
   void renderMenu();
   void renderNew();
   //void renderSaves();
   void renderSpell();
+  void renderSpellShop(int shopCase, std::string greeting, std::vector<int> spellIndices);
   void renderStats();
   void renderText();
   //void renderTitle();

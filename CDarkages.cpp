@@ -56,12 +56,16 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
   showLoad=false;
   showMenu=false;
   showSave=false;
+  showShop=false;
+  showEquipShop=false;
+  showSpellShop=false;
   showSpell=false;
   showStats=false;
   showText = false;
   showTextInput = false;
   showTravel=false;
   curMap = 30;
+  curShopCase=0;
   multiFight=0;
   playerDir = 0;
   playerAnim = 0;
@@ -296,15 +300,25 @@ void CDarkages::buyArmor(int index){
   string s;
   da1response res;
   script.clear();
-  if(hero.gold<armors[index].cost){
+  if(strcmp(hero.armor, armors[index].name)==0){
+    s = "You already have that armor equipped!";
+    script.text->push_back(s);
+    res.text="OK";
+    res.result=curShopCase;
+    script.choices->push_back(res);
+    showText=true;
+  } else if(hero.gold<armors[index].cost){
     s = "You don't have enough gold!";
     script.text->push_back(s);
+    res.text="OK";
+    res.result=curShopCase;
+    script.choices->push_back(res);
     showText=true;
   } else if(hero.aStr >= armors[index].value){
     s = "You current armor is as good or better than this one. Are you sure?";
     script.text->push_back(s);
     res.text="No.";
-    res.result=0;
+    res.result=curShopCase;
     script.choices->push_back(res);
     res.text="Yes.";
     res.result=620 + index;
@@ -328,15 +342,25 @@ void CDarkages::buyHelm(int index){
   string s;
   da1response res;
   script.clear();
-  if(hero.gold<helms[index].cost){
+  if(strcmp(hero.helm, helms[index].name)==0){
+    s = "You already have that helm equipped!";
+    script.text->push_back(s);
+    res.text="OK";
+    res.result=curShopCase;
+    script.choices->push_back(res);
+    showText=true;
+  } else if(hero.gold<helms[index].cost){
     s = "You don't have enough gold!";
     script.text->push_back(s);
+    res.text="OK";
+    res.result=curShopCase;
+    script.choices->push_back(res);
     showText=true;
   } else if(hero.hStr >= helms[index].value){
-    s = "You current armor is as good or better than this one. Are you sure?";
+    s = "You current helm is as good or better than this one. Are you sure?";
     script.text->push_back(s);
     res.text="No.";
-    res.result=0;
+    res.result=curShopCase;
     script.choices->push_back(res);
     res.text="Yes.";
     res.result=630 + index;
@@ -380,18 +404,28 @@ void CDarkages::buyRoomB(int cost){
 
 void CDarkages::buySpell(int index){
   string s;
+  da1response res;
   script.clear();
-  if(hero.gold<spells[index].cost){
-    s = "You don't have enough gold pieces!";
-    script.text->push_back(s);
-    showText=true;
-  } else if(hero.spells[index]){
+  if(hero.spells[index]){
     s = "You already know that spell!";
     script.text->push_back(s);
+    res.text="OK";
+    res.result=curShopCase;
+    script.choices->push_back(res);
+    showText=true;
+  } else if(hero.gold<spells[index].cost){
+    s = "You don't have enough gold pieces!";
+    script.text->push_back(s);
+    res.text="OK";
+    res.result=curShopCase;
+    script.choices->push_back(res);
     showText=true;
   } else if(index>0 && !hero.spells[index-1]){
     s = "You haven't learned the lower spell levels yet! Come back when you know all the lower spell levels.";
     script.text->push_back(s);
+    res.text="OK";
+    res.result=curShopCase;
+    script.choices->push_back(res);
     showText=true;
   } else {
     buySpellB(index);
@@ -410,15 +444,25 @@ void CDarkages::buyShield(int index){
   string s;
   da1response res;
   script.clear();
-  if(hero.gold<shields[index].cost){
+  if(strcmp(hero.shield, shields[index].name)==0){
+    s = "You already have that shield equipped!";
+    script.text->push_back(s);
+    res.text="OK";
+    res.result=curShopCase;
+    script.choices->push_back(res);
+    showText=true;
+  } else if(hero.gold<shields[index].cost){
     s = "You don't have enough gold!";
     script.text->push_back(s);
+    res.text="OK";
+    res.result=curShopCase;
+    script.choices->push_back(res);
     showText=true;
   } else if(hero.sStr >= shields[index].value){
-    s = "You current armor is as good or better than this one. Are you sure?";
+    s = "You current shield is as good or better than this one. Are you sure?";
     script.text->push_back(s);
     res.text="No.";
-    res.result=0;
+    res.result=curShopCase;
     script.choices->push_back(res);
     res.text="Yes.";
     res.result=640 + index;
@@ -442,15 +486,25 @@ void CDarkages::buyWeapon(int index){
   string s;
   da1response res;
   script.clear();
-  if(hero.gold<weapons[index].cost){
+  if(strcmp(hero.weapon, weapons[index].name)==0){
+    s = "You already have that weapon equipped!";
+    script.text->push_back(s);
+    res.text="OK";
+    res.result=curShopCase;
+    script.choices->push_back(res);
+    showText=true;
+  } else if(hero.gold<weapons[index].cost){
     s = "You don't have enough gold!";
     script.text->push_back(s);
+    res.text="OK";
+    res.result=curShopCase;
+    script.choices->push_back(res);
     showText=true;
   } else if(hero.wStr >= weapons[index].value){
     s = "You current weapon is as good or better than this one. Are you sure?";
     script.text->push_back(s);
     res.text="No.";
-    res.result=0;
+    res.result=curShopCase;
     script.choices->push_back(res);
     res.text="Yes.";
     res.result=600+index;
@@ -471,6 +525,82 @@ void CDarkages::buyWeaponB(int index){
   hero.gold-=weapons[index].cost;
   script.text->push_back("Enjoy your purchase!");
   showText=true;
+}
+
+int CDarkages::currentEquipValue(eShopItemType type){
+  switch(type){
+  case ShopWeapon: return hero.wStr;
+  case ShopArmor:  return hero.aStr;
+  case ShopHelm:   return hero.hStr;
+  case ShopShield: return hero.sStr;
+  }
+  return 0;
+}
+
+da1item* CDarkages::shopItemData(sShopItem item){
+  switch(item.type){
+  case ShopWeapon: return &weapons[item.index];
+  case ShopArmor:  return &armors[item.index];
+  case ShopHelm:   return &helms[item.index];
+  case ShopShield: return &shields[item.index];
+  }
+  return NULL;
+}
+
+string CDarkages::shopItemTypeName(eShopItemType type){
+  switch(type){
+  case ShopWeapon: return "Weapon";
+  case ShopArmor:  return "Armor";
+  case ShopHelm:   return "Helmet";
+  case ShopShield: return "Shield";
+  }
+  return "";
+}
+
+void CDarkages::renderEquipShop(int shopCase, string greeting, vector<sShopItem> items){
+  da1item* it;
+  int code;
+  size_t i;
+
+  curShopCase = shopCase;
+  showShop = true;
+  showEquipShop = true;
+  curShopItems = items;
+
+  script.addText(greeting + " All purchases replace your current equipment.");
+  script.addChoice("Nothing", 0);
+
+  for(i=0; i < items.size(); i++){
+    it = shopItemData(items[i]);
+    if(it==NULL) continue;
+
+    switch(items[i].type){
+    case ShopWeapon: code=500+items[i].index; break;
+    case ShopArmor:  code=520+items[i].index; break;
+    case ShopHelm:   code=530+items[i].index; break;
+    case ShopShield: code=540+items[i].index; break;
+    default: code=0; break;
+    }
+    script.addChoice(it->name, code);
+  }
+}
+
+void CDarkages::renderSpellShop(int shopCase, string greeting, vector<int> spellIndices){
+  size_t i;
+  int idx;
+
+  curShopCase = shopCase;
+  showShop = true;
+  showSpellShop = true;
+  curSpellItems = spellIndices;
+
+  script.addText(greeting);
+  script.addChoice("Nothing", 0);
+
+  for(i=0; i < spellIndices.size(); i++){
+    idx = spellIndices[i];
+    script.addChoice(spells[idx].name, 550+idx);
+  }
 }
 
 void CDarkages::castSpell(int index){
@@ -2043,9 +2173,9 @@ void CDarkages::renderStats(){
   font.render(16, 58, "Hit Points");
   sprintf(str, "= %d", hero.hp);
   font.render(224, 58, str);
-  font.render(16, 72, "Max HP");
+  font.render(16, 74, "Max HP");
   sprintf(str, "= %d", hero.maxHP);
-  font.render(224, 72, str);
+  font.render(224, 74, str);
   font.render(16, 90, "Magic Points");
   sprintf(str, "= %d", hero.mp);
   font.render(224, 90, str);
@@ -2122,9 +2252,11 @@ void CDarkages::renderText(){
   int lineNum;
   int choiceLine;
   bool bDownArrow=false;
+  int boxH = showShop ? 320 : 130;
+  int maxLines = (showEquipShop || showSpellShop) ? 14 : (showShop ? 17 : 5);
 
   r.w = 640;
-  r.h = 130;
+  r.h = boxH;
   r.x = 0;
   r.y = 0;
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 200);
@@ -2205,6 +2337,32 @@ void CDarkages::renderText(){
 
   //render choices if necessary
   bDownArrow=false;
+  int typeX = 340;
+  int priceX = 600;
+  string priceStr;
+  if(showEquipShop){
+    lineNum++; //space between shopkeeper dialog and item list
+    font.render(36, 12 + 16 * lineNum, "Equipment");
+    font.render(typeX, 12 + 16 * lineNum, "Type");
+    priceStr="Price";
+    font.render(priceX - font.getStringWidth(priceStr), 12 + 16 * lineNum, priceStr);
+    lineNum+=2;
+  } else if(showSpellShop){
+    lineNum++; //space between shopkeeper dialog and item list
+    font.render(36, 12 + 16 * lineNum, "Spell");
+    priceStr="Price";
+    font.render(priceX - font.getStringWidth(priceStr), 12 + 16 * lineNum, priceStr);
+    lineNum+=2;
+  }
+  SDL_Rect r2;
+  r2.x = 36;
+  r2.y = 16 * lineNum+8;
+  r2.w = 568;
+  r2.h = 4;
+  if (showEquipShop || showSpellShop) {
+    SDL_SetRenderDrawColor(display->renderer, 255, 255, 255, 255);
+    SDL_RenderFillRect(display->renderer, &r2);
+  }
   choiceLine=lineNum;
   if(script.text->size()==1 && script.choices->size()>0){
     for(i=script.offset; i < script.choices->size();i++){
@@ -2217,8 +2375,33 @@ void CDarkages::renderText(){
         SDL_RenderFillRect(display->renderer, &r);
         SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
       }
-      font.render(36, 12 + 16 * lineNum++, script.choices->at(i).text);
-      if(lineNum>5){
+      if(showEquipShop && i>=1 && (i-1) < curShopItems.size()){
+        da1item* it = shopItemData(curShopItems[i-1]);
+        font.render(36, 12 + 16 * lineNum, script.choices->at(i).text);
+        font.render(typeX, 12 + 16 * lineNum, shopItemTypeName(curShopItems[i-1].type));
+        if(it != NULL){
+          char pbuf[16];
+          sprintf(pbuf, "%d", it->cost);
+          priceStr=pbuf;
+          font.render(priceX - font.getStringWidth(priceStr), 12 + 16 * lineNum, priceStr);
+        }
+        lineNum++;
+      } else if(showSpellShop && i>=1 && (i-1) < curSpellItems.size()){
+        int idx = curSpellItems[i-1];
+        font.render(36, 12 + 16 * lineNum, script.choices->at(i).text);
+        if(hero.spells[idx]){
+          priceStr="Known";
+        } else {
+          char pbuf[16];
+          sprintf(pbuf, "%d", spells[idx].cost);
+          priceStr=pbuf;
+        }
+        font.render(priceX - font.getStringWidth(priceStr), 12 + 16 * lineNum, priceStr);
+        lineNum++;
+      } else {
+        font.render(36, 12 + 16 * lineNum++, script.choices->at(i).text);
+      }
+      if(lineNum>maxLines){
         if(i<script.choices->size()-1) bDownArrow=true;
         break;
       }
@@ -2238,8 +2421,52 @@ void CDarkages::renderText(){
     r.w=16;
     r.h=16;
     r.x = 16;
-    r.y = 96;
+    r.y = (showEquipShop || showSpellShop) ? boxH - 58 : boxH - 34;
     SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(0), &r);
+  }
+
+  //Equipment/spell shop: bottom summary (attack power / armor value / gold)
+  if(showEquipShop || showSpellShop){
+    char buf[40];
+    string base;
+    int atkDelta=0, armDelta=0;
+    bool showAtk=false, showArm=false;
+
+    if(showEquipShop && script.selection>=1 && (script.selection-1) < curShopItems.size()){
+      sShopItem item = curShopItems[script.selection-1];
+      int delta = shopItemData(item)->value - currentEquipValue(item.type);
+      if(item.type==ShopWeapon){ atkDelta=delta; showAtk=true; }
+      else { armDelta=delta; showArm=true; }
+    }
+
+    r2.y = boxH - 56;
+    SDL_SetRenderDrawColor(display->renderer, 255, 255, 255, 255);
+    SDL_RenderFillRect(display->renderer, &r2);
+
+    if(showEquipShop){
+      sprintf(buf, "Attack Power:  %d", hero.str/2 + hero.wStr);
+      base=buf;
+      font.render(36, boxH-52, base);
+      if(showAtk){
+        sprintf(buf, " %+d", atkDelta);
+        font.render(36 + font.getStringWidth(base), boxH-52, string(buf));
+      }
+    }
+
+    font.render(400, boxH-52, "Gold: ");
+    sprintf(buf, "%d", hero.gold);
+    priceStr=buf;
+    font.render(priceX - font.getStringWidth(priceStr), boxH-52, priceStr);
+
+    if(showEquipShop){
+      sprintf(buf, "Armor Value:   %d", hero.aStr + hero.hStr + hero.sStr);
+      base=buf;
+      font.render(36, boxH-34, base);
+      if(showArm){
+        sprintf(buf, " %+d", armDelta);
+        font.render(36 + font.getStringWidth(base), boxH-34, string(buf));
+      }
+    }
   }
 
 }
@@ -2317,12 +2544,16 @@ void CDarkages::reset(){
   showLoad=false;
   showMenu=false;
   showSave=false;
+  showShop=false;
+  showEquipShop=false;
+  showSpellShop=false;
   showSpell=false;
   showStats=false;
   showText = false;
   showTextInput = false;
   showTravel=false;
   curMap = 30;
+  curShopCase=0;
   multiFight=0;
   playerDir = 0;
   playerAnim = 0;
@@ -2416,6 +2647,9 @@ void CDarkages::setRandomBanter(){
 
 void CDarkages::setText(int i){
   script.clear();
+  showShop=false;
+  showEquipShop=false;
+  showSpellShop=false;
   da1response res;
   string s;
   int r;
@@ -2585,57 +2819,45 @@ void CDarkages::setText(int i){
     break;
   case 54: //Meadow weapon shop
     if(curMap == 1) { //amber store
-      script.addText("What will it be traveler?");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Axe (300 gp)", 504);
-      script.addChoice("Chain Mail (2200 gp)", 525);
+      renderEquipShop(54, "What will it be traveler?", {
+        sShopItem(ShopWeapon, 4),  //Axe
+        sShopItem(ShopArmor, 5)    //Chain Mail
+      });
     } else if(curMap == 41){//trok weapon
-      script.addText("What will it be traveler?");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Shortsword (800 gp)", 505);
-      script.addChoice("Buckler (15 gp)", 540);
-      script.addChoice("Small Shield (100 gp)", 541);
+      renderEquipShop(54, "What will it be traveler?", {
+        sShopItem(ShopWeapon, 5),  //Shortsword
+        sShopItem(ShopShield, 0),  //Buckler
+        sShopItem(ShopShield, 1)   //Small Shield
+      });
     } else if(curMap == 42){//wisp weapon
-      script.addText("What will it be traveler?");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Axe (300 gp)", 504);
-      script.addChoice("Chain Coif (75 gp)", 531);
-      script.addChoice("Ring Mail (450 gp)", 523);
-      script.addChoice("Scale Mail (1000 gp)", 524);
-      script.addChoice("Large Shield (500 gp)", 542);
+      renderEquipShop(54, "What will it be traveler?", {
+        sShopItem(ShopWeapon, 4),  //Axe
+        sShopItem(ShopHelm, 1),    //Chain Coif
+        sShopItem(ShopArmor, 3),   //Ring Mail
+        sShopItem(ShopArmor, 4),   //Scale Mail
+        sShopItem(ShopShield, 2)   //Large Shield
+      });
     } else {
-      script.addText("What will it be traveler?");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Dagger (10 gp)", 500);
-      script.addChoice("Club (25 gp)", 501);
-      script.addChoice("Tunic (25 gp)", 520);
-      script.addChoice("Leather Vest (100 gp)", 521);
-      script.addChoice("Buckler (15 gp)", 540);
+      renderEquipShop(54, "What will it be traveler?", {
+        sShopItem(ShopWeapon, 0),  //Dagger
+        sShopItem(ShopWeapon, 1),  //Club
+        sShopItem(ShopArmor, 0),   //Tunic
+        sShopItem(ShopArmor, 1),   //Leather Vest
+        sShopItem(ShopShield, 0)   //Buckler
+      });
     }
     break;
   case 55: //Meadow magic shop
     if(curMap == 17 || curMap == 18){
-      script.addText("I can teach two magic levels if you are strong enough.");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Level 10: Death (3500 gp)", 559);
-      script.addChoice("Level 11: Travel (4000 gp)", 560);
+      renderSpellShop(55, "I can teach two magic levels if you are strong enough.", {9, 10}); //Death, Travel
     } else if(curMap == 21){ //laendlich magic shop
-      script.addText("I can teach two magic levels if you are strong enough.");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Level 4: Blindness (500 gp)", 553);
-      script.addChoice("Level 8: Melt Flesh (2000 gp)", 557);
+      renderSpellShop(55, "I can teach two magic levels if you are strong enough.", {3, 7}); //Blindness, Melt Flesh
     } else if(curMap == 39 || curMap == 40){ //tristen magic shop
-      script.addText("I can teach two magic levels if you are strong enough.");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Level 6: Massive Heal (1000 gp)", 555);
-      script.addChoice("Level 9: Full Heal (3000 gp)", 558);
+      renderSpellShop(55, "I can teach two magic levels if you are strong enough.", {5, 8}); //Massive Heal, Full Heal
     } else if(curMap == 42){ //wisp artifact
       script.addText("The card reads, 'Magical devices of Ithis, Lord of the Northern Reaches.'");
     } else {
-      script.addText("I can teach two magic levels if you are strong enough.");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Level 1: Heal (50 gp)", 550);
-      script.addChoice("Level 2: Burn (150 gp)", 551);
+      renderSpellShop(55, "I can teach two magic levels if you are strong enough.", {0, 1}); //Heal, Burn
     }
     break;
   case 60:
@@ -2771,52 +2993,52 @@ void CDarkages::setText(int i){
     break;
   case 66: //QTower weapon
     if(curMap == 0){ //aaryak weapon
-      script.addText("What will it be traveler?");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Great Axe (1500 gp)", 506);
-      script.addChoice("Halberd (3500 gp)", 508);
+      renderEquipShop(66, "What will it be traveler?", {
+        sShopItem(ShopWeapon, 6),  //Great Axe
+        sShopItem(ShopWeapon, 8)   //Halberd
+      });
     } else if(curMap == 19) { //garrison weapon
-      script.addText("What will it be traveler?");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Longsword (2500 gp)", 507);
-      script.addChoice("Magic Axe (5000 gp)", 509);
-      script.addChoice("Partial Plate Mail (4000 gp)", 526);
-      script.addChoice("Full Plate Mail (6000 gp)", 527);
-      script.addChoice("Plate Helm (250 gp)", 532);
-      script.addChoice("Magic Helm (500 gp)", 533);
+      renderEquipShop(66, "What will it be traveler?", {
+        sShopItem(ShopWeapon, 7),  //Longsword
+        sShopItem(ShopWeapon, 9),  //Magic Axe
+        sShopItem(ShopArmor, 6),   //Partial Plate Mail
+        sShopItem(ShopArmor, 7),   //Full Plate Mail
+        sShopItem(ShopHelm, 2),    //Plate Helm
+        sShopItem(ShopHelm, 3)     //Magic Helm
+      });
     } else if(curMap == 29){ //npost weapon
-      script.addText("What will it be traveler?");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Mace (40 gp)", 502);
-      script.addChoice("Axe (300 gp)", 504);
-      script.addChoice("Great Axe (1500 gp)", 506);
-      script.addChoice("Scale Mail (1000 gp)", 524);
-      script.addChoice("Chain Coif (75 gp)", 531);
+      renderEquipShop(66, "What will it be traveler?", {
+        sShopItem(ShopWeapon, 2),  //Mace
+        sShopItem(ShopWeapon, 4),  //Axe
+        sShopItem(ShopWeapon, 6),  //Great Axe
+        sShopItem(ShopArmor, 4),   //Scale Mail
+        sShopItem(ShopHelm, 1)     //Chain Coif
+      });
     } else if(curMap == 34) { //rhoeyce weapon
-      script.addText("Welcome to Wilhelm's Sword & Shields! What will it be traveler?");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Shortsword (800 gp)", 505);
-      script.addChoice("Buckler (15 gp)", 540);
-      script.addChoice("Small Shield (100 gp)", 541);
-      script.addChoice("Large Shield (500 gp)", 542);
-      script.addChoice("Magic Shield (2000 gp)", 543);
+      renderEquipShop(66, "Welcome to Wilhelm's Sword & Shields! What will it be traveler?", {
+        sShopItem(ShopWeapon, 5),  //Shortsword
+        sShopItem(ShopShield, 0),  //Buckler
+        sShopItem(ShopShield, 1),  //Small Shield
+        sShopItem(ShopShield, 2),  //Large Shield
+        sShopItem(ShopShield, 3)   //Magic Shield
+      });
     } else if(curMap == 39 || curMap == 40){ //tristen weapon
-      script.addText("What will it be traveler?");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Dagger (10 gp)", 500);
-      script.addChoice("Spear (60 gp)", 503);
-      script.addChoice("Longsword (2500 gp)", 507);
-      script.addChoice("Tunic (25 gp)", 520);
-      script.addChoice("Ring Mail (450 gp)", 523);
-      script.addChoice("Chain Mail (2200 gp)", 525);
+      renderEquipShop(66, "What will it be traveler?", {
+        sShopItem(ShopWeapon, 0),  //Dagger
+        sShopItem(ShopWeapon, 3),  //Spear
+        sShopItem(ShopWeapon, 7),  //Longsword
+        sShopItem(ShopArmor, 0),   //Tunic
+        sShopItem(ShopArmor, 3),   //Ring Mail
+        sShopItem(ShopArmor, 5)    //Chain Mail
+      });
     } else if(curMap == 42){ //wisp artifact 2
       script.addText("The card reads, 'Sword and Shield of Feigling the Quick to Run Away.'");
     } else {
-      script.addText("What will it be traveler?");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Club (25 gp)", 501);
-      script.addChoice("Mace (40 gp)", 502);
-      script.addChoice("Spear (60 gp)", 503);
+      renderEquipShop(66, "What will it be traveler?", {
+        sShopItem(ShopWeapon, 1),  //Club
+        sShopItem(ShopWeapon, 2),  //Mace
+        sShopItem(ShopWeapon, 3)   //Spear
+      });
     }
     break;
   case 67:
@@ -2832,18 +3054,18 @@ void CDarkages::setText(int i){
     break;
   case 68: //QTower armor
     if(curMap == 0) { //aaryak armor
-      script.addText("What will it be traveler?");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Full Plate Mail (6000 gp)", 527);
-      script.addChoice("Magic Armor (9000 gp)", 528);
-      script.addChoice("Plate Helm (250 gp)", 532);
+      renderEquipShop(68, "What will it be traveler?", {
+        sShopItem(ShopArmor, 7),  //Full Plate Mail
+        sShopItem(ShopArmor, 8),  //Magic Mail
+        sShopItem(ShopHelm, 2)    //Plate Helm
+      });
     } else {
-      script.addText("What will it be traveler?");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Leather Vest (100 gp)", 521);
-      script.addChoice("Studded Leather (250 gp)", 522);
-      script.addChoice("Small Shield (100 gp)", 541);
-      script.addChoice("Leather Cap (10 gp)", 530);
+      renderEquipShop(68, "What will it be traveler?", {
+        sShopItem(ShopArmor, 1),  //Leather Vest
+        sShopItem(ShopArmor, 2),  //Studded Leather
+        sShopItem(ShopShield, 1), //Small Shield
+        sShopItem(ShopHelm, 0)    //Leather Cap
+      });
     }
     break;
   case 69:
@@ -2871,27 +3093,15 @@ void CDarkages::setText(int i){
     break;
   case 70: //QTower magic
     if(curMap == 0){ //aaryak magic shop
-      script.addText("I can teach two magic levels if you are strong enough.");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Level 4: Blindness (500 gp)", 553);
-      script.addChoice("Level 9: Full Heal (3000 gp)", 558);
+      renderSpellShop(70, "I can teach two magic levels if you are strong enough.", {3, 8}); //Blindness, Full Heal
     } else if(curMap == 19) { //garrison magic
-      script.addText("I can teach two magic levels if you are strong enough.");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Level 5: Firebomb (750 gp)", 554);
-      script.addChoice("Level 6: Massive Heal (1000 gp)", 555);
+      renderSpellShop(70, "I can teach two magic levels if you are strong enough.", {4, 5}); //Firebomb, Massive Heal
     } else if(curMap == 34) { //rhoeyce magic shop
-      script.addText("I can teach two magic levels if you are strong enough.");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Level 5: Firebomb (750 gp)", 554);
-      script.addChoice("Level 7: Acid Rain (1500 gp)", 556);
+      renderSpellShop(70, "I can teach two magic levels if you are strong enough.", {4, 6}); //Firebomb, Acid Rain
     } else if(curMap == 42){ //wisp artifact 3
       script.addText("The card reads, 'Do not touch! Highly explosive. Thought to cause chronic impotence, too.'");
     } else {
-      script.addText("I can teach two magic levels if you are strong enough.");
-      script.addChoice("Nothing", 0);
-      script.addChoice("Level 2: Burn (150 gp)", 551);
-      script.addChoice("Level 3: Great Heal (350 gp)", 552);
+      renderSpellShop(70, "I can teach two magic levels if you are strong enough.", {1, 2}); //Burn, Great Heal
     }
     break;
   case 71: //QTower merchant
@@ -3580,12 +3790,11 @@ void CDarkages::setText(int i){
 void CDarkages::title(){
   int i;
 
-  music.playSong(TitleSong);
-
   CTitle title(display, &font, &gfx);
 
   while(true){
 
+    music.playSong(TitleSong);
     i=title.run();
     if(i == 1){
       if(newGame()) {
