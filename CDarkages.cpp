@@ -77,7 +77,6 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
   renderCount=0;
   music.setVolume(conf->vol);
   fadeIn=0;
-  step=0;
 
   canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 400);
 }
@@ -1659,7 +1658,6 @@ void CDarkages::run(){
   int i;
   int chMap = -1;
   bool anim = false;
-  bool moving = false;
   stop = false;
 
   /*unsigned int*/ ticks =0;
@@ -1672,8 +1670,9 @@ void CDarkages::run(){
 
     curTicks=SDL_GetTicks();
     aTicks=curTicks - lastTicks;
-    ticks+=curTicks - lastTicks;
-    lastFPS+=curTicks - lastTicks;
+    if(aTicks > 250) aTicks = 250; //clamp so a hitch/alt-tab can't cause a big movement jump
+    ticks+=aTicks;
+    lastFPS+=aTicks;
     lastTicks=curTicks;
     if(lastFPS>1000){
       fps=renderCount;
@@ -1784,69 +1783,59 @@ void CDarkages::run(){
       }
     }
     
-    //moving=cam.scrollCamera((int)aTicks);
-    //if(!moving){
-    step+=aTicks;
-    while(step > 4){
+    {
+      double frameMs = (double)aTicks;
 
-      if(cam.bumpCamera()){
-        step-=5;
-        continue;
-      }
+      while(!cam.bumpCamera(frameMs)){
 
-      if(chMap > -1){
-        cam.blockMovement();
-        cam.clearMovement();
-        changeMap(chMap);
-        chMap = -1;
-        break;
-      }
+        if(chMap > -1){
+          cam.blockMovement();
+          cam.clearMovement();
+          changeMap(chMap);
+          chMap = -1;
+          break;
+        }
 
-      switch(cam.setMovement()){
-      case 0:
-        i = checkTile(curMap, cam.getTileX(), cam.getTileY() - 1);
-        playerDir = 3;
-        if(i > 0) { chMap = i; anim = true; }
-        else if(i < 0) {
-          cam.blockMovement();
-          step=0;
-        } else anim = true;
-        break;
-      case 1:
-        i = checkTile(curMap, cam.getTileX() + 1, cam.getTileY());
-        playerDir = 2;
-        if(i > 0) { chMap=i; anim = true; }
-        else if(i < 0) {
-          cam.blockMovement();
-          step=0;
-        } else anim = true;
-        break;
-      case 2:
-        i = checkTile(curMap, cam.getTileX(), cam.getTileY() + 1);
-        playerDir = 0;
-        if(i > 0) { chMap=i; anim = true; }
-        else if(i < 0) {
-          cam.blockMovement();
-          step=0;
-        } else anim = true;
-        break;
-      case 3:
-        i = checkTile(curMap, cam.getTileX() - 1, cam.getTileY());
-        playerDir = 1;
-        if(i > 0) { chMap=i; anim = true; }
-        else if(i < 0) {
-          cam.blockMovement();
-          step=0;
-        } else anim = true;
-        break;
-      default:
-        step=0;
-        break;
-      }
+        bool startedNewStep = false;
+        switch(cam.setMovement()){
+        case 0:
+          i = checkTile(curMap, cam.getTileX(), cam.getTileY() - 1);
+          playerDir = 3;
+          if(i > 0) { chMap = i; anim = true; startedNewStep = true; }
+          else if(i < 0) cam.blockMovement();
+          else { anim = true; startedNewStep = true; }
+          break;
+        case 1:
+          i = checkTile(curMap, cam.getTileX() + 1, cam.getTileY());
+          playerDir = 2;
+          if(i > 0) { chMap=i; anim = true; startedNewStep = true; }
+          else if(i < 0) cam.blockMovement();
+          else { anim = true; startedNewStep = true; }
+          break;
+        case 2:
+          i = checkTile(curMap, cam.getTileX(), cam.getTileY() + 1);
+          playerDir = 0;
+          if(i > 0) { chMap=i; anim = true; startedNewStep = true; }
+          else if(i < 0) cam.blockMovement();
+          else { anim = true; startedNewStep = true; }
+          break;
+        case 3:
+          i = checkTile(curMap, cam.getTileX() - 1, cam.getTileY());
+          playerDir = 1;
+          if(i > 0) { chMap=i; anim = true; startedNewStep = true; }
+          else if(i < 0) cam.blockMovement();
+          else { anim = true; startedNewStep = true; }
+          break;
+        default:
+          break;
+        }
 
-      //check to see if keypress is buffered. if so, check battle
-      if(i==0 && cam.getKeyBuf()){
-        if(doBattle(checkBattle()) == 3) death();
+        //check to see if keypress is buffered. if so, check battle
+        if(i==0 && cam.getKeyBuf()){
+          if(doBattle(checkBattle()) == 3) death();
+        }
+
+        if(!startedNewStep) break; //blocked, or no key held; nothing more to animate this frame
       }
     }
 
@@ -1855,7 +1844,6 @@ void CDarkages::run(){
       else playerAnim = 0;
       anim = false;
     }
-    //if(!moving) cam.scrollCamera((int)aTicks);
     render();
     renderCount++;
 
