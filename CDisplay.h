@@ -23,16 +23,19 @@ public:
   SDL_Window*   window;
   
   bool init(sConf& conf);
+  int  S(int refValue); //scales a 640x400-reference-resolution value to the active mod's tile size
   std::vector<sDAVidMode> screenModes;
   int           screenHeight;
   int           screenWidth;
   size_t        currentScreenMode;
   SDL_Color     txtColors[20];
+  sModSettings  modSettings;
+  double        scale;
 
 private:
-  
 
-  
+
+
 
 };
 

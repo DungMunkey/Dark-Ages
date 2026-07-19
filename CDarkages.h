@@ -121,7 +121,7 @@ private:
   std::vector<int> spellList;
 
   int fps;
-  int actionTile[150];
+  int actionTile[150]; //tile IDs 0-149 are reserved for vanilla; mod-defined tiles use 150+ and are decorative/walkable-only (see checkAction())
 
   int curMap;
   int multiFight;
@@ -173,6 +173,7 @@ private:
   SDL_Texture* canvas;
   int fadeIn;
   sConf* conf;
+  sModSettings modSettings;
   unsigned int ticks;
 
   void actionCursorDown();

@@ -497,30 +497,31 @@ void CBattle::render(){
   char str[64];
 
   SDL_RenderClear(display->renderer);
-  
+
   //Draw Title
-  renderBox(100, 6, 440, 34);
+  renderBox(display->S(100), display->S(6), display->S(440), display->S(34));
   sprintf(str, "%s Attack!", curMon.name);
-  font->render((640 - font->getStringWidth(str)) / 2, 10, str);
+  font->render((display->S(640) - font->getStringWidth(str)) / 2, display->S(10), str);
 
   //Display Player stats and options
-  renderBox(210, 52, 348, 168);
-  font->render(240, 66, hero->name);
+  renderBox(display->S(210), display->S(52), display->S(348), display->S(168));
+  font->render(display->S(240), display->S(66), hero->name);
   sprintf(str, "HP = %d", hero->hp);
-  font->render(240, 82, str);
+  font->render(display->S(240), display->S(82), str);
   sprintf(str, "MP = %d", hero->mp);
-  font->render(240, 98, str);
-  r.w=336; r.h=16; r.x=216; r.y=152+16*selection;
+  font->render(display->S(240), display->S(98), str);
+  r.w=display->S(336); r.h=display->S(16); r.x=display->S(216); r.y=display->S(152)+display->S(16)*selection;
   SDL_SetRenderDrawColor(display->renderer, 0,0,128, 255);
   SDL_RenderFillRect(display->renderer, &r);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
-  font->render(240, 146, "Attack");
-  font->render(240, 162, "Spell");
-  font->render(240, 178, "Run");
+  font->render(display->S(240), display->S(146), "Attack");
+  font->render(display->S(240), display->S(162), "Spell");
+  font->render(display->S(240), display->S(178), "Run");
 
-  //Draw Monster
-  renderBox(10, 52, 120, 120);
-  r.w=100;  r.h=100;  r.x = 20;  r.y = 62;
+  //Draw Monster - rendered at native size (no stretching); only the frame's position tracks the general UI scale
+  int monsterSize = display->modSettings.monsterSize;
+  renderBox(display->S(10), display->S(52), monsterSize+20, monsterSize+20);
+  r.w=monsterSize;  r.h=monsterSize;  r.x = display->S(10)+10;  r.y = display->S(52)+10;
   if(curMon.hp <= curMon.maxHP / 2) SDL_RenderCopy(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx+1), &r);
   else SDL_RenderCopy(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx), &r);
 
@@ -566,68 +567,32 @@ void CBattle::renderSpell(){
   int lineCount=0;
   size_t i;
 
-  renderBox(150, 80, 342, 242);
+  renderBox(display->S(150), display->S(80), display->S(342), display->S(242));
 
-  r.w=230; r.h=16; r.x=156; r.y=88 + 16 * spellSelection;
+  r.w=display->S(230); r.h=display->S(16); r.x=display->S(156); r.y=display->S(88) + display->S(16) * spellSelection;
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
   SDL_RenderFillRect(display->renderer, &r);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
 
   for(i=0; i < spells.size();i++){
-    if(spells[i]==-1) font->render(166, 82, "Cancel");
-    else font->render(166, 98 + 16 * lineCount++, spellNames[spells[i]]);
+    if(spells[i]==-1) font->render(display->S(166), display->S(82), "Cancel");
+    else font->render(display->S(166), display->S(98) + display->S(16) * lineCount++, spellNames[spells[i]]);
   }
 
 }
 
 void CBattle::renderText(){
-  size_t i,j;
-  string word;
-  string line;
+  size_t j;
   string curText;
-  int sz;
-  int wsz;
   int lineNum;
-  bool bDownArrow=false;
 
-  renderBox(0, 180, 640, 170);
+  renderBox(0, display->S(180), display->S(640), display->S(170));
 
-  //Render word by word, applying line breaks as needed.
+  //Render word by word, applying line breaks as needed, continuing the line count across each text block.
   lineNum = 0;
   for(j=0; j < text.size(); j++){
-    sz = 0;
-    word.clear();
-    line.clear();
     curText=text[j];
-    for(i = 0; i < curText.size(); i++){
-      if(curText[i] == ' '){
-        wsz=font->getStringWidth(word);
-        if(sz + wsz>608){
-          //print current line
-          font->render(16, 188 + 16 * lineNum++, line);
-          line = word;
-          line += " ";
-          sz = wsz + font->getStringWidth(' ');
-        } else {
-          line += word;
-          line += " ";
-          sz += wsz + font->getStringWidth(' ');
-        }
-        word.clear();
-        wsz = 0;
-        continue;
-      }
-      word += curText[i];
-      wsz += font->getStringWidth(curText[i]);
-    }
-
-    if(sz + wsz > 608){
-      font->render(16, 188 + 16 * lineNum++, line);
-      line = word;
-    } else {
-      line += word;
-    }
-    font->render(16, 188 + 16 * lineNum++, line);
+    lineNum += font->renderWrap(display->S(16), display->S(188) + display->S(16) * lineNum, curText, display->S(608), display->S(16));
   }
 
 }

@@ -61,12 +61,14 @@ bool CGraphic::loadTexture(const char* fn, SDL_Renderer* rend, bool surf, bool a
   return true; 
 }
 
-bool CGraphic::createTiles(int szX, int szY, int canX, int canY){
+bool CGraphic::createTiles(int szX, int szY){
   if(texture==NULL) return false;
 
-  //get number of tiles
-  int x=canX/szX; //texture->w/szX;
-  int y=canY/szY; //texture->h/szY;
+  //get number of tiles that actually fit in the loaded texture
+  int canX, canY;
+  SDL_QueryTexture(texture, NULL, NULL, &canX, &canY);
+  int x=canX/szX;
+  int y=canY/szY;
   tileCount=x*y;
 
   //allocate memory
@@ -84,6 +86,22 @@ bool CGraphic::createTiles(int szX, int szY, int canX, int canY){
       count++;
     }
   }
+  return true;
+}
+
+bool CGraphic::createTiles(){
+  if(texture==NULL) return false;
+
+  int canX, canY;
+  SDL_QueryTexture(texture, NULL, NULL, &canX, &canY);
+
+  tileCount=1;
+  if(tiles!=NULL) delete [] tiles;
+  tiles=new SDL_Rect[1];
+  tiles[0].x=0;
+  tiles[0].y=0;
+  tiles[0].w=canX;
+  tiles[0].h=canY;
   return true;
 }
 

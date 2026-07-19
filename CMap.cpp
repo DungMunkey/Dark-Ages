@@ -33,6 +33,7 @@ CMap& CMap::operator=(const CMap& m){
       for (int j = 0; j < szY; j++) map[i][j] = m.map[i][j];
     }
   }
+  return *this;
 }
 
 void CMap::deleteMap(){

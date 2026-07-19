@@ -78,7 +78,7 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
   music.setVolume(conf->vol);
   fadeIn=0;
 
-  canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 400);
+  canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, display->S(640), display->S(400));
 }
 
 CDarkages::~CDarkages(){
@@ -1095,7 +1095,7 @@ int CDarkages::checkAction(int map, int x, int y){
       if (j != y && i != x) continue;  //do not check corners
       if (i == x && j == y) continue;  //do not check center
       k=world[map].getTile(i, j);
-      if(actionTile[k] > 0) return actionTile[k];
+      if(k >= 0 && k < 150 && actionTile[k] > 0) return actionTile[k]; //actionTile only covers vanilla's reserved tile ID range (0-149); mod tiles (150+) are decorative-only for now
     }
   }
   return 0; //nothing found
@@ -1462,16 +1462,17 @@ void CDarkages::death(){
   showText=true;
 }
 
-void CDarkages::init(){ 
+void CDarkages::init(){
+  modSettings = display->modSettings;
   font.setDisplay(display);
   font.loadFont("Font/DA1qb.ttf");
-  font.setFontSize(32);
-  gfx.loadGfx(display->renderer, conf->modName);
-  world.loadMaps();
+  font.setFontSize(display->S(32));
+  gfx.loadGfx(display->renderer, conf->modName, modSettings.tileSize, modSettings.monsterSize);
+  world.loadMaps(conf->modName);
   music.loadMusic(conf->modName);
   battle.init(display, &font, &gfx, &hero);
   //SDL_RenderSetIntegerScale(display->renderer, SDL_TRUE);
-  SDL_RenderSetLogicalSize(display->renderer, 640, 400);
+  SDL_RenderSetLogicalSize(display->renderer, display->S(640), display->S(400));
 
   //load save games (if any)
   FILE* f=fopen("Saves/master.sav","rb");
@@ -1858,6 +1859,7 @@ void CDarkages::render(){
   int offX, offY;
   int lowX, lowY;
   int highX, highY;
+  int tileSize = modSettings.tileSize;
   SDL_Rect r;
   //SDL_Rect vp;
 
@@ -1869,6 +1871,7 @@ void CDarkages::render(){
   x = cam.getX();
   y = cam.getY();
 
+  //the camera's own position stays in a fixed 40-per-tile coordinate space regardless of the mod's visual tile size
   offX = x % 40;
   offY = y % 40;
 
@@ -1881,8 +1884,8 @@ void CDarkages::render(){
   lowY = b - 4;
   highY = b + 5+1;
 
-  r.h = 40;
-  r.w = 40;
+  r.h = tileSize;
+  r.w = tileSize;
 
   //printf("A: %d, B: %d, lowX: %d, lowY: %d\n", a, b, lowX, lowY);
 
@@ -1891,10 +1894,10 @@ void CDarkages::render(){
   SDL_RenderClear(display->renderer);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
   for (j = lowY; j<highY; j++){
-    r.y = 40 * (j - lowY) - offY +20;
+    r.y = tileSize * (j - lowY) - display->S(offY) + tileSize/2;
     for (i = lowX; i<highX; i++){
       //printf("tile: %d,%d\n,", i, j);
-      r.x = 40 * (i - lowX) - offX +20;
+      r.x = tileSize * (i - lowX) - display->S(offX) + tileSize/2;
       if (i < 0 || i >= world[curMap].szX || j < 0 || j >= world[curMap].szY){
         SDL_RenderFillRect(display->renderer, &r);
       } else {
@@ -1907,17 +1910,17 @@ void CDarkages::render(){
 
   //special effect to begin game
   if(fadeIn>0){
-    r.x=0; r.y=0; r.w=640; r.h=400;
+    r.x=0; r.y=0; r.w=display->S(640); r.h=display->S(400);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, fadeIn);
     SDL_RenderFillRect(display->renderer, &r);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
-    r.h = 40;
-    r.w = 40;
+    r.h = tileSize;
+    r.w = tileSize;
   }
 
   //draw player
-  r.x = 300;
-  r.y = 180;
+  r.x = display->S(300);
+  r.y = display->S(180);
   SDL_RenderCopy(display->renderer, gfx.player->texture, gfx.player->getTile(playerDir + playerAnim), &r);
 
   //open viewport back up
@@ -1925,30 +1928,30 @@ void CDarkages::render(){
 
   //if dead, paste death image over tiles
   if(hero.hp<1){
-    r.x=0; r.y=0; r.h=400; r.w=640;
+    r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
     SDL_RenderCopy(display->renderer, gfx.death->texture, gfx.death->getTile(0), &r);
   }
 
   //show any endgame screens
   if(eGreyor==4){
-    r.x=0; r.y=0; r.h=400; r.w=640;
+    r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
     SDL_RenderCopy(display->renderer, gfx.endgame1->texture, gfx.endgame1->getTile(0), &r);
   } else if(eGreyor==7){
-    r.x=0; r.y=0; r.h=400; r.w=640;
+    r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
     SDL_RenderCopy(display->renderer, gfx.endgame3->texture, gfx.endgame3->getTile(0), &r);
   } else if(eGreyor == 11){
-    r.x=0; r.y=0; r.h=400; r.w=640;
+    r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
     SDL_RenderCopy(display->renderer, gfx.endgame2->texture, gfx.endgame2->getTile(0), &r);
   }
 
   //render blinds
-  r.x=0; r.y=0; r.h=20; r.w=640;
+  r.x=0; r.y=0; r.h=display->S(20); r.w=display->S(640);
   SDL_RenderFillRect(display->renderer, &r);
-  r.x=0; r.y=0; r.h=400; r.w=20;
+  r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(20);
   SDL_RenderFillRect(display->renderer, &r);
-  r.x=0; r.y=380; r.h=20; r.w=640;
+  r.x=0; r.y=display->S(400)-display->S(20); r.h=display->S(20); r.w=display->S(640);
   SDL_RenderFillRect(display->renderer, &r);
-  r.x=620; r.y=0; r.h=400; r.w=20;
+  r.x=display->S(640)-display->S(20); r.y=0; r.h=display->S(400); r.w=display->S(20);
   SDL_RenderFillRect(display->renderer, &r);
 
   //draw any text
@@ -1973,7 +1976,7 @@ void CDarkages::render(){
   char str[32];
   //sprintf(str, "%d %d,%d||%.2lf,%.2lf:%d  %d,%d  %d", curMap, cam.getTileX(), cam.getTileY(), cam.getdX(),cam.getdY(), world[curMap].getTile(cam.getTileX(), cam.getTileY()), curMap,eBattleCheck, fps);
   sprintf(str, "%d %d,%d", curMap, cam.getX(), cam.getY());
-  font.render(10, 370, str);
+  font.render(display->S(10), display->S(370), str);
   
   SDL_SetRenderTarget(display->renderer, NULL);
   SDL_RenderCopy(display->renderer, canvas, NULL, NULL);
@@ -2017,13 +2020,13 @@ bool CDarkages::renderCredits(){
   SDL_RenderClear(display->renderer);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
 
-  int max=((int)script.text->size()+25) * 16;
-  if(selection/4 > max) return true;
+  int max=((int)script.text->size()+25) * display->S(16);
+  if(display->S(selection/4) > max) return true;
   int y;
   for(size_t i=0; i < script.text->size(); i++){
-    y=(int)i * 16 - selection/4 + 400;
-    if(y > 400) break;
-    if(y > -16) font.render(20, y, script.text->at(i));
+    y=(int)i * display->S(16) - display->S(selection/4) + display->S(400);
+    if(y > display->S(400)) break;
+    if(y > -display->S(16)) font.render(display->S(20), y, script.text->at(i));
   }
   SDL_RenderPresent(display->renderer);
   return false;
@@ -2034,20 +2037,20 @@ void CDarkages::renderMenu(){
   SDL_Rect r;
 
   //Draw Menu
-  renderBox(196, 146, 248, 108);
+  renderBox(display->S(196), display->S(146), display->S(248), display->S(108));
 
   //Draw selection
-  r.x=202; r.y=160 + selection * 16; r.w=236; r.h=16;
+  r.x=display->S(202); r.y=display->S(160) + selection * display->S(16); r.w=display->S(236); r.h=display->S(16);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
   SDL_RenderFillRect(display->renderer, &r);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
 
   //Draw Options
-  font.render(210, 154, "Return To Game");
-  font.render(210, 170, "Save Game");
-  font.render(210, 186, "Load Game");
-  font.render(210, 202, "Options");
-  font.render(210, 218, "Quit");
+  font.render(display->S(210), display->S(154), "Return To Game");
+  font.render(display->S(210), display->S(170), "Save Game");
+  font.render(display->S(210), display->S(186), "Load Game");
+  font.render(display->S(210), display->S(202), "Options");
+  font.render(display->S(210), display->S(218), "Quit");
 }
 
 void CDarkages::renderNew(){
@@ -2056,10 +2059,10 @@ void CDarkages::renderNew(){
   SDL_RenderClear(display->renderer);
 
   //draw player
-  r.w=40;
-  r.h=40;
-  r.x = 300;
-  r.y = 180;
+  r.w=modSettings.tileSize;
+  r.h=modSettings.tileSize;
+  r.x = display->S(300);
+  r.y = display->S(180);
   SDL_RenderCopy(display->renderer, gfx.player->texture, gfx.player->getTile(playerDir + playerAnim), &r);
 
   //draw any text
@@ -2121,21 +2124,21 @@ void CDarkages::renderSpell(){
   int lineCount=0;
   size_t i;
 
-  renderBox(150, 138, 340, 124);
+  renderBox(display->S(150), display->S(138), display->S(340), display->S(124));
 
-  r.w=328; r.h=16; r.x=156; r.y=154 + 16 * selection;
+  r.w=display->S(328); r.h=display->S(16); r.x=display->S(156); r.y=display->S(154) + display->S(16) * selection;
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
   SDL_RenderFillRect(display->renderer, &r);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
 
   for(i=0; i < spellList.size(); i++){
     switch(spellList[i]){
-    case -1: font.render(164, 148 + 16 * lineCount++, "Cancel"); break;
-    case 0: font.render(164, 148 + 16 * lineCount++, "Heal (2 MP)"); break;
-    case 2: font.render(164, 148 + 16 * lineCount++, "Great Heal (7 MP)"); break;
-    case 5: font.render(164, 148 + 16 * lineCount++, "Massive Heal (12 MP)"); break;
-    case 8: font.render(164, 148 + 16 * lineCount++, "Full Heal (20 MP)"); break;
-    case 10: font.render(164, 148 + 16 * lineCount++, "Travel (15 MP)"); break;
+    case -1: font.render(display->S(164), display->S(148) + display->S(16) * lineCount++, "Cancel"); break;
+    case 0: font.render(display->S(164), display->S(148) + display->S(16) * lineCount++, "Heal (2 MP)"); break;
+    case 2: font.render(display->S(164), display->S(148) + display->S(16) * lineCount++, "Great Heal (7 MP)"); break;
+    case 5: font.render(display->S(164), display->S(148) + display->S(16) * lineCount++, "Massive Heal (12 MP)"); break;
+    case 8: font.render(display->S(164), display->S(148) + display->S(16) * lineCount++, "Full Heal (20 MP)"); break;
+    case 10: font.render(display->S(164), display->S(148) + display->S(16) * lineCount++, "Travel (15 MP)"); break;
     default: break;
     }
   }
@@ -2148,80 +2151,80 @@ void CDarkages::renderStats(){
   int lineCount;
 
   //Draw Nameplate
-  renderBox(0, 8, 640, 30);
-  font.render((640 - 16 * (int)strlen(hero.name)) / 2, 10, hero.name);
+  renderBox(0, display->S(8), display->S(640), display->S(30));
+  font.render((display->S(640) - display->S(16) * (int)strlen(hero.name)) / 2, display->S(10), hero.name);
 
   //Draw Player Stats
-  renderBox(0, 40, 370, 158);
-  font.render(16, 42, "Level");
+  renderBox(0, display->S(40), display->S(370), display->S(158));
+  font.render(display->S(16), display->S(42), "Level");
   sprintf(str, "= %d", hero.level);
-  font.render(224, 42, str);
-  font.render(16, 58, "Hit Points");
+  font.render(display->S(224), display->S(42), str);
+  font.render(display->S(16), display->S(58), "Hit Points");
   sprintf(str, "= %d", hero.hp);
-  font.render(224, 58, str);
-  font.render(16, 74, "Max HP");
+  font.render(display->S(224), display->S(58), str);
+  font.render(display->S(16), display->S(74), "Max HP");
   sprintf(str, "= %d", hero.maxHP);
-  font.render(224, 74, str);
-  font.render(16, 90, "Magic Points");
+  font.render(display->S(224), display->S(74), str);
+  font.render(display->S(16), display->S(90), "Magic Points");
   sprintf(str, "= %d", hero.mp);
-  font.render(224, 90, str);
-  font.render(16, 106, "Max MP");
+  font.render(display->S(224), display->S(90), str);
+  font.render(display->S(16), display->S(106), "Max MP");
   sprintf(str, "= %d", hero.maxMP);
-  font.render(224, 106, str);
-  font.render(16, 122, "Experience");
+  font.render(display->S(224), display->S(106), str);
+  font.render(display->S(16), display->S(122), "Experience");
   sprintf(str, "= %d", hero.expr);
-  font.render(224, 122, str);
-  font.render(16, 138, "Strength");
+  font.render(display->S(224), display->S(122), str);
+  font.render(display->S(16), display->S(138), "Strength");
   sprintf(str, "= %d", hero.str);
-  font.render(224, 138, str);
-  font.render(16, 154, "Dexterity");
+  font.render(display->S(224), display->S(138), str);
+  font.render(display->S(16), display->S(154), "Dexterity");
   sprintf(str, "= %d", hero.dex);
-  font.render(224, 154, str);
-  font.render(16, 170, "Wisdom");
+  font.render(display->S(224), display->S(154), str);
+  font.render(display->S(16), display->S(170), "Wisdom");
   sprintf(str, "= %d", hero.wis);
-  font.render(224, 170, str);
+  font.render(display->S(224), display->S(170), str);
 
   //Draw Battle Stats
-  renderBox(0, 200, 370, 78);
-  font.render(16, 202, "Attack Power");
+  renderBox(0, display->S(200), display->S(370), display->S(78));
+  font.render(display->S(16), display->S(202), "Attack Power");
   sprintf(str, "= %d", hero.str / 2 + hero.wStr);
-  font.render(224, 202, str);
-  font.render(16, 218, "Hit Percent");
+  font.render(display->S(224), display->S(202), str);
+  font.render(display->S(16), display->S(218), "Hit Percent");
   sprintf(str, "= %d%%", 60 + hero.dex / 2);
-  font.render(224, 218, str);
-  font.render(16, 234, "Armor Value");
+  font.render(display->S(224), display->S(218), str);
+  font.render(display->S(16), display->S(234), "Armor Value");
   sprintf(str, "= %d", hero.aStr + hero.hStr + hero.sStr);
-  font.render(224, 234, str);
-  font.render(16, 250, "Gold");
+  font.render(display->S(224), display->S(234), str);
+  font.render(display->S(16), display->S(250), "Gold");
   sprintf(str, "= %d", hero.gold);
-  font.render(224, 250, str);
+  font.render(display->S(224), display->S(250), str);
 
   //Draw Armaments
-  renderBox(0, 280, 640, 94);
-  font.render(16, 282, "Weapon");
+  renderBox(0, display->S(280), display->S(640), display->S(94));
+  font.render(display->S(16), display->S(282), "Weapon");
   sprintf(str, "= %s", hero.weapon);
-  font.render(288, 282, str);
-  font.render(16, 298, "Armor");
+  font.render(display->S(288), display->S(282), str);
+  font.render(display->S(16), display->S(298), "Armor");
   sprintf(str, "= %s", hero.armor);
-  font.render(288, 298, str);
-  font.render(16, 314, "Helmet");
+  font.render(display->S(288), display->S(298), str);
+  font.render(display->S(16), display->S(314), "Helmet");
   sprintf(str, "= %s", hero.helm);
-  font.render(288, 314, str);
-  font.render(16, 330, "Shield");
+  font.render(display->S(288), display->S(314), str);
+  font.render(display->S(16), display->S(330), "Shield");
   sprintf(str, "= %s", hero.shield);
-  font.render(288, 330, str);
-  font.render(16, 346, "Medallion Pieces");
+  font.render(display->S(288), display->S(330), str);
+  font.render(display->S(16), display->S(346), "Medallion Pieces");
   sprintf(str, "= %d", hero.medallion);
-  font.render(288, 346, str);
+  font.render(display->S(288), display->S(346), str);
 
   //Draw Spells
-  renderBox(372, 40, 268, 238);
-  font.render(388, 42, "Spells:");
+  renderBox(display->S(372), display->S(40), display->S(268), display->S(238));
+  font.render(display->S(388), display->S(42), "Spells:");
   lineCount=0;
   for(i=0; i<11; i++){
-    if(hero.spells[i]) font.render(404, 58 + 16 * lineCount++, spells[i].name);
+    if(hero.spells[i]) font.render(display->S(404), display->S(58) + display->S(16) * lineCount++, spells[i].name);
   }
-  if(lineCount == 0) font.render(404, 58, "None");
+  if(lineCount == 0) font.render(display->S(404), display->S(58), "None");
 
 }
 
@@ -2230,18 +2233,14 @@ void CDarkages::renderText(){
 
   SDL_Rect r;
   size_t i;
-  string word;
-  string line;
   string curText;
-  int sz;
-  int wsz;
   int lineNum;
   int choiceLine;
   bool bDownArrow=false;
-  int boxH = showShop ? 320 : 130;
+  int boxH = display->S(showShop ? 320 : 130);
   int maxLines = (showEquipShop || showSpellShop) ? 14 : (showShop ? 17 : 5);
 
-  r.w = 640;
+  r.w = display->S(640);
   r.h = boxH;
   r.x = 0;
   r.y = 0;
@@ -2279,73 +2278,42 @@ void CDarkages::renderText(){
 
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
 
-  //Render word by word, applying line breaks as needed.
-  sz = 0;
-  lineNum = 0;
-  word.clear();
+  //Render word by word, applying line breaks as needed, then continue layout below it.
   curText=script.text->at(0);
-  for (i = 0; i < curText.size(); i++){
-    if (curText[i] == ' '){
-      wsz=font.getStringWidth(word);
-      if (sz + wsz>608){
-        //print current line
-        font.render(16, 8+16*lineNum++, line);
-        line = word;
-        line += " ";
-        sz = wsz + font.getStringWidth(' ');
-      } else {
-        line += word;
-        line += " ";
-        sz += wsz+font.getStringWidth(' ');
-      }
-      word.clear();
-      wsz = 0;
-      continue;
-    }
-    word += curText[i];
-    wsz += font.getStringWidth(curText[i]);
-  }
-
-  if (sz + wsz>608){
-    font.render(16, 8+16 * lineNum++, line);
-    line = word;
-  } else {
-    line += word;
-  }
-  font.render(16, 8+16 * lineNum++, line);
+  lineNum = font.renderWrap(display->S(16), display->S(8), curText, display->S(608), display->S(16));
 
   //special case for user input
   if(showTextInput && script.text->size()==1) {
-    font.render(16, 8 + 16 * lineNum, "You say: ");
-    font.render(160, 8 + 16 * lineNum, userText);
-    font.render(160 + 16 * (int)userText.size(), 8 + 16 * lineNum, "_");
+    font.render(display->S(16), display->S(8) + display->S(16) * lineNum, "You say: ");
+    font.render(display->S(160), display->S(8) + display->S(16) * lineNum, userText);
+    font.render(display->S(160) + display->S(16) * (int)userText.size(), display->S(8) + display->S(16) * lineNum, "_");
   }
 
   //render choices if necessary
   bDownArrow=false;
-  int typeX = 340;
-  int priceX = 600;
+  int typeX = display->S(340);
+  int priceX = display->S(600);
   string priceStr;
   if(showEquipShop){
     lineNum++; //space between shopkeeper dialog and item list
-    font.render(36, 12 + 16 * lineNum, "Equipment");
-    font.render(typeX, 12 + 16 * lineNum, "Type");
+    font.render(display->S(36), display->S(12) + display->S(16) * lineNum, "Equipment");
+    font.render(typeX, display->S(12) + display->S(16) * lineNum, "Type");
     priceStr="Price";
-    font.render(priceX - font.getStringWidth(priceStr), 12 + 16 * lineNum, priceStr);
+    font.render(priceX - font.getStringWidth(priceStr), display->S(12) + display->S(16) * lineNum, priceStr);
     lineNum+=2;
   } else if(showSpellShop){
     lineNum++; //space between shopkeeper dialog and item list
-    font.render(36, 12 + 16 * lineNum, "Spell");
-    font.render(typeX, 12 + 16 * lineNum, "Level");
+    font.render(display->S(36), display->S(12) + display->S(16) * lineNum, "Spell");
+    font.render(typeX, display->S(12) + display->S(16) * lineNum, "Level");
     priceStr="Price";
-    font.render(priceX - font.getStringWidth(priceStr), 12 + 16 * lineNum, priceStr);
+    font.render(priceX - font.getStringWidth(priceStr), display->S(12) + display->S(16) * lineNum, priceStr);
     lineNum+=2;
   }
   SDL_Rect r2;
-  r2.x = 36;
-  r2.y = 16 * lineNum+8;
-  r2.w = 568;
-  r2.h = 4;
+  r2.x = display->S(36);
+  r2.y = display->S(16) * lineNum + display->S(8);
+  r2.w = display->S(568);
+  r2.h = display->S(4);
   if (showEquipShop || showSpellShop) {
     SDL_SetRenderDrawColor(display->renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(display->renderer, &r2);
@@ -2355,30 +2323,30 @@ void CDarkages::renderText(){
     for(i=script.offset; i < script.choices->size();i++){
       if(script.selection==i){
         r.w -= 4;
-        r.h = 16;
+        r.h = display->S(16);
         r.x++;
-        r.y = 18 + 16 * lineNum;
+        r.y = display->S(18) + display->S(16) * lineNum;
         SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
         SDL_RenderFillRect(display->renderer, &r);
         SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
       }
       if(showEquipShop && i>=1 && (i-1) < curShopItems.size()){
         da1item* it = shopItemData(curShopItems[i-1]);
-        font.render(36, 12 + 16 * lineNum, script.choices->at(i).text);
-        font.render(typeX, 12 + 16 * lineNum, shopItemTypeName(curShopItems[i-1].type));
+        font.render(display->S(36), display->S(12) + display->S(16) * lineNum, script.choices->at(i).text);
+        font.render(typeX, display->S(12) + display->S(16) * lineNum, shopItemTypeName(curShopItems[i-1].type));
         if(it != NULL){
           char pbuf[16];
           sprintf(pbuf, "%d", it->cost);
           priceStr=pbuf;
-          font.render(priceX - font.getStringWidth(priceStr), 12 + 16 * lineNum, priceStr);
+          font.render(priceX - font.getStringWidth(priceStr), display->S(12) + display->S(16) * lineNum, priceStr);
         }
         lineNum++;
       } else if(showSpellShop && i>=1 && (i-1) < curSpellItems.size()){
         int idx = curSpellItems[i-1];
         char lbuf[8];
-        font.render(36, 12 + 16 * lineNum, script.choices->at(i).text);
+        font.render(display->S(36), display->S(12) + display->S(16) * lineNum, script.choices->at(i).text);
         sprintf(lbuf, "%d", idx+1);
-        font.render(typeX, 12 + 16 * lineNum, string(lbuf));
+        font.render(typeX, display->S(12) + display->S(16) * lineNum, string(lbuf));
         if(hero.spells[idx]){
           priceStr="Known";
         } else {
@@ -2386,10 +2354,10 @@ void CDarkages::renderText(){
           sprintf(pbuf, "%d", spells[idx].cost);
           priceStr=pbuf;
         }
-        font.render(priceX - font.getStringWidth(priceStr), 12 + 16 * lineNum, priceStr);
+        font.render(priceX - font.getStringWidth(priceStr), display->S(12) + display->S(16) * lineNum, priceStr);
         lineNum++;
       } else {
-        font.render(36, 12 + 16 * lineNum++, script.choices->at(i).text);
+        font.render(display->S(36), display->S(12) + display->S(16) * lineNum++, script.choices->at(i).text);
       }
       if(lineNum>maxLines){
         if(i<script.choices->size()-1) bDownArrow=true;
@@ -2401,17 +2369,17 @@ void CDarkages::renderText(){
 
   //Draw arrows if necessary
   if(script.offset>0) {
-    r.w=16;
-    r.h=16;
-    r.x = 16;
-    r.y = 18 + 16 * choiceLine;
+    r.w=display->S(16);
+    r.h=display->S(16);
+    r.x = display->S(16);
+    r.y = display->S(18) + display->S(16) * choiceLine;
     SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(1), &r);
   }
   if(bDownArrow){
-    r.w=16;
-    r.h=16;
-    r.x = 16;
-    r.y = (showEquipShop || showSpellShop) ? boxH - 58 : boxH - 34;
+    r.w=display->S(16);
+    r.h=display->S(16);
+    r.x = display->S(16);
+    r.y = (showEquipShop || showSpellShop) ? boxH - display->S(58) : boxH - display->S(34);
     SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(0), &r);
   }
 
@@ -2429,32 +2397,32 @@ void CDarkages::renderText(){
       else { armDelta=delta; showArm=true; }
     }
 
-    r2.y = boxH - 56;
+    r2.y = boxH - display->S(56);
     SDL_SetRenderDrawColor(display->renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(display->renderer, &r2);
 
     if(showEquipShop){
       sprintf(buf, "Attack Power:  %d", hero.str/2 + hero.wStr);
       base=buf;
-      font.render(36, boxH-52, base);
+      font.render(display->S(36), boxH-display->S(52), base);
       if(showAtk){
         sprintf(buf, " %+d", atkDelta);
-        font.render(36 + font.getStringWidth(base), boxH-52, string(buf));
+        font.render(display->S(36) + font.getStringWidth(base), boxH-display->S(52), string(buf));
       }
     }
 
-    font.render(400, boxH-52, "Gold: ");
+    font.render(display->S(400), boxH-display->S(52), "Gold: ");
     sprintf(buf, "%d", hero.gold);
     priceStr=buf;
-    font.render(priceX - font.getStringWidth(priceStr), boxH-52, priceStr);
+    font.render(priceX - font.getStringWidth(priceStr), boxH-display->S(52), priceStr);
 
     if(showEquipShop){
       sprintf(buf, "Armor Value:   %d", hero.aStr + hero.hStr + hero.sStr);
       base=buf;
-      font.render(36, boxH-34, base);
+      font.render(display->S(36), boxH-display->S(34), base);
       if(showArm){
         sprintf(buf, " %+d", armDelta);
-        font.render(36 + font.getStringWidth(base), boxH-34, string(buf));
+        font.render(display->S(36) + font.getStringWidth(base), boxH-display->S(34), string(buf));
       }
     }
   }
@@ -2505,26 +2473,26 @@ void CDarkages::renderTitle(){
 void CDarkages::renderTravelSpell(){
   SDL_Rect r;
 
-  renderBox(75, 39, 170, 116);
+  renderBox(display->S(75), display->S(39), display->S(170), display->S(116));
 
-  r.w=164; r.h=8; r.x=78; r.y=47 + 8 * selection;
+  r.w=display->S(164); r.h=display->S(8); r.x=display->S(78); r.y=display->S(47) + display->S(8) * selection;
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
   SDL_RenderFillRect(display->renderer, &r);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
 
-  font.render(82, 44, "Cancel");
-  font.render(82, 52, "Meadow");
-  font.render(82, 60, "Quinine Tower");
-  font.render(82, 68, "Wisp");
-  font.render(82, 76, "Trok");
-  font.render(82, 84, "Tristen");
-  font.render(82, 92, "Northern Post");
-  font.render(82, 100, "Castle Garrison");
-  font.render(82, 108, "Amber");
-  font.render(82, 116, "Laendlich");
-  font.render(82, 124, "Rhoeyce");
-  font.render(82, 132, "Aaryak");
-  font.render(82, 140, "Floating City");
+  font.render(display->S(82), display->S(44), "Cancel");
+  font.render(display->S(82), display->S(52), "Meadow");
+  font.render(display->S(82), display->S(60), "Quinine Tower");
+  font.render(display->S(82), display->S(68), "Wisp");
+  font.render(display->S(82), display->S(76), "Trok");
+  font.render(display->S(82), display->S(84), "Tristen");
+  font.render(display->S(82), display->S(92), "Northern Post");
+  font.render(display->S(82), display->S(100), "Castle Garrison");
+  font.render(display->S(82), display->S(108), "Amber");
+  font.render(display->S(82), display->S(116), "Laendlich");
+  font.render(display->S(82), display->S(124), "Rhoeyce");
+  font.render(display->S(82), display->S(132), "Aaryak");
+  font.render(display->S(82), display->S(140), "Floating City");
 
 }
 

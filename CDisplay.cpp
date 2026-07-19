@@ -1,4 +1,6 @@
 #include "CDisplay.h"
+#include "CMods.h"
+#include <cmath>
 
 using namespace std;
 
@@ -10,6 +12,7 @@ CDisplay::CDisplay(){
   renderer=NULL;
   //screenSurface = NULL;
   window = NULL;
+  scale=1.0;
 
   txtColors[0].r=255;
   txtColors[0].g=255;
@@ -36,6 +39,9 @@ bool CDisplay::init(sConf& conf) {
 		printf( "SDL could not initialize! SDL Error: %s\n", SDL_GetError() );
 		success = false;
 	}	else	{
+
+    modSettings = CMods::loadModSettings(conf.modName);
+    scale = modSettings.tileSize / 40.0;
 
     int display_count = 0, display_index = 0, mode_index = 0;
     SDL_DisplayMode mode ={SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0};
@@ -105,4 +111,8 @@ bool CDisplay::init(sConf& conf) {
 	}
 
 	return success;
+}
+
+int CDisplay::S(int refValue){
+  return (int)round(refValue * scale);
 }

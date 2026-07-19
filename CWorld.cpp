@@ -1,4 +1,5 @@
 #include "CWorld.h"
+#include "CMods.h"
 
 using namespace std;
 
@@ -28,94 +29,94 @@ int CWorld::checkTile(int map, int x, int y){
   return -1;
 }
 */
-void CWorld::loadMaps(){
+void CWorld::loadMaps(const string& modName){
   CMap m;
-  m.loadMap("Maps/Aaryak.map"); //0
+  m.loadMap(CMods::resolve(modName, "Maps/Aaryak.map").c_str()); //0
   maps.push_back(m);
-  m.loadMap("Maps/Amber.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Amber.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Crystal1.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Crystal1.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/crystal2.map");
+  m.loadMap(CMods::resolve(modName, "Maps/crystal2.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/crystal3.map");
+  m.loadMap(CMods::resolve(modName, "Maps/crystal3.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/dgfort.map"); //5
+  m.loadMap(CMods::resolve(modName, "Maps/dgfort.map").c_str()); //5
   maps.push_back(m);
-  m.loadMap("Maps/Dungeon1.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Dungeon1.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Dungeon2.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Dungeon2.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Dungeon3.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Dungeon3.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Dwarf1.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Dwarf1.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Dwarf2.map"); //10
+  m.loadMap(CMods::resolve(modName, "Maps/Dwarf2.map").c_str()); //10
   maps.push_back(m);
-  m.loadMap("Maps/DwarfA.map");
+  m.loadMap(CMods::resolve(modName, "Maps/DwarfA.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/DwarfB.map");
+  m.loadMap(CMods::resolve(modName, "Maps/DwarfB.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/DwarfC.map");
+  m.loadMap(CMods::resolve(modName, "Maps/DwarfC.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/DwarfD.map");
+  m.loadMap(CMods::resolve(modName, "Maps/DwarfD.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/DwarfE.map"); //15
+  m.loadMap(CMods::resolve(modName, "Maps/DwarfE.map").c_str()); //15
   maps.push_back(m);
-  m.loadMap("Maps/Dwarftwn.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Dwarftwn.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Fcity.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Fcity.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Fcity2.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Fcity2.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Garrison.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Garrison.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Greyor.map"); //20
+  m.loadMap(CMods::resolve(modName, "Maps/Greyor.map").c_str()); //20
   maps.push_back(m);
-  m.loadMap("Maps/Landlich.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Landlich.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/ld1.map");
+  m.loadMap(CMods::resolve(modName, "Maps/ld1.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/ld2.map");
+  m.loadMap(CMods::resolve(modName, "Maps/ld2.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/ld3.map");
+  m.loadMap(CMods::resolve(modName, "Maps/ld3.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/ld4.map"); //25
+  m.loadMap(CMods::resolve(modName, "Maps/ld4.map").c_str()); //25
   maps.push_back(m);
-  m.loadMap("Maps/ld5.map");
+  m.loadMap(CMods::resolve(modName, "Maps/ld5.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Meadow.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Meadow.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/newcont1.map");
+  m.loadMap(CMods::resolve(modName, "Maps/newcont1.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Npost.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Npost.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/outside1.map"); //30
+  m.loadMap(CMods::resolve(modName, "Maps/outside1.map").c_str()); //30
   maps.push_back(m);
-  m.loadMap("Maps/outside2.map");
+  m.loadMap(CMods::resolve(modName, "Maps/outside2.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Qtower1.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Qtower1.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Qtower2.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Qtower2.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Rhoeyce.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Rhoeyce.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Rift1.map"); //35
+  m.loadMap(CMods::resolve(modName, "Maps/Rift1.map").c_str()); //35
   maps.push_back(m);
-  m.loadMap("Maps/Rift2.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Rift2.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Rift3.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Rift3.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Temple.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Temple.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Tristen.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Tristen.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Tristen2.map"); //40
+  m.loadMap(CMods::resolve(modName, "Maps/Tristen2.map").c_str()); //40
   maps.push_back(m);
-  m.loadMap("Maps/Trok.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Trok.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/Wisp.map");
+  m.loadMap(CMods::resolve(modName, "Maps/Wisp.map").c_str());
   maps.push_back(m);
-  m.loadMap("Maps/ld1b.map");
+  m.loadMap(CMods::resolve(modName, "Maps/ld1b.map").c_str());
   maps.push_back(m);
 }

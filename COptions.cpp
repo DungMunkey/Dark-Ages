@@ -133,129 +133,129 @@ bool COptions::logic(optAction a){
 
 void COptions::render(){
   SDL_Rect r;
- 
+
   //SDL_SetRenderTarget(display->renderer, canvas);
   SDL_RenderClear(display->renderer);
 
-  renderBox(20, 20, 600, 360);
+  renderBox(display->S(20), display->S(20), display->S(600), display->S(360));
 
   if(active) {
     SDL_SetRenderDrawColor(display->renderer, 0, 128, 0, 255);
-    r.w=570;
+    r.w=display->S(570);
   } else {
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
-    r.w=260;
+    r.w=display->S(260);
   }
-  r.h=26;
+  r.h=display->S(26);
   switch(selection){
-  case 0:   r.x=36; r.y=40;    break;
-  case 1:   r.x=36; r.y=65;    break;
-  case 2:   r.x=36; r.y=90;    break;
-  case 3:   r.x=36; r.y=115;   break;
-  case 4:   r.x=36; r.y=140;   break;
-  case 5:   r.x=36; r.y=165;   break;
+  case 0:   r.x=display->S(36); r.y=display->S(40);    break;
+  case 1:   r.x=display->S(36); r.y=display->S(65);    break;
+  case 2:   r.x=display->S(36); r.y=display->S(90);    break;
+  case 3:   r.x=display->S(36); r.y=display->S(115);   break;
+  case 4:   r.x=display->S(36); r.y=display->S(140);   break;
+  case 5:   r.x=display->S(36); r.y=display->S(165);   break;
   default:  break;
   }
   SDL_RenderFillRect(display->renderer, &r);
 
   //draw music indicators
   if(selection == 1 && active){
-    r.w=16; r.h=16;
+    r.w=display->S(16); r.h=display->S(16);
     if(tmpVol > 0) {
-      r.x = 400; r.y = 69;
+      r.x = display->S(400); r.y = display->S(69);
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(3), &r);
     }
     if(tmpVol<10){
-      r.x = 590; r.y = 69;
+      r.x = display->S(590); r.y = display->S(69);
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
     }
   }
 
   //draw resolution indicators
   if(selection == 2 && active){
-    r.w=16; r.h=16;
+    r.w=display->S(16); r.h=display->S(16);
     if(tmpScreen > 0) {
-      r.x = 400; r.y = 94;
+      r.x = display->S(400); r.y = display->S(94);
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(3), &r);
     }
     if(tmpScreen<display->screenModes.size() - 1){
-      r.x = 590; r.y = 94;
+      r.x = display->S(590); r.y = display->S(94);
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
     }
   }
 
   //draw fullscreen indicators
   if(selection == 3 && active){
-    r.w=16; r.h=16;
+    r.w=display->S(16); r.h=display->S(16);
     if(tmpFull) {
-      r.x = 400; r.y = 119;
+      r.x = display->S(400); r.y = display->S(119);
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(3), &r);
     } else {
-      r.x = 590; r.y = 119;
+      r.x = display->S(590); r.y = display->S(119);
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
     }
   }
 
   //draw vSync indicators
   if(selection == 4 && active){
-    r.w=16; r.h=16;
+    r.w=display->S(16); r.h=display->S(16);
     if(tmpVSync) {
-      r.x = 400; r.y = 144;
+      r.x = display->S(400); r.y = display->S(144);
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(3), &r);
     } else {
-      r.x = 590; r.y = 144;
+      r.x = display->S(590); r.y = display->S(144);
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
     }
   }
 
   //draw mod indicators
   if(selection == 5 && active){
-    r.w=16; r.h=16;
+    r.w=display->S(16); r.h=display->S(16);
     if(tmpMod > 0) {
-      r.x = 400; r.y = 169;
+      r.x = display->S(400); r.y = display->S(169);
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(3), &r);
     }
     if(tmpMod < (int)mods.size() - 1){
-      r.x = 590; r.y = 169;
+      r.x = display->S(590); r.y = display->S(169);
       SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
     }
   }
 
-  font->render(40, 40, "Return to Game");
-  font->render(40, 65, "Music");
-  r.w = 186; r.h = 24; r.x = 410; r.y = 65;
+  font->render(display->S(40), display->S(40), "Return to Game");
+  font->render(display->S(40), display->S(65), "Music");
+  r.w = display->S(186); r.h = display->S(24); r.x = display->S(410); r.y = display->S(65);
   SDL_SetRenderDrawColor(display->renderer, 255, 255, 255, 255);
   SDL_RenderDrawRect(display->renderer, &r);
   r.x++; r.y++; r.w-=2; r.h-=2;
   SDL_RenderDrawRect(display->renderer, &r);
   for(int i=1; i <= tmpVol; i++){
-    r.w = 16; r.h = 16; r.x = 414 + (i - 1) * 18; r.y = 69;
+    r.w = display->S(16); r.h = display->S(16); r.x = display->S(414) + (i - 1) * display->S(18); r.y = display->S(69);
     SDL_RenderFillRect(display->renderer, &r);
   }
-  font->render(40, 90, "Screen Res:");
-  font->render(430, 90, display->screenModes[tmpScreen].name);
+  font->render(display->S(40), display->S(90), "Screen Res:");
+  font->render(display->S(430), display->S(90), display->screenModes[tmpScreen].name);
 
-  font->render(40, 115, "Fullscreen:");
-  if(tmpFull) font->render(450, 115, "Yes");
-  else font->render(460, 115, "No");
+  font->render(display->S(40), display->S(115), "Fullscreen:");
+  if(tmpFull) font->render(display->S(450), display->S(115), "Yes");
+  else font->render(display->S(460), display->S(115), "No");
 
-  font->render(40, 140, "VSync:");
-  if(tmpVSync) font->render(450, 140, "Yes");
-  else font->render(460, 140, "No");
+  font->render(display->S(40), display->S(140), "VSync:");
+  if(tmpVSync) font->render(display->S(450), display->S(140), "Yes");
+  else font->render(display->S(460), display->S(140), "No");
 
-  font->render(40, 165, "Mod:");
-  font->render(430, 165, mods[tmpMod]);
+  font->render(display->S(40), display->S(165), "Mod:");
+  font->render(display->S(430), display->S(165), mods[tmpMod]);
 
-  font->setFontSize(16);
-  font->render(40, 193, "Mod changes take effect after restarting the game.");
-  font->setFontSize(32);
+  font->setFontSize(display->S(16));
+  font->render(display->S(40), display->S(193), "Mod changes take effect after restarting the game.");
+  font->setFontSize(display->S(32));
 
-  font->render(40, 224, "Keys:");
-  font->render(60, 248, "Cursors = Movement");
-  font->render(60, 272, "SPACE/ENTER = Talk/Action");
-  font->render(60, 296, "C = Cast Spell");
-  font->render(60, 320, "Z = Player Stats");
-  font->render(60, 344, "ESC = Game Menu");
+  font->render(display->S(40), display->S(224), "Keys:");
+  font->render(display->S(60), display->S(248), "Cursors = Movement");
+  font->render(display->S(60), display->S(272), "SPACE/ENTER = Talk/Action");
+  font->render(display->S(60), display->S(296), "C = Cast Spell");
+  font->render(display->S(60), display->S(320), "Z = Player Stats");
+  font->render(display->S(60), display->S(344), "ESC = Game Menu");
 
 
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);

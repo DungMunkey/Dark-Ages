@@ -22,39 +22,39 @@ void CLoadSave::render(){
 
   //Draw Menu
   if(showLoad){
-    renderBox(80, 52, 480, 296);
+    renderBox(display->S(80), display->S(52), display->S(480), display->S(296));
 
     //Draw selection
-    r.x=86; r.y=64 + selection * 40; r.w=468; r.h=32;
+    r.x=display->S(86); r.y=display->S(64) + selection * display->S(40); r.w=display->S(468); r.h=display->S(32);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
     SDL_RenderFillRect(display->renderer, &r);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
 
-    font->render(94, 58, "Cancel");
+    font->render(display->S(94), display->S(58), "Cancel");
     for(i=0; i < 6; i++){
       if(i == 0) sprintf(str, "QuickSave, %d-%d-%d", saves[i].year, saves[i].month + 1, saves[i].day);
       else sprintf(str, "Save %d, %d-%d-%d", i, saves[i].year, saves[i].month + 1, saves[i].day);
-      font->render(94, 98 + i * 40, str);
+      font->render(display->S(94), display->S(98) + i * display->S(40), str);
       sprintf(str, "%s Lv=%d Gold=%d", saves[i].name, saves[i].level, saves[i].gold);
-      font->render(94, 114 + i * 40, str);
+      font->render(display->S(94), display->S(114) + i * display->S(40), str);
     }
 
   } else {
 
-    renderBox(80, 72, 480, 256);
+    renderBox(display->S(80), display->S(72), display->S(480), display->S(256));
 
     //Draw selection
-    r.x=86; r.y=84 + selection * 40; r.w=468; r.h=32;
+    r.x=display->S(86); r.y=display->S(84) + selection * display->S(40); r.w=display->S(468); r.h=display->S(32);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
     SDL_RenderFillRect(display->renderer, &r);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
 
-    font->render(94, 78, "Cancel");
+    font->render(display->S(94), display->S(78), "Cancel");
     for(i=1; i < 6; i++){
       sprintf(str, "Save %d, %d-%d-%d", i, saves[i].year, saves[i].month, saves[i].day);
-      font->render(94, 78 + i * 40, str);
+      font->render(display->S(94), display->S(78) + i * display->S(40), str);
       sprintf(str, "%s Lv=%d Gold=%d", saves[i].name, saves[i].level, saves[i].gold);
-      font->render(94, 94 + i * 40, str);
+      font->render(display->S(94), display->S(94) + i * display->S(40), str);
     }
   }
 }

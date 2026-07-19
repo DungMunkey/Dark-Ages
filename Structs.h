@@ -20,6 +20,15 @@ typedef struct sConf{
   }
 }sConf;
 
+typedef struct sModSettings{
+  int tileSize;
+  int monsterSize;
+  sModSettings(){
+    tileSize=40;
+    monsterSize=100;
+  }
+}sModSettings;
+
 typedef struct da1saves{
   int day;
   int month;

@@ -19,7 +19,7 @@ public:
   CGraphic* endgame3;
   CGraphic* title;
 
-  bool loadGfx(SDL_Renderer* rend, const std::string& modName);
+  bool loadGfx(SDL_Renderer* rend, const std::string& modName, int tileSize, int monsterSize);
 
 private:
   //CGraphic* bldgs[4];
