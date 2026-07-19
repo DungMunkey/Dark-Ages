@@ -1370,7 +1370,7 @@ int CDarkages::checkTile(int map, int x, int y){
   case 108: return -1;
   case 109: return -1;
   case 110: return -1;
-  case 111: return 111;
+  case 111: return -1;
   case 112: return -1;
   case 113: return -1;
   case 114: return -1;
@@ -1794,46 +1794,50 @@ void CDarkages::run(){
         continue;
       }
 
+      if(chMap > -1){
+        cam.blockMovement();
+        cam.clearMovement();
+        changeMap(chMap);
+        chMap = -1;
+        break;
+      }
+
       switch(cam.setMovement()){
       case 0:
         i = checkTile(curMap, cam.getTileX(), cam.getTileY() - 1);
         playerDir = 3;
-        anim = true;
-        if(i > 0) chMap = i;
+        if(i > 0) { chMap = i; anim = true; }
         else if(i < 0) {
           cam.blockMovement();
           step=0;
-        }
+        } else anim = true;
         break;
       case 1:
         i = checkTile(curMap, cam.getTileX() + 1, cam.getTileY());
         playerDir = 2;
-        anim = true;
-        if(i > 0) chMap=i;
+        if(i > 0) { chMap=i; anim = true; }
         else if(i < 0) {
           cam.blockMovement();
           step=0;
-        }
+        } else anim = true;
         break;
       case 2:
         i = checkTile(curMap, cam.getTileX(), cam.getTileY() + 1);
         playerDir = 0;
-        anim = true;
-        if(i > 0) chMap=i;
+        if(i > 0) { chMap=i; anim = true; }
         else if(i < 0) {
           cam.blockMovement();
           step=0;
-        }
+        } else anim = true;
         break;
       case 3:
         i = checkTile(curMap, cam.getTileX() - 1, cam.getTileY());
         playerDir = 1;
-        anim = true;
-        if(i > 0) chMap=i;
+        if(i > 0) { chMap=i; anim = true; }
         else if(i < 0) {
           cam.blockMovement();
           step=0;
-        }
+        } else anim = true;
         break;
       default:
         step=0;
@@ -1845,13 +1849,7 @@ void CDarkages::run(){
         if(doBattle(checkBattle()) == 3) death();
       }
     }
-       
-    if (chMap > -1){
-      cam.blockMovement();
-      cam.clearMovement();
-      changeMap(chMap);
-      chMap = -1;
-    }
+
     if (anim){
       if (playerAnim == 0) playerAnim = 4;
       else playerAnim = 0;
@@ -2350,6 +2348,7 @@ void CDarkages::renderText(){
   } else if(showSpellShop){
     lineNum++; //space between shopkeeper dialog and item list
     font.render(36, 12 + 16 * lineNum, "Spell");
+    font.render(typeX, 12 + 16 * lineNum, "Level");
     priceStr="Price";
     font.render(priceX - font.getStringWidth(priceStr), 12 + 16 * lineNum, priceStr);
     lineNum+=2;
@@ -2388,7 +2387,10 @@ void CDarkages::renderText(){
         lineNum++;
       } else if(showSpellShop && i>=1 && (i-1) < curSpellItems.size()){
         int idx = curSpellItems[i-1];
+        char lbuf[8];
         font.render(36, 12 + 16 * lineNum, script.choices->at(i).text);
+        sprintf(lbuf, "%d", idx+1);
+        font.render(typeX, 12 + 16 * lineNum, string(lbuf));
         if(hero.spells[idx]){
           priceStr="Known";
         } else {

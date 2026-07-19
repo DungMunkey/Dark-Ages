@@ -30,7 +30,8 @@ void CMusic::loadMusic(const string& modName){
   music[DungeonSong] = Mix_LoadMUS(CMods::resolve(modName, "Music/dungeon.ogg").c_str());
   music[TitleSong]   = Mix_LoadMUS(CMods::resolve(modName, "Music/title.ogg").c_str());
   music[TownSong]    = Mix_LoadMUS(CMods::resolve(modName, "Music/town.ogg").c_str());
-  music[WorldSong]   = Mix_LoadMUS(CMods::resolve(modName, "Music/title.ogg").c_str());
+  music[WorldSong]   = Mix_LoadMUS(CMods::resolve(modName, "Music/world.ogg").c_str());
+  if(music[WorldSong] == NULL) music[WorldSong] = Mix_LoadMUS(CMods::resolve(modName, "Music/title.ogg").c_str());
 
   loaded[BattleSong]  = music[BattleSong]  != NULL;
   loaded[DungeonSong] = music[DungeonSong] != NULL;
