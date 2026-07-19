@@ -4,25 +4,18 @@
 using namespace std;
 
 CCamera::CCamera(){
-  moveX=0;
-  moveY=0;
   xPos=0;
   yPos=0;
   dXPos=0;
   dYPos=0;
   maxX=4000;
   maxY=4000;
-  lastTime=SDL_GetTicks();
 
   keyBuf = NULL;
   bKeys[0]=false;
   bKeys[1]=false;
   bKeys[2]=false;
   bKeys[3]=false;
-
-  freq=SDL_GetPerformanceFrequency();
-  t0=SDL_GetPerformanceCounter();
-  speed=0;
 }
 
 CCamera::~CCamera(){
@@ -30,28 +23,32 @@ CCamera::~CCamera(){
 }
 
 void CCamera::blockMovement(){
-  //moveX=0;
-  //moveY=0;
   dXPos=xPos;
   dYPos=yPos;
 }
 
-bool CCamera::bumpCamera(){
-  if(dXPos < xPos) {
-    xPos--;
-    return true;
-  } else if(dXPos>xPos){
-    xPos++;
-    return true;
-  } else if(dYPos<yPos){
-    yPos--;
-    return true;
-  } else if(dYPos>yPos){
-    yPos++;
-    return true;
-  }
-  return false;
+bool CCamera::bumpCamera(double& deltaMs){
+  const double speed = 0.2; //pixels per millisecond (200 px/sec), matches the previous fixed step rate
 
+  double* pos;
+  double* dest;
+  if(xPos != dXPos){ pos=&xPos; dest=&dXPos; }
+  else if(yPos != dYPos){ pos=&yPos; dest=&dYPos; }
+  else return false; //already at rest
+
+  double remaining = *dest - *pos;
+  double absRemaining = remaining < 0 ? -remaining : remaining;
+  double maxDist = speed * deltaMs;
+
+  if(absRemaining <= maxDist){
+    deltaMs -= absRemaining / speed; //only consume the time actually needed to arrive
+    *pos = *dest;
+    return false; //arrived - caller may spend the leftover deltaMs starting a new step this same frame
+  }
+
+  *pos += (remaining > 0 ? maxDist : -maxDist);
+  deltaMs = 0;
+  return true; //still moving; used up the whole remaining frame budget
 }
 
 void CCamera::clearMovement(){
@@ -72,24 +69,24 @@ bool CCamera::getKeyBuf(){
 }
 
 void CCamera::getTileUnderMouse(int mx, int my, int& x, int& y){
-  x=(xPos+mx)/40;
-  y=(yPos+my)/40;
+  x=((int)xPos+mx)/40;
+  y=((int)yPos+my)/40;
 }
 
 int CCamera::getTileX(){
-  return xPos / 40;
+  return (int)xPos / 40;
 }
 
 int CCamera::getTileY(){
-  return yPos / 40;
+  return (int)yPos / 40;
 }
 
 int CCamera::getX(){
-  return xPos;
+  return (int)xPos;
 }
 
 int CCamera::getY(){
-  return yPos;
+  return (int)yPos;
 }
 
 void CCamera::keyDown(int dir){
@@ -104,11 +101,10 @@ void CCamera::keyDown(int dir){
     keyBuf->next=s;
     s=NULL;
   }
-  //setMovement();
 }
 
 void CCamera::keyUp(int dir){
-  bKeys[dir]=false; 
+  bKeys[dir]=false;
   while(keyBuf != NULL){
     if(bKeys[keyBuf->dir] == false){
       sKeypress* s=keyBuf;
@@ -120,84 +116,12 @@ void CCamera::keyUp(int dir){
   }
 }
 
-bool CCamera::scrollCamera(int count){
-  if(moveX == 0 && moveY == 0) return false;
-  /*
-  if(moveX == 0){
-    dXPos=(double)xPos;
-    if(moveY == 0) {
-      //t0=SDL_GetPerformanceCounter();
-      dYPos=(double)yPos;
-      return false;
-    }
-  }else if(moveY==0){
-    dYPos=(double)yPos;
-  }
-  */
-  
-
-  double d=count;
-  d/=6;
-  //printf("%d,%d\n", moveX, moveY);
-  //deltaTime=(SDL_GetPerformanceCounter() - t0)/(double)freq*1000.0;
-  //t0=SDL_GetPerformanceCounter();
-  //speed+=32 * deltaTime;
-  //if(speed < 1) return true;
-  //else speed-=1;
-    //if(count < 24) return true;
-    //count =0;
-  //printf("%.8lf\n", deltaTime);
-  //if(deltaTime < 8) return true;
-  //else t0=SDL_GetPerformanceCounter();
-  //curTime=SDL_GetTicks();
-  //if(curTime - lastTime < 16) return true;
-  //else lastTime=curTime;
-  if(moveX < 0){
-    dXPos-=d;
-    while((int)dXPos < xPos){
-      xPos--;
-      moveX++;
-    }
-    //if(moveX == 0) setMovement();
-    return true;
-  }
-  if(moveX>0){
-    dXPos+=d;
-    if((int)dXPos > xPos){
-      xPos++;
-      moveX--;
-    }
-    //if(moveX==0) setMovement();
-    return true;
-  }
-  if(moveY < 0){
-    dYPos-=d;
-    if((int)dYPos < yPos){
-      yPos--;
-      moveY++;
-    }
-    //if(moveY == 0) setMovement();
-    return true;
-  }
-  if(moveY>0){
-    dYPos+=d;
-    if((int)dYPos > yPos){
-      yPos++;
-      moveY--;
-    }
-    //if(moveY==0) setMovement();
-    return true;
-  }
-  return false;
-}
-
 void CCamera::setMax(int x, int y){
   maxX=x*40;
   maxY=y*40;
 }
 
 int CCamera::setMovement(){
-  //if(moveX != 0 || moveY != 0) return -1;
   if(keyBuf!=NULL){
     switch(keyBuf->dir){
     case 0: dYPos-=40; return 0;
@@ -216,5 +140,3 @@ void CCamera::setPos(int x, int y){
   dXPos=xPos;
   dYPos=yPos;
 }
-
-
