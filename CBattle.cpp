@@ -1,4 +1,5 @@
 #include "CBattle.h"
+#include "CWindow.h"
 
 using namespace std;
 
@@ -499,12 +500,12 @@ void CBattle::render(){
   SDL_RenderClear(display->renderer);
 
   //Draw Title
-  renderBox(display->S(100), display->S(6), display->S(440), display->S(34));
+  CWindow::renderBox(display, display->S(100), display->S(6), display->S(440), display->S(34));
   sprintf(str, "%s Attack!", curMon.name);
   font->render((display->S(640) - font->getStringWidth(str)) / 2, display->S(10), str);
 
   //Display Player stats and options
-  renderBox(display->S(210), display->S(52), display->S(348), display->S(168));
+  CWindow::renderBox(display, display->S(210), display->S(52), display->S(348), display->S(168));
   font->render(display->S(240), display->S(66), hero->name);
   sprintf(str, "HP = %d", hero->hp);
   font->render(display->S(240), display->S(82), str);
@@ -520,7 +521,7 @@ void CBattle::render(){
 
   //Draw Monster - rendered at native size (no stretching); only the frame's position tracks the general UI scale
   int monsterSize = display->modSettings.monsterSize;
-  renderBox(display->S(10), display->S(52), monsterSize+20, monsterSize+20);
+  CWindow::renderBox(display, display->S(10), display->S(52), monsterSize+20, monsterSize+20);
   r.w=monsterSize;  r.h=monsterSize;  r.x = display->S(10)+10;  r.y = display->S(52)+10;
   if(curMon.hp <= curMon.maxHP / 2) SDL_RenderCopy(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx+1), &r);
   else SDL_RenderCopy(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx), &r);
@@ -531,43 +532,14 @@ void CBattle::render(){
   SDL_RenderPresent(display->renderer);
 }
 
-void CBattle::renderBox(int x, int y, int w, int h){
-  SDL_Rect r;
-
-  //Draw Box
-  r.w = w; r.h = h; r.x = x; r.y = y;
-  SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 200);
-  SDL_RenderFillRect(display->renderer, &r);
-  //SDL_SetRenderDrawColor(display->renderer, 64, 64, 64, 255);
-  //SDL_RenderDrawRect(display->renderer, &r);
-  //r.w -= 2; r.h -= 2; r.x++; r.y++;
-  SDL_SetRenderDrawColor(display->renderer, 96, 96, 96, 255);
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2; r.h -= 2; r.x++; r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2; r.h -= 2; r.x++; r.y++;
-  SDL_SetRenderDrawColor(display->renderer, 128, 128, 128, 255);
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2; r.h -= 2; r.x++; r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2; r.h -= 2; r.x++; r.y++;
-  SDL_SetRenderDrawColor(display->renderer, 96, 96, 96, 255);
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2; r.h -= 2; r.x++; r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-  //r.w -= 2; r.h -= 2; r.x++; r.y++;
-  //SDL_SetRenderDrawColor(display->renderer, 64, 64, 64, 255);
-  //SDL_RenderDrawRect(display->renderer, &r);
-  SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
-
-}
+//renderBox() calls in this file now go through CWindow::renderBox(display, ...) - see CWindow.h/.cpp
 
 void CBattle::renderSpell(){
   SDL_Rect r;
   int lineCount=0;
   size_t i;
 
-  renderBox(display->S(150), display->S(80), display->S(342), display->S(242));
+  CWindow::renderBox(display, display->S(150), display->S(80), display->S(342), display->S(242));
 
   r.w=display->S(230); r.h=display->S(16); r.x=display->S(156); r.y=display->S(88) + display->S(16) * spellSelection;
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
@@ -586,7 +558,7 @@ void CBattle::renderText(){
   string curText;
   int lineNum;
 
-  renderBox(0, display->S(180), display->S(640), display->S(170));
+  CWindow::renderBox(display, 0, display->S(180), display->S(640), display->S(170));
 
   //Render word by word, applying line breaks as needed, continuing the line count across each text block.
   lineNum = 0;

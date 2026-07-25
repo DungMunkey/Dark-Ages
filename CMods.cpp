@@ -64,6 +64,11 @@ sModSettings CMods::loadModSettings(const string& modName){
     } else if(_stricmp(key, "MonsterSize") == 0){
       int sz = atoi(val);
       if(sz > 0) s.monsterSize = sz;
+    } else if(_stricmp(key, "HighResBorders") == 0){
+      s.highResBorders = (atoi(val) != 0 || _stricmp(val, "true") == 0 || _stricmp(val, "yes") == 0);
+    } else if(_stricmp(key, "BevelDetail") == 0){
+      int d = atoi(val);
+      if(d > 0) s.bevelDetail = d;
     }
   }
 

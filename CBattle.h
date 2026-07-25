@@ -61,7 +61,6 @@ private:
   void monsterAttack();
   void playerAttack();
   void render();
-  void renderBox(int x, int y, int w, int h);
   void renderSpell();
   void renderText();
   void setHeroSpells();

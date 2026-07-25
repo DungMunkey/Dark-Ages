@@ -215,7 +215,6 @@ private:
   void loadGame(int index);
   bool newGame();
   void render();
-  void renderBox(int x, int y, int w, int h);
   bool renderCredits();
   void renderEquipShop(int shopCase, std::string greeting, std::vector<sShopItem> items);
   void renderMenu();

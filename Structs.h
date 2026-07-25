@@ -23,9 +23,13 @@ typedef struct sConf{
 typedef struct sModSettings{
   int tileSize;
   int monsterSize;
+  bool highResBorders; //true = 1px per bevel band stroke instead of 2px (thinner bevel overall)
+  int bevelDetail;     //multiplies each bevel style's band count for finer gradation (1 = today's look)
   sModSettings(){
     tileSize=40;
     monsterSize=100;
+    highResBorders=false;
+    bevelDetail=1;
   }
 }sModSettings;
 

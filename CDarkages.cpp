@@ -1,4 +1,5 @@
 #include "CDarkages.h"
+#include "CWindow.h"
 
 using namespace std;
 
@@ -1984,36 +1985,7 @@ void CDarkages::render(){
 
 }
 
-void CDarkages::renderBox(int x, int y, int w, int h){
-  SDL_Rect r;
-
-  //Draw Box
-  r.w = w; r.h = h; r.x = x; r.y = y;
-  SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 200);
-  SDL_RenderFillRect(display->renderer, &r);
-  //SDL_SetRenderDrawColor(display->renderer, 64, 64, 64, 255);
-  //SDL_RenderDrawRect(display->renderer, &r);
-  //r.w -= 2; r.h -= 2; r.x++; r.y++;
-  SDL_SetRenderDrawColor(display->renderer, 96, 96, 96, 255);
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2; r.h -= 2; r.x++; r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2; r.h -= 2; r.x++; r.y++;
-  SDL_SetRenderDrawColor(display->renderer, 128, 128, 128, 255);
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2; r.h -= 2; r.x++; r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2; r.h -= 2; r.x++; r.y++;
-  SDL_SetRenderDrawColor(display->renderer, 96, 96, 96, 255);
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2; r.h -= 2; r.x++; r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-  //r.w -= 2; r.h -= 2; r.x++; r.y++;
-  //SDL_SetRenderDrawColor(display->renderer, 64, 64, 64, 255);
-  //SDL_RenderDrawRect(display->renderer, &r);
-  SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
-
-}
+//renderBox() calls in this file now go through CWindow::renderBox(display, ...) - see CWindow.h/.cpp
 
 bool CDarkages::renderCredits(){
 
@@ -2037,7 +2009,7 @@ void CDarkages::renderMenu(){
   SDL_Rect r;
 
   //Draw Menu
-  renderBox(display->S(196), display->S(146), display->S(248), display->S(108));
+  CWindow::renderBox(display, display->S(196), display->S(146), display->S(248), display->S(108));
 
   //Draw selection
   r.x=display->S(202); r.y=display->S(160) + selection * display->S(16); r.w=display->S(236); r.h=display->S(16);
@@ -2124,7 +2096,7 @@ void CDarkages::renderSpell(){
   int lineCount=0;
   size_t i;
 
-  renderBox(display->S(150), display->S(138), display->S(340), display->S(124));
+  CWindow::renderBox(display, display->S(150), display->S(138), display->S(340), display->S(124));
 
   r.w=display->S(328); r.h=display->S(16); r.x=display->S(156); r.y=display->S(154) + display->S(16) * selection;
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
@@ -2151,11 +2123,11 @@ void CDarkages::renderStats(){
   int lineCount;
 
   //Draw Nameplate
-  renderBox(0, display->S(8), display->S(640), display->S(30));
+  CWindow::renderBox(display, 0, display->S(8), display->S(640), display->S(30));
   font.render((display->S(640) - display->S(16) * (int)strlen(hero.name)) / 2, display->S(10), hero.name);
 
   //Draw Player Stats
-  renderBox(0, display->S(40), display->S(370), display->S(158));
+  CWindow::renderBox(display, 0, display->S(40), display->S(370), display->S(158));
   font.render(display->S(16), display->S(42), "Level");
   sprintf(str, "= %d", hero.level);
   font.render(display->S(224), display->S(42), str);
@@ -2185,7 +2157,7 @@ void CDarkages::renderStats(){
   font.render(display->S(224), display->S(170), str);
 
   //Draw Battle Stats
-  renderBox(0, display->S(200), display->S(370), display->S(78));
+  CWindow::renderBox(display, 0, display->S(200), display->S(370), display->S(78));
   font.render(display->S(16), display->S(202), "Attack Power");
   sprintf(str, "= %d", hero.str / 2 + hero.wStr);
   font.render(display->S(224), display->S(202), str);
@@ -2200,7 +2172,7 @@ void CDarkages::renderStats(){
   font.render(display->S(224), display->S(250), str);
 
   //Draw Armaments
-  renderBox(0, display->S(280), display->S(640), display->S(94));
+  CWindow::renderBox(display, 0, display->S(280), display->S(640), display->S(94));
   font.render(display->S(16), display->S(282), "Weapon");
   sprintf(str, "= %s", hero.weapon);
   font.render(display->S(288), display->S(282), str);
@@ -2218,7 +2190,7 @@ void CDarkages::renderStats(){
   font.render(display->S(288), display->S(346), str);
 
   //Draw Spells
-  renderBox(display->S(372), display->S(40), display->S(268), display->S(238));
+  CWindow::renderBox(display, display->S(372), display->S(40), display->S(268), display->S(238));
   font.render(display->S(388), display->S(42), "Spells:");
   lineCount=0;
   for(i=0; i<11; i++){
@@ -2240,43 +2212,11 @@ void CDarkages::renderText(){
   int boxH = display->S(showShop ? 320 : 130);
   int maxLines = (showEquipShop || showSpellShop) ? 14 : (showShop ? 17 : 5);
 
-  r.w = display->S(640);
-  r.h = boxH;
-  r.x = 0;
-  r.y = 0;
-  SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 200);
-  SDL_RenderFillRect(display->renderer, &r);
-
-  SDL_SetRenderDrawColor(display->renderer, 64, 64, 64, 255);
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2;  r.h -= 2;  r.x++;  r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-
-  SDL_SetRenderDrawColor(display->renderer, 96, 96, 96, 255);
-  r.w -= 2;  r.h -= 2;  r.x++;  r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2;  r.h -= 2;  r.x++;  r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-
-  SDL_SetRenderDrawColor(display->renderer, 128, 128, 128, 255);
-  r.w -= 2;  r.h -= 2;  r.x++;  r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2;  r.h -= 2;  r.x++;  r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-
-  SDL_SetRenderDrawColor(display->renderer, 96, 96, 96, 255);
-  r.w -= 2;  r.h -= 2;  r.x++;  r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2;  r.h -= 2;  r.x++;  r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-
-  SDL_SetRenderDrawColor(display->renderer, 64, 64, 64, 255);
-  r.w -= 2;  r.h -= 2;  r.x++;  r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-  r.w -= 2;  r.h -= 2;  r.x++;  r.y++;
-  SDL_RenderDrawRect(display->renderer, &r);
-
-  SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
+  int inset = CWindow::renderBox(display, 0, 0, display->S(640), boxH, BevelRich);
+  r.x = inset;
+  r.y = inset;
+  r.w = display->S(640) - inset*2;
+  r.h = boxH - inset*2;
 
   //Render word by word, applying line breaks as needed, then continue layout below it.
   curText=script.text->at(0);
@@ -2473,7 +2413,7 @@ void CDarkages::renderTitle(){
 void CDarkages::renderTravelSpell(){
   SDL_Rect r;
 
-  renderBox(display->S(75), display->S(39), display->S(170), display->S(116));
+  CWindow::renderBox(display, display->S(75), display->S(39), display->S(170), display->S(116));
 
   r.w=display->S(164); r.h=display->S(8); r.x=display->S(78); r.y=display->S(47) + display->S(8) * selection;
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
@@ -2656,6 +2596,8 @@ void CDarkages::setText(int i){
         eFirewand=6;
       }
     } else if(curMap == 21) { //laendlich banter
+      setRandomBanter();
+    } else if(curMap == 39 || curMap == 40) { //tristen banter
       setRandomBanter();
     } else if(curMap == 41) {//trok welcome
       script.addText("Welcome to Trok!");
