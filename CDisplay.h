@@ -32,7 +32,34 @@ public:
   sModSettings  modSettings;
   double        scale;
 
+  //World canvas (tile-art, native TileSize-scaled) placement, and the separate UI layer's placement -
+  //see computeLayout(). Both are integer multiples of their own reference size, letterboxed to fit
+  //the real screen, so tile art keeps its own best-fit magnification while UI text/borders always use
+  //the same multiplier regardless of which mod's TileSize is loaded.
+  int      canvasW, canvasH;
+  int      worldScale;
+  SDL_Rect worldRect;
+  int      uiScale;
+  SDL_Rect uiRect;
+
+  void setCanvasSize(int w, int h); //stores the world canvas's native pixel size and computes the layout
+  void computeLayout(); //(re)computes worldScale/worldRect/uiScale/uiRect from canvasW/H + current screenWidth/Height - call again after any runtime resolution/fullscreen change
+
+  //Brackets UI-space drawing (text, bevel boxes, selection rects) directly onto the current render
+  //target (expected to be the backbuffer): temporarily repoints S() at uiScale instead of the mod's
+  //native scale, and restricts drawing to uiRect so it lands in the right letterboxed position.
+  void beginUIPass();
+  void endUIPass();
+
+  //Brackets legacy screens (title splash, battle sprites) that still draw mod-native-scaled bitmap
+  //content directly to the backbuffer, the way SDL_RenderSetLogicalSize used to do for every draw
+  //call. Unlike beginUIPass(), this uses SDL's own render scale, since that content's positions
+  //aren't pre-multiplied by worldScale the way S()-based UI coordinates are pre-multiplied by uiScale.
+  void beginCompatPass();
+  void endCompatPass();
+
 private:
+  double savedScale;
 
 
 

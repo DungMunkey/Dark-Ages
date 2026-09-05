@@ -46,6 +46,8 @@ bool COptions::logic(optAction a){
         display->currentScreenMode=tmpScreen;
         conf->w=display->screenModes[tmpScreen].w;
         conf->h=display->screenModes[tmpScreen].h;
+        SDL_GetWindowSize(display->window, &display->screenWidth, &display->screenHeight);
+        display->computeLayout();
       } else if(selection==3){
         if(tmpFull){
           conf->fullScreen=true;
@@ -54,6 +56,10 @@ bool COptions::logic(optAction a){
           conf->fullScreen=false;
           SDL_SetWindowFullscreen(display->window, 0);
         }
+        //FULLSCREEN_DESKTOP resizes to the desktop resolution asynchronously to this call, so re-query
+        //the real size rather than assuming conf->w/h still match it.
+        SDL_GetWindowSize(display->window, &display->screenWidth, &display->screenHeight);
+        display->computeLayout();
       } else if(selection == 4){
         if(tmpVSync){
           conf->vSync=true;
@@ -136,6 +142,11 @@ void COptions::render(){
 
   //SDL_SetRenderTarget(display->renderer, canvas);
   SDL_RenderClear(display->renderer);
+
+  //Pure text/borders/small mod-independent icons - draws directly onto the backbuffer at the UI
+  //layer's own scale (see CDisplay::beginUIPass()), so it's always crisp regardless of the loaded
+  //mod's TileSize.
+  display->beginUIPass();
 
   renderBox(display->S(20), display->S(20), display->S(600), display->S(360));
 
@@ -259,6 +270,8 @@ void COptions::render(){
 
 
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
+
+  display->endUIPass();
 
   //SDL_SetRenderTarget(display->renderer, NULL);
   //SDL_RenderCopy(display->renderer, canvas, NULL, NULL);

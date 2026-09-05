@@ -116,3 +116,54 @@ bool CDisplay::init(sConf& conf) {
 int CDisplay::S(int refValue){
   return (int)round(refValue * scale);
 }
+
+void CDisplay::setCanvasSize(int w, int h){
+  canvasW = w;
+  canvasH = h;
+  computeLayout();
+}
+
+void CDisplay::computeLayout(){
+  //world canvas: its own best-fit integer multiple of the mod's native tile-art resolution
+  worldScale = screenWidth / canvasW;
+  int worldScaleH = screenHeight / canvasH;
+  if(worldScaleH < worldScale) worldScale = worldScaleH;
+  if(worldScale < 1) worldScale = 1;
+  worldRect.w = canvasW * worldScale;
+  worldRect.h = canvasH * worldScale;
+  worldRect.x = (screenWidth - worldRect.w) / 2;
+  worldRect.y = (screenHeight - worldRect.h) / 2;
+
+  //UI layer: its own best-fit integer multiple of the fixed 640x400 reference space, independent of
+  //the mod's tile size, so text/borders are always sized the same regardless of which mod is loaded
+  uiScale = screenWidth / 640;
+  int uiScaleH = screenHeight / 400;
+  if(uiScaleH < uiScale) uiScale = uiScaleH;
+  if(uiScale < 1) uiScale = 1;
+  uiRect.w = 640 * uiScale;
+  uiRect.h = 400 * uiScale;
+  uiRect.x = (screenWidth - uiRect.w) / 2;
+  uiRect.y = (screenHeight - uiRect.h) / 2;
+}
+
+void CDisplay::beginUIPass(){
+  savedScale = scale;
+  scale = uiScale;
+  SDL_RenderSetScale(renderer, 1.0f, 1.0f); //S() does the scaling in software here, so SDL's own scale must stay neutral
+  SDL_RenderSetViewport(renderer, &uiRect);
+}
+
+void CDisplay::endUIPass(){
+  scale = savedScale;
+  SDL_RenderSetViewport(renderer, NULL);
+}
+
+void CDisplay::beginCompatPass(){
+  SDL_RenderSetViewport(renderer, &worldRect);
+  SDL_RenderSetScale(renderer, (float)worldScale, (float)worldScale);
+}
+
+void CDisplay::endCompatPass(){
+  SDL_RenderSetScale(renderer, 1.0f, 1.0f);
+  SDL_RenderSetViewport(renderer, NULL);
+}

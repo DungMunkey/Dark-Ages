@@ -38,8 +38,13 @@ int CTitle::actionEnter(){
 void CTitle::render(){
   SDL_Rect r;
 
-  SDL_RenderClear(display->renderer);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
+  SDL_RenderClear(display->renderer);
+
+  //Still drawn in the mod's own native (worldScale) space, same as the world canvas, since the splash
+  //image is mod-scaled bitmap art. Not yet migrated to the UI layer's crisp, mod-independent text pass
+  //(see CDisplay::beginUIPass()) - a candidate for a future pass, not required for the current fix.
+  display->beginCompatPass();
 
   r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
   SDL_RenderCopy(display->renderer, gfx->title->texture, gfx->title->getTile(0), &r);
@@ -61,6 +66,8 @@ void CTitle::render(){
   r.x = display->S(240);
   r.y = display->S(244) + selection * display->S(30);
   SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
+
+  display->endCompatPass();
 
   SDL_RenderPresent(display->renderer);
 

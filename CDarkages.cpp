@@ -74,12 +74,14 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
   loadSave=NULL;
   conf=c;
 
+  //canvas + layout must exist before init(), since init() sizes the font using display->uiScale/worldScale
+  canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, display->S(640), display->S(400));
+  display->setCanvasSize(display->S(640), display->S(400));
+
   init();
   renderCount=0;
   music.setVolume(conf->vol);
   fadeIn=0;
-
-  canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, display->S(640), display->S(400));
 }
 
 CDarkages::~CDarkages(){
@@ -1496,10 +1498,10 @@ void CDarkages::init(){
   world.loadMaps(conf->modName);
   music.loadMusic(conf->modName);
   battle.init(display, &font, &gfx, &hero);
-  //Forces the canvas->screen blit to an integer multiple (with letterbox/pillarbox bars for the remainder)
-  //instead of a fractional stretch, which is what caused blurry text and scroll jitter at most resolutions.
-  SDL_RenderSetIntegerScale(display->renderer, SDL_TRUE);
-  SDL_RenderSetLogicalSize(display->renderer, display->S(640), display->S(400));
+  //The canvas->screen blit and the UI layer's own blit are now both done manually (see
+  //CDisplay::computeLayout()/worldRect/uiRect), each as an explicit integer-scaled SDL_RenderCopy,
+  //rather than relying on SDL_RenderSetLogicalSize/IntegerScale for the whole renderer. That's what
+  //lets UI text use a different (mod-independent) scale than the world tiles.
 
   //load save games (if any)
   FILE* f=fopen("Saves/master.sav","rb");
@@ -1981,6 +1983,18 @@ void CDarkages::render(){
   r.x=display->S(640)-display->S(20); r.y=0; r.h=display->S(400); r.w=display->S(20);
   SDL_RenderFillRect(display->renderer, &r);
 
+  //world/tile rendering (including the player sprite, death/endgame overlays and the border "blinds"
+  //above) is done onto the canvas at the mod's own native tile-art resolution - that part is unchanged.
+  //Everything below is procedurally-drawn UI content (text, bevel boxes, selection highlights), which
+  //renders separately, directly onto the backbuffer at display->uiScale - a fixed multiplier based on
+  //the reference 640x400 UI space rather than the mod's TileSize, so it stays crisp regardless of which
+  //mod is loaded. See CDisplay::beginUIPass()/computeLayout() for how the two scales are kept separate.
+  SDL_SetRenderTarget(display->renderer, NULL);
+  SDL_RenderClear(display->renderer);
+  SDL_RenderCopy(display->renderer, canvas, NULL, &display->worldRect);
+
+  display->beginUIPass();
+
   //draw any text
   if (showText) renderText();
 
@@ -2004,9 +2018,9 @@ void CDarkages::render(){
   //sprintf(str, "%d %d,%d||%.2lf,%.2lf:%d  %d,%d  %d", curMap, cam.getTileX(), cam.getTileY(), cam.getdX(),cam.getdY(), world[curMap].getTile(cam.getTileX(), cam.getTileY()), curMap,eBattleCheck, fps);
   sprintf(str, "%d %d,%d", curMap, cam.getX(), cam.getY());
   font.render(display->S(10), display->S(370), str);
-  
-  SDL_SetRenderTarget(display->renderer, NULL);
-  SDL_RenderCopy(display->renderer, canvas, NULL, NULL);
+
+  display->endUIPass();
+
   SDL_RenderPresent(display->renderer);
 
 }
@@ -2015,17 +2029,24 @@ void CDarkages::render(){
 
 bool CDarkages::renderCredits(){
 
-  SDL_RenderClear(display->renderer);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
+  SDL_RenderClear(display->renderer);
+
+  display->beginUIPass();
 
   int max=((int)script.text->size()+25) * display->S(16);
-  if(display->S(selection/4) > max) return true;
+  if(display->S(selection/4) > max){
+    display->endUIPass();
+    return true;
+  }
   int y;
   for(size_t i=0; i < script.text->size(); i++){
     y=(int)i * display->S(16) - display->S(selection/4) + display->S(400);
     if(y > display->S(400)) break;
     if(y > -display->S(16)) font.render(display->S(20), y, script.text->at(i));
   }
+
+  display->endUIPass();
   SDL_RenderPresent(display->renderer);
   return false;
 
@@ -2056,15 +2077,21 @@ void CDarkages::renderNew(){
 
   SDL_RenderClear(display->renderer);
 
-  //draw player
+  //player sprite is mod-native-scaled bitmap art, same treatment as the world canvas
+  display->beginCompatPass();
   r.w=modSettings.tileSize;
   r.h=modSettings.tileSize;
   r.x = display->S(300);
   r.y = display->S(180);
   SDL_RenderCopy(display->renderer, gfx.player->texture, gfx.player->getTile(playerDir + playerAnim), &r);
+  display->endCompatPass();
 
   //draw any text
-  if(showText) renderText();
+  if(showText){
+    display->beginUIPass();
+    renderText();
+    display->endUIPass();
+  }
 
   SDL_RenderPresent(display->renderer);
 
@@ -3784,7 +3811,9 @@ int CDarkages::titleLoad(){
     }
 
     SDL_RenderClear(display->renderer);
+    display->beginUIPass();
     loadSave->render();
+    display->endUIPass();
     SDL_RenderPresent(display->renderer);
   }
   showLoad=false;

@@ -499,6 +499,11 @@ void CBattle::render(){
 
   SDL_RenderClear(display->renderer);
 
+  //Monster sprite is mod-native-scaled bitmap art, so this whole screen still draws in the mod's own
+  //(worldScale) space rather than the UI layer's mod-independent scale - not yet migrated, same as
+  //CTitle::render(). See CDisplay::beginCompatPass().
+  display->beginCompatPass();
+
   //Draw Title
   CWindow::renderBox(display, display->S(100), display->S(6), display->S(440), display->S(34));
   sprintf(str, "%s Attack!", curMon.name);
@@ -528,6 +533,8 @@ void CBattle::render(){
 
   if(showText) renderText();
   if(showSpell) renderSpell();
+
+  display->endCompatPass();
 
   SDL_RenderPresent(display->renderer);
 }
