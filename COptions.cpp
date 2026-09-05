@@ -49,7 +49,7 @@ bool COptions::logic(optAction a){
       } else if(selection==3){
         if(tmpFull){
           conf->fullScreen=true;
-          SDL_SetWindowFullscreen(display->window, SDL_WINDOW_FULLSCREEN);
+          SDL_SetWindowFullscreen(display->window, SDL_WINDOW_FULLSCREEN_DESKTOP);
         } else {
           conf->fullScreen=false;
           SDL_SetWindowFullscreen(display->window, 0);

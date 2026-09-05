@@ -1467,12 +1467,38 @@ void CDarkages::init(){
   modSettings = display->modSettings;
   font.setDisplay(display);
   font.loadFont("Font/DA1qb.ttf");
-  font.setFontSize(display->S(32));
+
+  //Font size used to be a flat display->S(32) (tileSize/40 * 32), which shrinks the font's native
+  //render resolution for any mod with a smaller tile size. That shrinkage is invisible on its own,
+  //but SDL_RenderSetIntegerScale (below) then has to apply a *larger* whole-number multiplier to fill
+  //the screen with a smaller canvas, so small-tile mods were magnifying an already-lower-resolution
+  //font more aggressively than the TileSize=40 baseline - the combination is what made text look
+  //blocky at TileSize=32 despite the jitter fix. To compensate, size the font to land on the same
+  //apparent on-screen height as the TileSize=40 baseline would get on this screen, but never let its
+  //native pixel size drop below that baseline (32px) even if the math would ask for smaller.
+  int refOutScale = display->screenWidth / 640;
+  int refOutScaleH = display->screenHeight / 400;
+  if (refOutScaleH < refOutScale) refOutScale = refOutScaleH;
+  if (refOutScale < 1) refOutScale = 1;
+
+  int modCanvasW = display->S(640);
+  int modCanvasH = display->S(400);
+  int modOutScale = display->screenWidth / modCanvasW;
+  int modOutScaleH = display->screenHeight / modCanvasH;
+  if (modOutScaleH < modOutScale) modOutScale = modOutScaleH;
+  if (modOutScale < 1) modOutScale = 1;
+
+  int fontPx = (int)(32.0 * refOutScale / modOutScale + 0.5);
+  if (fontPx < 32) fontPx = 32;
+  font.setFontSize(fontPx);
+
   gfx.loadGfx(display->renderer, conf->modName, modSettings.tileSize, modSettings.monsterSize);
   world.loadMaps(conf->modName);
   music.loadMusic(conf->modName);
   battle.init(display, &font, &gfx, &hero);
-  //SDL_RenderSetIntegerScale(display->renderer, SDL_TRUE);
+  //Forces the canvas->screen blit to an integer multiple (with letterbox/pillarbox bars for the remainder)
+  //instead of a fractional stretch, which is what caused blurry text and scroll jitter at most resolutions.
+  SDL_RenderSetIntegerScale(display->renderer, SDL_TRUE);
   SDL_RenderSetLogicalSize(display->renderer, display->S(640), display->S(400));
 
   //load save games (if any)

@@ -78,7 +78,7 @@ bool CDisplay::init(sConf& conf) {
     screenHeight=screenModes[currentScreenMode].h;
     int wf;
     if(conf.fullScreen) {
-      wf=SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN;
+      wf=SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP;
     } else {
       wf=SDL_WINDOW_SHOWN;
     }
