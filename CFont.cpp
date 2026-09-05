@@ -10,30 +10,18 @@ CFont::CFont() {
   font = NULL;
   display = NULL;
 
-  int i, k;
-
-  for (i = 0; i<65; i++){
-    for (k = 0; k<128; k++){
-      texture[i][k] = NULL;
-    }
-  }
-
   TTF_Init();
 }
 
 CFont::~CFont() {
   display = NULL;
 
-  int i, k;
-
-  for (i = 0; i<65; i++){
-    for (k = 0; k<128; k++){
-      if (texture[i][k] != NULL){
-        SDL_DestroyTexture(texture[i][k]);
-        texture[i][k] = NULL;
-      }
+  for(std::map<int, GlyphSet>::iterator it = glyphCache.begin(); it != glyphCache.end(); ++it){
+    for(int k = 0; k<128; k++){
+      if(it->second.texture[k] != NULL) SDL_DestroyTexture(it->second.texture[k]);
     }
   }
+  glyphCache.clear();
 
   if (font != NULL){
     TTF_CloseFont(font);
@@ -43,19 +31,20 @@ CFont::~CFont() {
 }
 
 int CFont::getFontHeight() {
-  return rect[fontSize][106].h;
+  return glyphCache.at(fontSize).rect[106].h;
 }
 
 int CFont::getStringWidth(char c) {
-  return rect[fontSize][(int)c].w;
+  return glyphCache.at(fontSize).rect[(int)c].w;
 }
 
 int CFont::getStringWidth(char* str) {
   int i = 0;
   int index;
+  const SDL_Rect* r = glyphCache.at(fontSize).rect;
   for (size_t j = 0; j<strlen(str); j++){
     index = (int)str[j];
-    i += rect[fontSize][index].w;
+    i += r[index].w;
   }
   return i;
 }
@@ -65,21 +54,23 @@ int CFont::getStringWidth(string str) {
 }
 
 int CFont::getStringWidthN(const char* str) {
-  int i = rect[fontSize]['8'].w*(int)strlen(str); //digits are treated as monospaced so numeric fields align without jitter
-  i += rect[fontSize][','].w*(((int)strlen(str) - 1) / 3); //account for grouping commas
+  const SDL_Rect* r = glyphCache.at(fontSize).rect;
+  int i = r['8'].w*(int)strlen(str); //digits are treated as monospaced so numeric fields align without jitter
+  i += r[','].w*(((int)strlen(str) - 1) / 3); //account for grouping commas
   return i;
 }
 
 int CFont::getStringWidthN(int num) {
-  if (num == 0) return rect[fontSize]['8'].w;
+  const SDL_Rect* r = glyphCache.at(fontSize).rect;
+  if (num == 0) return r['8'].w;
   int i = 0;
   if (num<0){
-    i += rect[fontSize]['-'].w;
+    i += r['-'].w;
     num = -num;
   }
   int n = (int)log10((double)num) + 1;
-  i += n*rect[fontSize]['8'].w;
-  i += rect[fontSize][','].w*((n - 1) / 3);
+  i += n*r['8'].w;
+  i += r[','].w*((n - 1) / 3);
   return i;
 }
 
@@ -88,22 +79,29 @@ int CFont::getStringWidthN(string str) {
 }
 
 bool CFont::loadFont(const char* fname) {
-  int i, k;
-  for (i = 6; i<65; i++){
-    font = TTF_OpenFont(fname, i);
-    if (font == NULL) return false;
-    for (k = 32; k<127; k++){
-      if (!setText((char)k, texture[i][k])) {
-        TTF_CloseFont(font);
-        font = NULL;
-        return false;
-      }
-      SDL_QueryTexture(texture[i][k], NULL, NULL, &rect[i][k].w, &rect[i][k].h);
+  fontPath = fname;
+  ensureSize(fontSize);
+  return glyphCache.find(fontSize) != glyphCache.end();
+}
+
+void CFont::ensureSize(int sz) {
+  if (glyphCache.find(sz) != glyphCache.end()) return; //already cached
+
+  font = TTF_OpenFont(fontPath.c_str(), sz);
+  if (font == NULL) return;
+
+  GlyphSet& gs = glyphCache[sz];
+  for (int k = 32; k<127; k++){
+    if (!setText((char)k, gs.texture[k])) {
+      TTF_CloseFont(font);
+      font = NULL;
+      glyphCache.erase(sz);
+      return;
     }
-    TTF_CloseFont(font);
-    font = NULL;
+    SDL_QueryTexture(gs.texture[k], NULL, NULL, &gs.rect[k].w, &gs.rect[k].h);
   }
-  return true;
+  TTF_CloseFont(font);
+  font = NULL;
 }
 
 void CFont::render(int x, int y, char* str, int color, bool rotate) {
@@ -113,23 +111,24 @@ void CFont::render(int x, int y, char* str, int color, bool rotate) {
   int posY = y;
   SDL_Rect r;
   SDL_Point p;
+  GlyphSet& gs = glyphCache.at(fontSize);
 
   for (i = 0; i<strlen(str); i++){
     index = (int)str[i];
 
-    SDL_SetTextureColorMod(texture[fontSize][index], display->txtColors[color].r, display->txtColors[color].g, display->txtColors[color].b);
+    SDL_SetTextureColorMod(gs.texture[index], display->txtColors[color].r, display->txtColors[color].g, display->txtColors[color].b);
 
-    r = rect[fontSize][index];
+    r = gs.rect[index];
     r.x = posX;
     r.y = posY;
     if (rotate){
       p.x = 0;
       p.y = 0;
-      SDL_RenderCopyEx(display->renderer, texture[fontSize][index], NULL, &r, -90.0, &p, SDL_FLIP_NONE);
+      SDL_RenderCopyEx(display->renderer, gs.texture[index], NULL, &r, -90.0, &p, SDL_FLIP_NONE);
       posY -= r.w;
     }
     else {
-      SDL_RenderCopy(display->renderer, texture[fontSize][index], NULL, &r);
+      SDL_RenderCopy(display->renderer, gs.texture[index], NULL, &r);
       posX += r.w;
     }
   }
@@ -163,15 +162,16 @@ void CFont::renderInt(int x, int y, int num, int color, bool rotate) {
   }
   if (neg) s = "-" + s;
 
-  int bigSpace = rect[fontSize]['8'].w;
-  int littleSpace = rect[fontSize][','].w;
+  GlyphSet& gs = glyphCache.at(fontSize);
+  int bigSpace = gs.rect['8'].w;
+  int littleSpace = gs.rect[','].w;
   int offset;
   for (i = 0; i<s.size(); i++){
     index = (int)s[i];
 
-    SDL_SetTextureColorMod(texture[fontSize][index], display->txtColors[color].r, display->txtColors[color].g, display->txtColors[color].b);
+    SDL_SetTextureColorMod(gs.texture[index], display->txtColors[color].r, display->txtColors[color].g, display->txtColors[color].b);
 
-    r = rect[fontSize][index];
+    r = gs.rect[index];
     offset = (bigSpace - r.w) / 2;
     r.x = posX;
     r.y = posY;
@@ -179,12 +179,12 @@ void CFont::renderInt(int x, int y, int num, int color, bool rotate) {
     if (rotate){
       p.x = 0;
       p.y = 0;
-      SDL_RenderCopyEx(display->renderer, texture[fontSize][index], NULL, &r, -90.0, &p, SDL_FLIP_NONE);
+      SDL_RenderCopyEx(display->renderer, gs.texture[index], NULL, &r, -90.0, &p, SDL_FLIP_NONE);
       if (s[i] != ',') posY -= bigSpace;
       else posY += littleSpace;
     }
     else {
-      SDL_RenderCopy(display->renderer, texture[fontSize][index], NULL, &r);
+      SDL_RenderCopy(display->renderer, gs.texture[index], NULL, &r);
       if (s[i] != ',') posX += bigSpace;
       else posX += littleSpace;
     }
@@ -200,7 +200,7 @@ int CFont::renderWrap(int x, int y, string str, int wrap, int lineHeight, int co
   string line;
   int szWord = 0;
   int szLine = 0;
-  int szSpace = rect[fontSize][' '].w;
+  int szSpace = glyphCache.at(fontSize).rect[' '].w;
   int lineCount = 0;
 
   while (i < str.size()) {
@@ -223,7 +223,7 @@ int CFont::renderWrap(int x, int y, string str, int wrap, int lineHeight, int co
       szWord = 0;
     } else { //extend the word by this character
       word += str[i];
-      szWord += rect[fontSize][(int)str[i]].w;
+      szWord += glyphCache.at(fontSize).rect[(int)str[i]].w;
     }
     i++;
   }
@@ -252,7 +252,7 @@ void CFont::setDisplay(CDisplay* d) {
 
 void CFont::setFontSize(int sz) {
   if (sz<6) sz = 6;
-  if (sz>64) sz = 64;
+  ensureSize(sz);
   fontSize = sz;
 }
 

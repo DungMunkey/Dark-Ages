@@ -1,6 +1,7 @@
 #ifndef _CFONT_H
 #define _CFONT_H
 
+#include <map>
 #include <string>
 
 #ifdef GCC
@@ -37,10 +38,19 @@ public:
 private:
   CDisplay*   display;
   TTF_Font*   font;
+  std::string fontPath;
 
-  SDL_Texture* texture[65][128]; //[size][character]; one glyph per size/char - color is applied at render time via SDL_SetTextureColorMod
+  //Glyphs are cached lazily per point size instead of eagerly pre-rendering a fixed range (6-64) -
+  //UI text on a high-resolution/high-DPI screen can legitimately need a native size well past 64,
+  //and pre-rendering every size up front for every mod would be wasteful. See ensureSize().
+  struct GlyphSet{
+    SDL_Texture* texture[128]; //[character]; one glyph per char - color is applied at render time via SDL_SetTextureColorMod
+    SDL_Rect     rect[128];
+    GlyphSet(){ for(int i=0;i<128;i++) texture[i]=NULL; }
+  };
+  std::map<int, GlyphSet> glyphCache; //keyed by point size
 
-  SDL_Rect rect[65][128];
+  void ensureSize(int sz); //renders and caches every glyph at this point size, if not already cached
 
   int height;
   int width;

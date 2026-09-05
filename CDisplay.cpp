@@ -1,4 +1,5 @@
 #include "CDisplay.h"
+#include "CFont.h"
 #include "CMods.h"
 #include <cmath>
 
@@ -13,6 +14,7 @@ CDisplay::CDisplay(){
   //screenSurface = NULL;
   window = NULL;
   scale=1.0;
+  font=NULL;
 
   txtColors[0].r=255;
   txtColors[0].g=255;
@@ -94,6 +96,12 @@ bool CDisplay::init(sConf& conf) {
 			printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
 			success = false;
 		}	else	{
+			//SDL_WINDOW_FULLSCREEN_DESKTOP ignores the w/h passed to SDL_CreateWindow and instead takes over
+			//the desktop at its own current resolution, so screenWidth/screenHeight (used everywhere below
+			//to compute the world/UI layout) must be re-queried from the real, resulting window size rather
+			//than trusted from the display-mode list picked above.
+			SDL_GetWindowSize(window, &screenWidth, &screenHeight);
+
 			//Get window surface
 			//screenSurface = SDL_GetWindowSurface(window);
       if(conf.vSync) renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
@@ -144,6 +152,19 @@ void CDisplay::computeLayout(){
   uiRect.h = 400 * uiScale;
   uiRect.x = (screenWidth - uiRect.w) / 2;
   uiRect.y = (screenHeight - uiRect.h) / 2;
+
+  //Canonical font sizes for each pass. worldFontPx mirrors S(32) (the mod's own native scale, same as
+  //before this whole rescale existed), floored so a small-tile mod's font can never render at fewer
+  //native pixels than the well-tested TileSize=40 baseline. uiFontPx is the same idea but built purely
+  //from uiScale, since UI-pass text is never touched by the mod's tile size at all.
+  worldFontPx = S(32);
+  if(worldFontPx < 32) worldFontPx = 32;
+  uiFontPx = (int)(32.0 * uiScale + 0.5);
+  if(uiFontPx < 32) uiFontPx = 32;
+}
+
+void CDisplay::setFont(CFont* f){
+  font = f;
 }
 
 void CDisplay::beginUIPass(){
@@ -151,6 +172,7 @@ void CDisplay::beginUIPass(){
   scale = uiScale;
   SDL_RenderSetScale(renderer, 1.0f, 1.0f); //S() does the scaling in software here, so SDL's own scale must stay neutral
   SDL_RenderSetViewport(renderer, &uiRect);
+  if(font != NULL) font->setFontSize(uiFontPx);
 }
 
 void CDisplay::endUIPass(){
@@ -161,6 +183,7 @@ void CDisplay::endUIPass(){
 void CDisplay::beginCompatPass(){
   SDL_RenderSetViewport(renderer, &worldRect);
   SDL_RenderSetScale(renderer, (float)worldScale, (float)worldScale);
+  if(font != NULL) font->setFontSize(worldFontPx);
 }
 
 void CDisplay::endCompatPass(){

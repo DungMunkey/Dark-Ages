@@ -13,6 +13,8 @@ typedef struct sDAVidMode{
   std::string name;
 }sDAVidMode;
 
+class CFont; //forward declaration only - CFont.h includes CDisplay.h, so this avoids a circular include
+
 class CDisplay {
 public:
   CDisplay();
@@ -42,8 +44,17 @@ public:
   int      uiScale;
   SDL_Rect uiRect;
 
+  //Canonical font sizes for each pass, computed alongside worldScale/uiScale - see computeLayout().
+  //beginUIPass()/beginCompatPass() force the font to the right one every time a pass starts, so
+  //leftover state from whichever *other* context last changed the font size (e.g. Options' or
+  //Title's temporary footnote-text downsizing, which each run under a different scale) can never
+  //leak into the wrong context.
+  int      worldFontPx;
+  int      uiFontPx;
+  void setFont(CFont* f); //called once, after both CDisplay and the (single, shared) CFont exist
+
   void setCanvasSize(int w, int h); //stores the world canvas's native pixel size and computes the layout
-  void computeLayout(); //(re)computes worldScale/worldRect/uiScale/uiRect from canvasW/H + current screenWidth/Height - call again after any runtime resolution/fullscreen change
+  void computeLayout(); //(re)computes worldScale/worldRect/uiScale/uiRect/worldFontPx/uiFontPx from canvasW/H + current screenWidth/Height - call again after any runtime resolution/fullscreen change
 
   //Brackets UI-space drawing (text, bevel boxes, selection rects) directly onto the current render
   //target (expected to be the backbuffer): temporarily repoints S() at uiScale instead of the mod's
@@ -60,9 +71,7 @@ public:
 
 private:
   double savedScale;
-
-
-
+  CFont* font;
 
 };
 
