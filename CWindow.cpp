@@ -42,7 +42,7 @@ static vector<float> buildBevelRamp(int depth, float minBrightness){
   return ramp;
 }
 
-int CWindow::renderBox(CDisplay* display, int x, int y, int w, int h, eBevelStyle style, SDL_Color baseColor){
+int CWindow::renderBox(CDisplay* display, int x, int y, int w, int h, eBevelStyle style, SDL_Color baseColor, bool drawBackground){
   int baseDepth = (style == BevelRich) ? 2 : 1;         //today's Rich = 5 bands (depth 2), Simple = 3 bands (depth 1)
   float minBrightness = (style == BevelRich) ? 0.5f : 0.75f;
 
@@ -57,8 +57,10 @@ int CWindow::renderBox(CDisplay* display, int x, int y, int w, int h, eBevelStyl
 
   SDL_Rect r;
   r.x = x; r.y = y; r.w = w; r.h = h;
-  SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 200);
-  SDL_RenderFillRect(display->renderer, &r);
+  if(drawBackground){
+    SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 200);
+    SDL_RenderFillRect(display->renderer, &r);
+  }
 
   int strokeIndex = 0;
   for(size_t i = 0; i < ramp.size(); i++){

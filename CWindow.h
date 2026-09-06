@@ -31,7 +31,10 @@ public:
   //band-count detail multiplier are read from display->modSettings (HighResBorders/BevelDetail in mod.cfg).
   //Returns the total border inset in pixels (from the outer edge to the innermost stroke), so callers that
   //need to position content precisely inside the drawn border don't have to duplicate the band/thickness math.
-  static int renderBox(CDisplay* display, int x, int y, int w, int h, eBevelStyle style = BevelSimple, SDL_Color baseColor = SDL_Color{128,128,128,255});
+  //drawBackground controls the translucent fill behind the bevel strokes - defaults on for dialog/menu
+  //boxes, but should be turned off for a frame drawn around content that's already been rendered
+  //underneath it (e.g. a picture frame around a sprite), since the fill would otherwise dim it.
+  static int renderBox(CDisplay* display, int x, int y, int w, int h, eBevelStyle style = BevelSimple, SDL_Color baseColor = SDL_Color{128,128,128,255}, bool drawBackground = true);
 };
 
 #endif

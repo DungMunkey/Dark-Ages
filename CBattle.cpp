@@ -523,9 +523,12 @@ void CBattle::render(){
   //which case a monster near the world's edge converts to a screen position outside uiRect's bounds.
   //beginUIPass()'s viewport would silently clip that, so open it back up to the full screen for this
   //one absolute-screen-pixel rect (stroke thickness is unaffected - scale is still neutral here).
+  //No background fill here (drawBackground=false) - this is a picture frame around the monster
+  //sprite already drawn beneath it, not a dialog window, so the usual translucent fill would just
+  //dim the art it's framing.
   monsterFrame = display->compatRectToScreenRect(monsterFrame);
   display->beginUnclippedUI();
-  CWindow::renderBox(display, monsterFrame.x, monsterFrame.y, monsterFrame.w, monsterFrame.h);
+  CWindow::renderBox(display, monsterFrame.x, monsterFrame.y, monsterFrame.w, monsterFrame.h, BevelSimple, SDL_Color{128,128,128,255}, false);
   display->endUnclippedUI();
 
   //Draw Title
