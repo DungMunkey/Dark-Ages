@@ -499,10 +499,21 @@ void CBattle::render(){
 
   SDL_RenderClear(display->renderer);
 
-  //Monster sprite is mod-native-scaled bitmap art, so this whole screen still draws in the mod's own
-  //(worldScale) space rather than the UI layer's mod-independent scale - not yet migrated, same as
-  //CTitle::render(). See CDisplay::beginCompatPass().
+  //Monster sprite is mod-native-scaled bitmap art, and its frame border's size is derived directly
+  //from monsterSize, so both stay in the mod's own (worldScale) space - same reasoning as the world
+  //canvas's own border. See CDisplay::beginCompatPass().
   display->beginCompatPass();
+  int monsterSize = display->modSettings.monsterSize;
+  CWindow::renderBox(display, display->S(10), display->S(52), monsterSize+20, monsterSize+20);
+  r.w=monsterSize;  r.h=monsterSize;  r.x = display->S(10)+10;  r.y = display->S(52)+10;
+  if(curMon.hp <= curMon.maxHP / 2) SDL_RenderCopy(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx+1), &r);
+  else SDL_RenderCopy(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx), &r);
+  display->endCompatPass();
+
+  //Everything else here is procedural UI (borders, text, selection highlight) with no mod-native
+  //bitmap content, so it draws through the UI layer like the rest of the game's menus - consistent
+  //scale/crispness regardless of TileSize, independent of the monster art above.
+  display->beginUIPass();
 
   //Draw Title
   CWindow::renderBox(display, display->S(100), display->S(6), display->S(440), display->S(34));
@@ -524,17 +535,10 @@ void CBattle::render(){
   font->render(display->S(240), display->S(162), "Spell");
   font->render(display->S(240), display->S(178), "Run");
 
-  //Draw Monster - rendered at native size (no stretching); only the frame's position tracks the general UI scale
-  int monsterSize = display->modSettings.monsterSize;
-  CWindow::renderBox(display, display->S(10), display->S(52), monsterSize+20, monsterSize+20);
-  r.w=monsterSize;  r.h=monsterSize;  r.x = display->S(10)+10;  r.y = display->S(52)+10;
-  if(curMon.hp <= curMon.maxHP / 2) SDL_RenderCopy(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx+1), &r);
-  else SDL_RenderCopy(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx), &r);
-
   if(showText) renderText();
   if(showSpell) renderSpell();
 
-  display->endCompatPass();
+  display->endUIPass();
 
   SDL_RenderPresent(display->renderer);
 }
