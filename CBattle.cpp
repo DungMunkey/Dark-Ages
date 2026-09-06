@@ -499,12 +499,15 @@ void CBattle::render(){
 
   SDL_RenderClear(display->renderer);
 
-  //Monster sprite is mod-native-scaled bitmap art, and its frame border's size is derived directly
-  //from monsterSize, so both stay in the mod's own (worldScale) space - same reasoning as the world
-  //canvas's own border. See CDisplay::beginCompatPass().
+  //Monster sprite is mod-native-scaled bitmap art, so it stays in the mod's own (worldScale) space -
+  //same reasoning as the world canvas. Its frame border is procedural (not bitmap), so it's drawn
+  //separately below, in the UI pass, at the UI layer's consistent stroke thickness - only its
+  //position/size (computed here, in compat-pass-local coordinates) is derived from the sprite.
+  SDL_Rect monsterFrame;
   display->beginCompatPass();
   int monsterSize = display->modSettings.monsterSize;
-  CWindow::renderBox(display, display->S(10), display->S(52), monsterSize+20, monsterSize+20);
+  monsterFrame.x = display->S(10); monsterFrame.y = display->S(52);
+  monsterFrame.w = monsterSize+20; monsterFrame.h = monsterSize+20;
   r.w=monsterSize;  r.h=monsterSize;  r.x = display->S(10)+10;  r.y = display->S(52)+10;
   if(curMon.hp <= curMon.maxHP / 2) SDL_RenderCopy(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx+1), &r);
   else SDL_RenderCopy(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx), &r);
@@ -514,6 +517,9 @@ void CBattle::render(){
   //bitmap content, so it draws through the UI layer like the rest of the game's menus - consistent
   //scale/crispness regardless of TileSize, independent of the monster art above.
   display->beginUIPass();
+
+  monsterFrame = display->compatRectToUIRect(monsterFrame);
+  CWindow::renderBox(display, monsterFrame.x, monsterFrame.y, monsterFrame.w, monsterFrame.h);
 
   //Draw Title
   CWindow::renderBox(display, display->S(100), display->S(6), display->S(440), display->S(34));

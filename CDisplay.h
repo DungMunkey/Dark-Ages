@@ -69,6 +69,13 @@ public:
   void beginCompatPass();
   void endCompatPass();
 
+  //Converts a rect expressed in compat-pass local coordinates (as if drawn during beginCompatPass())
+  //into the equivalent rect in UI-pass local coordinates (as if drawn during beginUIPass()) - both
+  //ultimately map to the same physical screen pixels, just via different offsets/scales. Lets a
+  //procedural element (e.g. a bevel border) that must exactly frame a piece of mod-native bitmap art
+  //still draw at the UI layer's consistent stroke thickness instead of the mod's own worldScale.
+  SDL_Rect compatRectToUIRect(SDL_Rect r);
+
 private:
   double savedScale;
   CFont* font;

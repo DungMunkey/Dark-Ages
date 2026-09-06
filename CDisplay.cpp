@@ -190,3 +190,19 @@ void CDisplay::endCompatPass(){
   SDL_RenderSetScale(renderer, 1.0f, 1.0f);
   SDL_RenderSetViewport(renderer, NULL);
 }
+
+SDL_Rect CDisplay::compatRectToUIRect(SDL_Rect r){
+  //compat-pass local -> real screen pixels
+  int screenX = worldRect.x + r.x * worldScale;
+  int screenY = worldRect.y + r.y * worldScale;
+  int screenW = r.w * worldScale;
+  int screenH = r.h * worldScale;
+
+  //real screen pixels -> UI-pass local
+  SDL_Rect result;
+  result.x = (int)round((screenX - uiRect.x) / (double)uiScale);
+  result.y = (int)round((screenY - uiRect.y) / (double)uiScale);
+  result.w = (int)round(screenW / (double)uiScale);
+  result.h = (int)round(screenH / (double)uiScale);
+  return result;
+}
