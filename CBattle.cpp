@@ -518,8 +518,15 @@ void CBattle::render(){
   //scale/crispness regardless of TileSize, independent of the monster art above.
   display->beginUIPass();
 
-  monsterFrame = display->compatRectToUIRect(monsterFrame);
+  //worldRect and uiRect are letterboxed independently, so they're not always the same width - a
+  //small-TileSize mod can make the world's fit wider than the UI layer's fixed 640x400 reference, in
+  //which case a monster near the world's edge converts to a screen position outside uiRect's bounds.
+  //beginUIPass()'s viewport would silently clip that, so open it back up to the full screen for this
+  //one absolute-screen-pixel rect (stroke thickness is unaffected - scale is still neutral here).
+  monsterFrame = display->compatRectToScreenRect(monsterFrame);
+  display->beginUnclippedUI();
   CWindow::renderBox(display, monsterFrame.x, monsterFrame.y, monsterFrame.w, monsterFrame.h);
+  display->endUnclippedUI();
 
   //Draw Title
   CWindow::renderBox(display, display->S(100), display->S(6), display->S(440), display->S(34));

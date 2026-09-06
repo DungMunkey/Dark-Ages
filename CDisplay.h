@@ -70,11 +70,20 @@ public:
   void endCompatPass();
 
   //Converts a rect expressed in compat-pass local coordinates (as if drawn during beginCompatPass())
-  //into the equivalent rect in UI-pass local coordinates (as if drawn during beginUIPass()) - both
-  //ultimately map to the same physical screen pixels, just via different offsets/scales. Lets a
-  //procedural element (e.g. a bevel border) that must exactly frame a piece of mod-native bitmap art
-  //still draw at the UI layer's consistent stroke thickness instead of the mod's own worldScale.
-  SDL_Rect compatRectToUIRect(SDL_Rect r);
+  //into real, absolute screen pixels. Lets a procedural element (e.g. a bevel border) that must
+  //exactly frame a piece of mod-native bitmap art be drawn instead during beginUIPass() - which
+  //leaves SDL's own render scale neutral, so the border's stroke thickness matches every other UI
+  //border's, rather than being magnified by the mod's own worldScale.
+  SDL_Rect compatRectToScreenRect(SDL_Rect r);
+
+  //worldRect and uiRect are each independently letterboxed to their own reference size, so they are
+  //not guaranteed to be the same width/height - a worldRect wider than uiRect means a rect converted
+  //by compatRectToScreenRect() can legitimately fall outside uiRect's bounds (e.g. content near the
+  //world's own left/right edge). Since beginUIPass() clips drawing to uiRect, call this pair around
+  //drawing such a rect to temporarily lift that clip back to the full screen - scale stays neutral
+  //(so stroke thickness is unaffected), only the viewport widens.
+  void beginUnclippedUI();
+  void endUnclippedUI();
 
 private:
   double savedScale;

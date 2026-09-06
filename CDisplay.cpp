@@ -191,18 +191,19 @@ void CDisplay::endCompatPass(){
   SDL_RenderSetViewport(renderer, NULL);
 }
 
-SDL_Rect CDisplay::compatRectToUIRect(SDL_Rect r){
-  //compat-pass local -> real screen pixels
-  int screenX = worldRect.x + r.x * worldScale;
-  int screenY = worldRect.y + r.y * worldScale;
-  int screenW = r.w * worldScale;
-  int screenH = r.h * worldScale;
-
-  //real screen pixels -> UI-pass local
+SDL_Rect CDisplay::compatRectToScreenRect(SDL_Rect r){
   SDL_Rect result;
-  result.x = (int)round((screenX - uiRect.x) / (double)uiScale);
-  result.y = (int)round((screenY - uiRect.y) / (double)uiScale);
-  result.w = (int)round(screenW / (double)uiScale);
-  result.h = (int)round(screenH / (double)uiScale);
+  result.x = worldRect.x + r.x * worldScale;
+  result.y = worldRect.y + r.y * worldScale;
+  result.w = r.w * worldScale;
+  result.h = r.h * worldScale;
   return result;
+}
+
+void CDisplay::beginUnclippedUI(){
+  SDL_RenderSetViewport(renderer, NULL);
+}
+
+void CDisplay::endUnclippedUI(){
+  SDL_RenderSetViewport(renderer, &uiRect);
 }
