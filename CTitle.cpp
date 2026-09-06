@@ -41,10 +41,11 @@ void CTitle::render(){
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
   SDL_RenderClear(display->renderer);
 
-  //Still drawn in the mod's own native (worldScale) space, same as the world canvas, since the splash
-  //image is mod-scaled bitmap art. Not yet migrated to the UI layer's crisp, mod-independent text pass
-  //(see CDisplay::beginUIPass()) - a candidate for a future pass, not required for the current fix.
-  display->beginCompatPass();
+  //The splash image is a fixed 640x400 asset (identical across every mod, not resized per TileSize the
+  //way tile/sprite art is), so unlike the battle/character-creation screens it has no mod-native
+  //resolution worth protecting - it draws through the UI layer at uiScale, same as the text/icon it's
+  //composited with, and gets the biggest crisp integer-scaled fit for whatever resolution is active.
+  display->beginUIPass();
 
   r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
   SDL_RenderCopy(display->renderer, gfx->title->texture, gfx->title->getTile(0), &r);
@@ -67,7 +68,7 @@ void CTitle::render(){
   r.y = display->S(244) + selection * display->S(30);
   SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
 
-  display->endCompatPass();
+  display->endUIPass();
 
   SDL_RenderPresent(display->renderer);
 
