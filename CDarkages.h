@@ -211,6 +211,7 @@ private:
   std::string shopItemTypeName(eShopItemType type);
   void death();
   int  doBattle(int index);
+  int heroTile(int dir, int frame); //maps a direction (0-3) + walk-cycle frame index into gfx.player's tile index - see CDarkages.cpp for the sheet layout convention
   void init();
   void loadGame(int index);
   bool newGame();

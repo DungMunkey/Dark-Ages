@@ -25,11 +25,13 @@ typedef struct sModSettings{
   int monsterSize;
   bool highResBorders; //true = 1px per bevel band stroke instead of 2px (thinner bevel overall)
   int bevelDetail;     //multiplies each bevel style's band count for finer gradation (1 = today's look)
+  int heroWalkFrames;  //walk-cycle frames per direction in Gfx/DA1HeroL.bmp (2 = today's two-frame gait)
   sModSettings(){
     tileSize=40;
     monsterSize=100;
     highResBorders=false;
     bevelDetail=1;
+    heroWalkFrames=2;
   }
 }sModSettings;
 

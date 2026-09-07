@@ -1850,8 +1850,7 @@ void CDarkages::run(){
     }
 
     if (anim){
-      if (playerAnim == 0) playerAnim = 4;
-      else playerAnim = 0;
+      playerAnim = (playerAnim + 1) % modSettings.heroWalkFrames;
       anim = false;
     }
     render();
@@ -1859,6 +1858,17 @@ void CDarkages::run(){
 
   }
 
+}
+
+//Gfx/DA1HeroL.bmp is always a 16-column tile sheet (see CGraphic::createTiles()). Each direction gets
+//its own column, with successive walk-cycle frames stacked downward in that column ("reading down"
+//the sheet) - dir 0-3 use columns 0-3 for frames 0-7, then columns 4-7 for frames 8-15, and so on in
+//groups of 8 rows x 4 columns, matching how a mod author would lay the frames out in an image editor.
+int CDarkages::heroTile(int dir, int frame){
+  int block = frame / 8;
+  int row = frame % 8;
+  int col = dir + block * 4;
+  return row * 16 + col;
 }
 
 void CDarkages::render(){
@@ -1930,7 +1940,7 @@ void CDarkages::render(){
   //draw player
   r.x = display->S(300);
   r.y = display->S(180);
-  SDL_RenderCopy(display->renderer, gfx.player->texture, gfx.player->getTile(playerDir + playerAnim), &r);
+  SDL_RenderCopy(display->renderer, gfx.player->texture, gfx.player->getTile(heroTile(playerDir, playerAnim)), &r);
 
   //open viewport back up
   //SDL_RenderSetViewport(display->renderer, &vp);
@@ -2063,7 +2073,7 @@ void CDarkages::renderNew(){
   r.h=modSettings.tileSize;
   r.x = display->S(300);
   r.y = display->S(180);
-  SDL_RenderCopy(display->renderer, gfx.player->texture, gfx.player->getTile(playerDir + playerAnim), &r);
+  SDL_RenderCopy(display->renderer, gfx.player->texture, gfx.player->getTile(heroTile(playerDir, playerAnim)), &r);
   display->endCompatPass();
 
   //draw any text

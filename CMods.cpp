@@ -69,6 +69,9 @@ sModSettings CMods::loadModSettings(const string& modName){
     } else if(_stricmp(key, "BevelDetail") == 0){
       int d = atoi(val);
       if(d > 0) s.bevelDetail = d;
+    } else if(_stricmp(key, "HeroWalkFrames") == 0){
+      int f = atoi(val);
+      if(f > 0) s.heroWalkFrames = (f > 32) ? 32 : f; //DA1HeroL.bmp is 16 columns wide, 4 per direction block - 32 is as many 8-row blocks as that supports
     }
   }
 
