@@ -72,6 +72,13 @@ sModSettings CMods::loadModSettings(const string& modName){
     } else if(_stricmp(key, "HeroWalkFrames") == 0){
       int f = atoi(val);
       if(f > 0) s.heroWalkFrames = (f > 32) ? 32 : f; //DA1HeroL.bmp is 16 columns wide, 4 per direction block - 32 is as many 8-row blocks as that supports
+    } else if(_stricmp(key, "SolidTiles") == 0){
+      //comma-separated list of map-tile values to additionally treat as impassable - see CDarkages::checkTile()
+      char* tok = strtok(val, ",");
+      while(tok != NULL){
+        s.solidTiles.push_back(atoi(tok));
+        tok = strtok(NULL, ",");
+      }
     }
   }
 

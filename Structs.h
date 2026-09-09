@@ -2,6 +2,7 @@
 #define _DASTRUCTS_H
 
 #include <cstring>
+#include <vector>
 
 typedef struct sConf{
   int w;
@@ -26,6 +27,7 @@ typedef struct sModSettings{
   bool highResBorders; //true = 1px per bevel band stroke instead of 2px (thinner bevel overall)
   int bevelDetail;     //multiplies each bevel style's band count for finer gradation (1 = today's look)
   int heroWalkFrames;  //walk-cycle frames per direction in Gfx/DA1HeroL.bmp (2 = today's two-frame gait)
+  std::vector<int> solidTiles; //extra impassable map-tile values (mod.cfg's SolidTiles), on top of CDarkages::checkTile()'s built-in table - same numbering as the raw values stored in .map files
   sModSettings(){
     tileSize=40;
     monsterSize=100;

@@ -1290,7 +1290,16 @@ int CDarkages::checkBattle(){
 }
 
 int CDarkages::checkTile(int map, int x, int y){
-  switch (world[map].getTile(x, y)){
+  int tile = world[map].getTile(x, y);
+
+  //mod.cfg's SolidTiles - lets a mod mark tiles impassable on top of the built-in table below without
+  //needing an engine change. Checked first so it always takes effect even for a tile ID this switch
+  //doesn't otherwise mention.
+  for(size_t i = 0; i < modSettings.solidTiles.size(); i++){
+    if(modSettings.solidTiles[i] == tile) return -1;
+  }
+
+  switch (tile){
   case 0: return -1;
   case 2:
   case 3:
