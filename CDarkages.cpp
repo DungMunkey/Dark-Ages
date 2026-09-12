@@ -1340,7 +1340,7 @@ int CDarkages::checkTile(int map, int x, int y){
   case 57: return -1;
   case 58: return 58;
   case 59: return 59;
-  case 60: return 60;
+  case 60: return -1; //solid - unlike 58/59/61, changeMap() has no destination logic for this tile
   case 61: return 61;
   case 62: return -1;
   case 63: return -1;
