@@ -79,6 +79,14 @@ sModSettings CMods::loadModSettings(const string& modName){
         s.solidTiles.push_back(atoi(tok));
         tok = strtok(NULL, ",");
       }
+    } else if(_stricmp(key, "HeroIdleAnimations") == 0){
+      //comma-separated frame count per idle animation, e.g. "12,16,8" = 3 animations - see Gfx/DA1HeroIdle.bmp
+      char* tok = strtok(val, ",");
+      while(tok != NULL){
+        int f = atoi(tok);
+        if(f > 0) s.heroIdleAnimations.push_back(f);
+        tok = strtok(NULL, ",");
+      }
     }
   }
 

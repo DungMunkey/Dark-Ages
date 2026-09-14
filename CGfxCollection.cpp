@@ -13,6 +13,7 @@ CGfxCollection::CGfxCollection(){
   endgame2=NULL;
   endgame3=NULL;
   title=NULL;
+  heroIdle=NULL;
 }
 
 CGfxCollection::~CGfxCollection(){
@@ -25,9 +26,10 @@ CGfxCollection::~CGfxCollection(){
   if(endgame2 != NULL) delete endgame2;
   if(endgame3 != NULL) delete endgame3;
   if(title != NULL) delete title;
+  if(heroIdle != NULL) delete heroIdle;
 }
 
-bool CGfxCollection::loadGfx(SDL_Renderer *rend, const string& modName, int tileSize, int monsterSize){
+bool CGfxCollection::loadGfx(SDL_Renderer *rend, const string& modName, int tileSize, int monsterSize, bool hasIdleAnimations){
   if(tiles != NULL) delete tiles;
   tiles = new CGraphic(CMods::resolve(modName, "Gfx/DA1TilesL.bmp").c_str(), rend);
   tiles->createTiles(tileSize, tileSize);
@@ -63,6 +65,21 @@ bool CGfxCollection::loadGfx(SDL_Renderer *rend, const string& modName, int tile
   if(title != NULL) delete title;
   title = new CGraphic(CMods::resolve(modName, "Gfx/datitle.bmp").c_str(), rend);
   title->createTiles();
+
+  //Idle animations are a mod-only feature (the base game has none), so this deliberately does NOT use
+  //CMods::resolve()'s fall-back-to-base-game behavior - it's only ever loaded from inside the mod's own
+  //folder, and only attempted at all when the mod actually declared HeroIdleAnimations in mod.cfg.
+  if(heroIdle != NULL) delete heroIdle;
+  heroIdle = NULL;
+  if(hasIdleAnimations){
+    string idlePath = "Mods/" + modName + "/Gfx/DA1HeroIdle.bmp";
+    CGraphic* g = new CGraphic(idlePath.c_str(), rend, true, 0, 0, 0);
+    if(g->texture != NULL && g->createTiles(tileSize, tileSize)){
+      heroIdle = g;
+    } else {
+      delete g; //missing/bad file - idle animations are simply skipped rather than crashing on a null texture
+    }
+  }
 
   return true;
 }

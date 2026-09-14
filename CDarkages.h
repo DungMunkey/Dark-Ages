@@ -127,6 +127,11 @@ private:
   int multiFight;
   int playerDir;
   int playerAnim;
+  bool idlePlaying;          //true while an idle animation (mod-only, see HeroIdleAnimations) is playing in place of normal walk-frame rendering
+  int idleAnimIndex;         //which entry of modSettings.heroIdleAnimations is currently playing
+  int idleFrame;             //current frame within that animation
+  unsigned int idleTicks;    //ms since last input activity; triggers an idle animation once it crosses idleTimeoutMs
+  unsigned int idleFrameTicks; //ms accumulator for advancing idleFrame at idleFrameMs
   int selection;
   bool showCredits;
   bool showMenu;
@@ -212,6 +217,8 @@ private:
   void death();
   int  doBattle(int index);
   int heroTile(int dir, int frame); //maps a direction (0-3) + walk-cycle frame index into gfx.player's tile index - see CDarkages.cpp for the sheet layout convention
+  int idleTile(int animIndex, int frame); //maps an idle-animation index + frame index into gfx.heroIdle's tile index
+  void updateIdleAnimation(unsigned int aTicks, bool blockingUIOpen); //advances the idle countdown/animation by aTicks ms; blockingUIOpen suppresses idle entirely while a menu/dialogue/credits screen is up
   void init();
   void loadGame(int index);
   bool newGame();

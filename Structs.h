@@ -28,6 +28,7 @@ typedef struct sModSettings{
   int bevelDetail;     //multiplies each bevel style's band count for finer gradation (1 = today's look)
   int heroWalkFrames;  //walk-cycle frames per direction in Gfx/DA1HeroL.bmp (2 = today's two-frame gait)
   std::vector<int> solidTiles; //extra impassable map-tile values (mod.cfg's SolidTiles), on top of CDarkages::checkTile()'s built-in table - same numbering as the raw values stored in .map files
+  std::vector<int> heroIdleAnimations; //mod.cfg's HeroIdleAnimations - frame count per idle animation, e.g. "12,16,8" = 3 animations. Empty = feature off (base game has none). See Gfx/DA1HeroIdle.bmp convention: one row per animation, frames left-to-right within that row.
   sModSettings(){
     tileSize=40;
     monsterSize=100;

@@ -18,8 +18,9 @@ public:
   CGraphic* endgame2;
   CGraphic* endgame3;
   CGraphic* title;
+  CGraphic* heroIdle; //NULL unless the mod declares HeroIdleAnimations - see loadGfx()'s hasIdleAnimations param
 
-  bool loadGfx(SDL_Renderer* rend, const std::string& modName, int tileSize, int monsterSize);
+  bool loadGfx(SDL_Renderer* rend, const std::string& modName, int tileSize, int monsterSize, bool hasIdleAnimations);
 
 private:
   //CGraphic* bldgs[4];

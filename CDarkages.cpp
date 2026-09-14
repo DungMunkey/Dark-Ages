@@ -70,6 +70,11 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
   multiFight=0;
   playerDir = 0;
   playerAnim = 0;
+  idlePlaying = false;
+  idleAnimIndex = 0;
+  idleFrame = 0;
+  idleTicks = 0;
+  idleFrameTicks = 0;
   selection=0;
   loadSave=NULL;
   conf=c;
@@ -1483,7 +1488,7 @@ void CDarkages::init(){
   //Font size is no longer set here - display->beginUIPass()/beginCompatPass() each force it to the
   //right value (uiFontPx or worldFontPx) every time a pass starts, so whichever runs first wins.
 
-  gfx.loadGfx(display->renderer, conf->modName, modSettings.tileSize, modSettings.monsterSize);
+  gfx.loadGfx(display->renderer, conf->modName, modSettings.tileSize, modSettings.monsterSize, !modSettings.heroIdleAnimations.empty());
   world.loadMaps(conf->modName);
   music.loadMusic(conf->modName);
   battle.init(display, &font, &gfx, &hero);
@@ -1727,6 +1732,14 @@ void CDarkages::run(){
     }
 
     while (SDL_PollEvent(&e) != 0) {
+      if(e.type == SDL_KEYDOWN || e.type == SDL_CONTROLLERBUTTONDOWN){
+        idleTicks = 0;
+        if(idlePlaying){
+          idlePlaying = false;
+          playerDir = 0;
+          playerAnim = 0;
+        }
+      }
       if(e.type == SDL_TEXTINPUT){
         if(showTextInput && userText.size() < 16 && e.text.text[0] != ' ') userText+=e.text.text;
       } else if(e.type == SDL_CONTROLLERBUTTONUP) {
@@ -1862,6 +1875,9 @@ void CDarkages::run(){
       playerAnim = (playerAnim + 1) % modSettings.heroWalkFrames;
       anim = false;
     }
+
+    updateIdleAnimation(aTicks, showText||showMenu||showStats||showSpell||showTravel||showLoad||showSave||showCredits);
+
     render();
     renderCount++;
 
@@ -1878,6 +1894,55 @@ int CDarkages::heroTile(int dir, int frame){
   int row = frame % 8;
   int col = dir + block * 4;
   return row * 16 + col;
+}
+
+//Gfx/DA1HeroIdle.bmp (mod-only, see mod.cfg's HeroIdleAnimations) is one row per animation, frames laid
+//out left-to-right within that row - so this is a plain row-major lookup using the sheet's actual width.
+//Clamped to the sheet's real tile count in case mod.cfg's declared frame counts don't match the actual
+//bitmap (e.g. a shorter/narrower sheet than HeroIdleAnimations implies) - a wrong-looking frame beats a
+//read past the end of the tile array.
+int CDarkages::idleTile(int animIndex, int frame){
+  int index = animIndex * gfx.heroIdle->gridCols + frame;
+  int maxIndex = gfx.heroIdle->getTileCount() - 1;
+  if(index > maxIndex) index = maxIndex;
+  if(index < 0) index = 0;
+  return index;
+}
+
+void CDarkages::updateIdleAnimation(unsigned int aTicks, bool blockingUIOpen){
+  const unsigned int idleTimeoutMs = 8000; //inactivity before an idle animation starts (or repeats)
+  const unsigned int idleFrameMs = 180;    //time each idle frame is shown
+
+  if(blockingUIOpen || modSettings.heroIdleAnimations.empty() || gfx.heroIdle == NULL){
+    idleTicks = 0;
+    idlePlaying = false;
+    return;
+  }
+
+  if(idlePlaying){
+    idleFrameTicks += aTicks;
+    while(idleFrameTicks >= idleFrameMs){
+      idleFrameTicks -= idleFrameMs;
+      idleFrame++;
+      if(idleFrame >= modSettings.heroIdleAnimations[idleAnimIndex]){
+        //animation finished - return to the forward-facing standing pose and restart the countdown,
+        //so another (possibly different, plain-uniform-random) animation can play if still idle later
+        idlePlaying = false;
+        playerDir = 0;
+        playerAnim = 0;
+        idleTicks = 0;
+        break;
+      }
+    }
+  } else {
+    idleTicks += aTicks;
+    if(idleTicks >= idleTimeoutMs){
+      idlePlaying = true;
+      idleAnimIndex = rand() % modSettings.heroIdleAnimations.size();
+      idleFrame = 0;
+      idleFrameTicks = 0;
+    }
+  }
 }
 
 void CDarkages::render(){
@@ -1949,7 +2014,11 @@ void CDarkages::render(){
   //draw player
   r.x = display->S(300);
   r.y = display->S(180);
-  SDL_RenderCopy(display->renderer, gfx.player->texture, gfx.player->getTile(heroTile(playerDir, playerAnim)), &r);
+  if(idlePlaying && gfx.heroIdle != NULL){
+    SDL_RenderCopy(display->renderer, gfx.heroIdle->texture, gfx.heroIdle->getTile(idleTile(idleAnimIndex, idleFrame)), &r);
+  } else {
+    SDL_RenderCopy(display->renderer, gfx.player->texture, gfx.player->getTile(heroTile(playerDir, playerAnim)), &r);
+  }
 
   //open viewport back up
   //SDL_RenderSetViewport(display->renderer, &vp);
@@ -2507,6 +2576,11 @@ void CDarkages::reset(){
   multiFight=0;
   playerDir = 0;
   playerAnim = 0;
+  idlePlaying = false;
+  idleAnimIndex = 0;
+  idleFrame = 0;
+  idleTicks = 0;
+  idleFrameTicks = 0;
   selection=0;
 
   //reset player

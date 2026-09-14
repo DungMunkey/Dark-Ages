@@ -7,12 +7,16 @@ CGraphic::CGraphic(){
   texture = NULL;
   surface = NULL;
   tiles = NULL;
+  tileCount = 0;
+  gridCols = 0;
 }
 
 CGraphic::CGraphic(const char* fn, SDL_Renderer* rend, bool alpha, Uint8 r, Uint8 g, Uint8 b){
   texture = NULL;
   surface = NULL;
   tiles = NULL;
+  tileCount = 0;
+  gridCols = 0;
   loadTexture(fn, rend, false, alpha, r, g, b);
 }
 
@@ -70,6 +74,7 @@ bool CGraphic::createTiles(int szX, int szY){
   int x=canX/szX;
   int y=canY/szY;
   tileCount=x*y;
+  gridCols=x;
 
   //allocate memory
   if(tiles!=NULL) delete [] tiles;

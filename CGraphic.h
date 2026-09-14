@@ -13,8 +13,10 @@ public:
   
   SDL_Texture* texture;
   SDL_Surface* surface;
+  int          gridCols; //tile columns from the last createTiles(szX,szY) call - lets a row-major grid (e.g. one row per animation) be addressed as row*gridCols+col
 
   SDL_Rect* getTile(int index);
+  int       getTileCount() const { return tileCount; }
   bool      loadTexture(const char* fn, SDL_Renderer* rend, bool surf=false, bool alpha=false, Uint8 r=0, Uint8 g=0, Uint8 b=0);
   bool      createTiles(int szX, int szY); //slices the actual loaded texture into szX x szY tiles, however many fit
   bool      createTiles(); //treats the entire loaded texture as a single tile
@@ -24,7 +26,7 @@ private:
 
   int       tileCount;
   SDL_Rect* tiles;
-  
+
 
 };
 
