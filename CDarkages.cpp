@@ -1911,7 +1911,7 @@ int CDarkages::idleTile(int animIndex, int frame){
 
 void CDarkages::updateIdleAnimation(unsigned int aTicks, bool blockingUIOpen){
   const unsigned int idleTimeoutMs = 8000; //inactivity before an idle animation starts (or repeats)
-  const unsigned int idleFrameMs = 180;    //time each idle frame is shown
+  const unsigned int idleFrameMs = 150;    //time each idle frame is shown
 
   if(blockingUIOpen || modSettings.heroIdleAnimations.empty() || gfx.heroIdle == NULL){
     idleTicks = 0;
