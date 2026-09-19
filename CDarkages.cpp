@@ -2752,6 +2752,10 @@ void CDarkages::setText(int i){
     script.addChoice("Nothing. I'm just looking around.", 0);
     break;
   case 47: //aaryak tavernkeeper
+    if(curMap != 0){ //Meadow's tavern reuses tile 47 for the two ends of the bar - not a keeper, so say nothing
+      showText=false;
+      return;
+    }
     script.addText("Welcome to the Lion's Den! If you're looking for news, see the Miner's Guild. They govern this town.");
     break;
   case 48: //reyd
@@ -2939,7 +2943,10 @@ void CDarkages::setText(int i){
         SDL_StartTextInput();
         showTextInput=true;
         //add name part here
-      } else if(eHelpDwarf == 6){
+      } else if(eHelpDwarf >= 6){
+        //6 = Diamant already handed over, 7 = lens made, 8 = medallion piece claimed. These must NOT fall through
+        //to the intro below: it sets eHelpDwarf back to 5, which undid the quest and (from 8) let the dwarf
+        //king's medallion++ be earned over and over.
         script.addText("Good luck on your quest!");
       } else {
         script.addText("Well, what have we here? It's been 2 years since the last visitor! Surprised to find someone living up here? Hehehe. I don't think I could leave if I wanted to.");
@@ -2948,7 +2955,9 @@ void CDarkages::setText(int i){
         script.addText("Little did I know that the world would seek me out. Year after year, brave young adventurers would venture into these caves searching for the prized Diamant. None of them ever found it.");
         script.addText("It is the stuff of legends! Ever wonder why no one has seen it in centuries? Because it doesn't exist, right? Ahh, but it does! I've combed these caves all these years.");
         script.addText("I know them backward and forward. And I also know how to get the Diamant!");
-        eHelpDwarf=5;
+        //only advance from the steps that actually lead here (3 = king said to return with a way to break the
+        //crystal, 4 = scientist pointed you to the Crystal Mountains); earlier steps must not be skipped
+        if(eHelpDwarf == 3 || eHelpDwarf == 4) eHelpDwarf=5;
       }
     } else if(curMap == 17 || curMap == 18){ //white wizard
       script.addText("Have you visited the Great Library? Thousands of volumes are contained in its lower vaults. You can peruse some of the volumes on display.");
@@ -3514,7 +3523,10 @@ void CDarkages::setText(int i){
     }
     break;
   case 124: //dungeon medallion piece
-    if(hero.medallion==3 || (hero.medallion==2 && eHelpDwarf<8)){
+    //There is no separate "altar taken" flag, so work it out: pieces held beyond the ones the other two quests
+    //account for (spider = eCave 3+, dwarves = eHelpDwarf 8) must have come from this altar. Counting the total
+    //alone can't tell which sources you've used, and let the altar be looted repeatedly.
+    if(hero.medallion > (eCave >= 3 ? 1 : 0) + (eHelpDwarf >= 8 ? 1 : 0)){
       script.addText("You already have the medallion piece. All that remains on the podium is some glowing astral residue left behind by the piece.");
     } else {
       script.addText("You behold on the alter the third peice of Greyor's evil medallion. Gently, you remove it from its resting place. After a moment's reverence, you decide it is time to hurry out of this hellish pit.");
