@@ -2029,27 +2029,27 @@ void CDarkages::render(){
     SDL_RenderCopy(display->renderer, gfx.death->texture, gfx.death->getTile(0), &r);
   }
 
-  //show any endgame screens
-  if(eGreyor==4){
+  //show any endgame screens. A 16:10 image (the original game's shape) is stretched over the canvas as
+  //always; any other shape (e.g. a square mod image) would be distorted that way, so it is instead drawn
+  //further down at its own aspect ratio over the whole window - see renderEndgameFullWindow().
+  CGraphic* endImg = currentEndgameImage();
+  bool endImgFullWindow = (endImg != NULL && !isCanvasShaped(endImg));
+  if(endImg != NULL && !endImgFullWindow){
     r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
-    SDL_RenderCopy(display->renderer, gfx.endgame1->texture, gfx.endgame1->getTile(0), &r);
-  } else if(eGreyor==7){
-    r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
-    SDL_RenderCopy(display->renderer, gfx.endgame3->texture, gfx.endgame3->getTile(0), &r);
-  } else if(eGreyor == 11){
-    r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
-    SDL_RenderCopy(display->renderer, gfx.endgame2->texture, gfx.endgame2->getTile(0), &r);
+    SDL_RenderCopy(display->renderer, endImg->texture, endImg->getTile(0), &r);
   }
 
-  //render blinds
-  r.x=0; r.y=0; r.h=display->S(20); r.w=display->S(640);
-  SDL_RenderFillRect(display->renderer, &r);
-  r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(20);
-  SDL_RenderFillRect(display->renderer, &r);
-  r.x=0; r.y=display->S(400)-display->S(20); r.h=display->S(20); r.w=display->S(640);
-  SDL_RenderFillRect(display->renderer, &r);
-  r.x=display->S(640)-display->S(20); r.y=0; r.h=display->S(400); r.w=display->S(20);
-  SDL_RenderFillRect(display->renderer, &r);
+  //render blinds (skipped while a full-window endgame image is up, since it doesn't sit inside this frame)
+  if(!endImgFullWindow){
+    r.x=0; r.y=0; r.h=display->S(20); r.w=display->S(640);
+    SDL_RenderFillRect(display->renderer, &r);
+    r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(20);
+    SDL_RenderFillRect(display->renderer, &r);
+    r.x=0; r.y=display->S(400)-display->S(20); r.h=display->S(20); r.w=display->S(640);
+    SDL_RenderFillRect(display->renderer, &r);
+    r.x=display->S(640)-display->S(20); r.y=0; r.h=display->S(400); r.w=display->S(20);
+    SDL_RenderFillRect(display->renderer, &r);
+  }
 
   //world/tile rendering (including the player sprite, death/endgame overlays and the border "blinds"
   //above) is done onto the canvas at the mod's own native tile-art resolution - that part is unchanged.
@@ -2060,6 +2060,9 @@ void CDarkages::render(){
   SDL_SetRenderTarget(display->renderer, NULL);
   SDL_RenderClear(display->renderer);
   SDL_RenderCopy(display->renderer, canvas, NULL, &display->worldRect);
+
+  //non-16:10 endgame image goes over the whole window, under any dialogue text drawn below
+  if(endImgFullWindow) renderEndgameFullWindow(endImg);
 
   display->beginUIPass();
 
@@ -2094,6 +2097,47 @@ void CDarkages::render(){
 }
 
 //renderBox() calls in this file now go through CWindow::renderBox(display, ...) - see CWindow.h/.cpp
+
+//Which endgame image, if any, the current eGreyor event stage calls for
+CGraphic* CDarkages::currentEndgameImage(){
+  if(eGreyor == 4) return gfx.endgame1;
+  if(eGreyor == 7) return gfx.endgame3;
+  if(eGreyor == 11) return gfx.endgame2;
+  return NULL;
+}
+
+//True when g is exactly 16:10 (the shape of the world canvas and of the original game's endgame art)
+bool CDarkages::isCanvasShaped(CGraphic* g){
+  SDL_Rect* t = g->getTile(0);
+  return t != NULL && t->w * 10 == t->h * 16;
+}
+
+//Draws g scaled to the largest size that fits the whole window with its aspect ratio preserved, centered,
+//with black bars on whichever axis is left over. Draws in raw backbuffer coordinates (no viewport/scale),
+//so it must be called between the canvas copy and beginUIPass(). Linear filtering is requested for this
+//texture only: the window is rarely an integer multiple of the art, and the game-wide nearest-neighbor
+//default would give uneven pixel sizes on a non-integer fit.
+void CDarkages::renderEndgameFullWindow(CGraphic* g){
+  SDL_Rect* src = g->getTile(0);
+  if(src == NULL || src->w <= 0 || src->h <= 0) return;
+
+  SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
+  SDL_RenderClear(display->renderer);
+
+  double fit = (double)display->screenWidth / src->w;
+  double fitH = (double)display->screenHeight / src->h;
+  if(fitH < fit) fit = fitH;
+
+  SDL_Rect dst;
+  dst.w = (int)(src->w * fit + 0.5);
+  dst.h = (int)(src->h * fit + 0.5);
+  dst.x = (display->screenWidth - dst.w) / 2;
+  dst.y = (display->screenHeight - dst.h) / 2;
+
+  SDL_SetTextureScaleMode(g->texture, SDL_ScaleModeLinear);
+  SDL_RenderCopy(display->renderer, g->texture, src, &dst);
+  SDL_SetTextureScaleMode(g->texture, SDL_ScaleModeNearest);
+}
 
 bool CDarkages::renderCredits(){
 

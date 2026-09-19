@@ -219,6 +219,9 @@ private:
   int heroTile(int dir, int frame); //maps a direction (0-3) + walk-cycle frame index into gfx.player's tile index - see CDarkages.cpp for the sheet layout convention
   int idleTile(int animIndex, int frame); //maps an idle-animation index + frame index into gfx.heroIdle's tile index
   void updateIdleAnimation(unsigned int aTicks, bool blockingUIOpen); //advances the idle countdown/animation by aTicks ms; blockingUIOpen suppresses idle entirely while a menu/dialogue/credits screen is up
+  CGraphic* currentEndgameImage(); //endgame image for the current eGreyor stage, or NULL
+  bool isCanvasShaped(CGraphic* g); //true if g is exactly 16:10 and so fits the world canvas without distortion
+  void renderEndgameFullWindow(CGraphic* g); //aspect-preserving, centered, full-window draw for endgame images that aren't 16:10
   void init();
   void loadGame(int index);
   bool newGame();
