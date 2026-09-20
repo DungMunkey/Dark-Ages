@@ -150,6 +150,7 @@ private:
   unsigned int idleTicks;    //ms since last input activity; triggers an idle animation once it crosses idleTimeoutMs
   unsigned int idleFrameTicks; //ms accumulator for advancing idleFrame at idleFrameMs
   double creditsMs;          //milliseconds the end credits have been scrolling - the scroll is time-based so its speed doesn't depend on the frame rate
+  double creditsSpeedRefPxPerSec; //credits scroll speed in 640x400 reference pixels per second - set in credits() so the scroll lasts exactly as long as the music track
   bool pendingMapChange;     //a story scene has queued a map change to happen once its dialogue box is dismissed (see queueMapChange())
   int pendingMap;
   int pendingX;
@@ -236,6 +237,7 @@ private:
   int  checkTile(int map, int x, int y);
   int  currentEquipValue(eShopItemType type);
   void credits();
+  int  creditsDistanceRef(); //total credits scroll distance in reference pixels: from the first line entering at the bottom until the last has left the top
   da1item* shopItemData(sShopItem item);
   std::string shopItemTypeName(eShopItemType type);
   void death();

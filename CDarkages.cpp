@@ -1516,10 +1516,25 @@ void CDarkages::credits(){
   script.addText(" ");
   script.addText(" ");
   script.addText("Thank you for playing!");
-  music.playSong(TitleSong);
+
+  //The credits play the world/adventure song once, from the beginning, and the scroll is timed to the track:
+  //the speed is the total scroll distance divided by the track's length, so the last line leaves the top of
+  //the screen just as the music ends. (The title screen's own music takes over once the credits finish.)
+  //If the track's length can't be read, fall back to the default speed.
+  music.playSongOnce(WorldSong);
+  double trackSeconds = music.getSongDuration(WorldSong);
+  creditsSpeedRefPxPerSec = (trackSeconds > 1.0) ? creditsDistanceRef() / trackSeconds : 15.0;
+
   showCredits=true;
   creditsMs=0;
   selection=0;
+}
+
+//How far the credits scroll, in reference pixels: the script's lines plus 25 lines of run-out, so the last
+//line has fully left the top of the 400-tall screen when the scroll is done. renderCredits() ends there, and
+//credits() divides it by the track length to get the scroll speed.
+int CDarkages::creditsDistanceRef(){
+  return ((int)script.text->size() + 25) * 16;
 }
 
 void CDarkages::death(){
@@ -2216,13 +2231,12 @@ bool CDarkages::renderCredits(){
   display->beginUIPass();
 
   //How far the text has scrolled, in real screen pixels: a constant speed in the 640x400 reference space
-  //(15 reference pixels per second - the speed the old per-frame step gave at 60 Hz), converted with uiScale.
+  //(creditsSpeedRefPxPerSec, fitted to the music track's length by credits()), converted with uiScale.
   //It is NOT rounded to whole reference pixels, so the text moves a screen pixel at a time instead of
   //hopping uiScale pixels every few frames.
-  const double creditsSpeedRefPxPerSec = 15.0;
   int scrollPx = (int)(creditsMs * creditsSpeedRefPxPerSec * display->uiScale / 1000.0 + 0.5);
 
-  int max=((int)script.text->size()+25) * display->S(16);
+  int max = creditsDistanceRef() * display->uiScale;
   if(scrollPx > max){
     display->endUIPass();
     return true;
@@ -2692,6 +2706,7 @@ void CDarkages::reset(){
   //reset flags and timers
   pendingMapChange=false;
   creditsMs=0;
+  creditsSpeedRefPxPerSec=15.0;
   showCredits=false;
   showLoad=false;
   showMenu=false;
@@ -3689,6 +3704,7 @@ void CDarkages::setText(int i){
   case 154:
     script.addText("A week later, you return to Castle Garrison at the summons of the King.");
     curMap=19; cam.setPos(27, 11); playerDir=0; eBattleNum=0;
+    music.playSong(WorldSong); //the world/adventure theme takes over for the ending (this scene sets curMap directly, so the town song isn't picked automatically)
     eGreyor=9;
     break;
   case 155:

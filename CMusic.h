@@ -19,6 +19,8 @@ public:
 
   void loadMusic(const std::string& modName);
   void playSong(eMusic m, bool restart=false);
+  void playSongOnce(eMusic m); //restarts m from the beginning and plays it through a single time (no looping)
+  double getSongDuration(eMusic m) const; //length of m in seconds, or -1.0 if it isn't loaded or its length can't be determined
   void setVolume(int vol);
 
 private:

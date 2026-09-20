@@ -49,6 +49,20 @@ void CMusic::playSong(eMusic m, bool restart){
   currentSong=m;
 }
 
+//Unlike playSong(), this never skips a song that is already playing (it always restarts it) and doesn't loop:
+//the music stops by itself when the track ends. Used for the end credits, whose scroll is timed to the track.
+void CMusic::playSongOnce(eMusic m){
+  if(!loaded[m]) return; //asset not available; leave whatever is currently playing alone
+
+  Mix_PlayMusic(music[m], 1); //play through exactly once, from the beginning
+  currentSong=m;
+}
+
+double CMusic::getSongDuration(eMusic m) const {
+  if(!loaded[m]) return -1.0;
+  return Mix_MusicDuration(music[m]); //seconds; -1.0 if the format can't report a length
+}
+
 void CMusic::setVolume(int vol){
   Mix_VolumeMusic(vol * MIX_MAX_VOLUME / 10);
 }
