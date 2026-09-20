@@ -27,6 +27,7 @@ private:
 
   Mix_Music* music[5];
   eMusic currentSong;
+  bool currentIsOneShot; //currentSong was started by playSongOnce(), so it isn't looping
   bool loaded[5];
 
 };

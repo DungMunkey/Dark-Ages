@@ -1517,12 +1517,13 @@ void CDarkages::credits(){
   script.addText(" ");
   script.addText("Thank you for playing!");
 
-  //The credits play the world/adventure song once, from the beginning, and the scroll is timed to the track:
-  //the speed is the total scroll distance divided by the track's length, so the last line leaves the top of
-  //the screen just as the music ends. (The title screen's own music takes over once the credits finish.)
-  //If the track's length can't be read, fall back to the default speed.
-  music.playSongOnce(WorldSong);
-  double trackSeconds = music.getSongDuration(WorldSong);
+  //The credits play the title song once, from the beginning, and the scroll is timed to the track: the speed
+  //is the total scroll distance divided by the track's length, so the last line leaves the top of the screen
+  //just as the music ends. When the credits finish, the title screen starts the title song again, looping, as
+  //it always does (CMusic::playSong() restarts a song that was only playing once). If the track's length
+  //can't be read, fall back to the default speed.
+  music.playSongOnce(TitleSong);
+  double trackSeconds = music.getSongDuration(TitleSong);
   creditsSpeedRefPxPerSec = (trackSeconds > 1.0) ? creditsDistanceRef() / trackSeconds : 15.0;
 
   showCredits=true;

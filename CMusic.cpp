@@ -12,6 +12,7 @@ CMusic::CMusic(){
   }
 
   currentSong=TitleSong;
+  currentIsOneShot=false;
 }
 
 CMusic::~CMusic(){
@@ -43,10 +44,14 @@ void CMusic::loadMusic(const string& modName){
 void CMusic::playSong(eMusic m, bool restart){
   if(!loaded[m]) return; //asset not available; leave whatever is currently playing alone
 
-  if(m == currentSong && !restart && Mix_PlayingMusic()) return; //already playing this song, nothing to do
+  //already playing this song, nothing to do - unless it was started by playSongOnce(): that playback won't loop,
+  //so a normal request for the same song (e.g. the title screen right after the credits, which play the title
+  //song once) must restart it looping rather than let it run out into silence
+  if(m == currentSong && !restart && !currentIsOneShot && Mix_PlayingMusic()) return;
 
   Mix_PlayMusic(music[m], -1); //loops indefinitely; always (re)starts from the beginning
   currentSong=m;
+  currentIsOneShot=false;
 }
 
 //Unlike playSong(), this never skips a song that is already playing (it always restarts it) and doesn't loop:
@@ -56,6 +61,7 @@ void CMusic::playSongOnce(eMusic m){
 
   Mix_PlayMusic(music[m], 1); //play through exactly once, from the beginning
   currentSong=m;
+  currentIsOneShot=true;
 }
 
 double CMusic::getSongDuration(eMusic m) const {
