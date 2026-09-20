@@ -29,6 +29,8 @@ public:
   int   getTileY();
   int   getX();
   int   getY();
+  double getXExact() const { return xPos; } //un-truncated position in 40-per-tile camera space, for drawing the scroll without a rounding step
+  double getYExact() const { return yPos; }
   void  keyDown(int dir);
   void  keyUp(int dir);
   void  setMax(int x, int y); //in tiles

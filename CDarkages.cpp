@@ -1952,7 +1952,7 @@ void CDarkages::updateIdleAnimation(unsigned int aTicks, bool blockingUIOpen){
 }
 
 void CDarkages::render(){
-  int x, y;
+  int scrollX, scrollY;
   int i, j, k;
   int a, b;
   int offX, offY;
@@ -1967,15 +1967,20 @@ void CDarkages::render(){
   //r.x=10; r.y=10; r.w=300; r.h=180;
   //SDL_RenderSetViewport(display->renderer, &r);
 
-  x = cam.getX();
-  y = cam.getY();
+  //The camera's own position stays in a fixed 40-per-tile coordinate space regardless of the mod's visual tile
+  //size. Convert its exact (fractional) position to canvas pixels with a SINGLE rounding. Truncating to whole
+  //camera pixels first and then rounding again through S() (the old approach) made the scroll advance unevenly
+  //whenever tileSize/40 wasn't 1 - visible as a periodic micro-stutter with e.g. 32px, 48px or 64px tiles.
+  double tileScale = tileSize / 40.0;
+  scrollX = (int)floor(cam.getXExact() * tileScale + 0.5);
+  scrollY = (int)floor(cam.getYExact() * tileScale + 0.5);
 
-  //the camera's own position stays in a fixed 40-per-tile coordinate space regardless of the mod's visual tile size
-  offX = x % 40;
-  offY = y % 40;
-
-  a = x / 40;
-  b = y / 40;
+  //split into whole tiles plus a pixel offset within the tile (both already in canvas pixels). Floor division,
+  //so this stays correct if the scroll position is ever negative.
+  a = (int)floor((double)scrollX / tileSize);
+  b = (int)floor((double)scrollY / tileSize);
+  offX = scrollX - a * tileSize;
+  offY = scrollY - b * tileSize;
 
   lowX = a - 7;
   highX = a + 8+1;
@@ -1993,10 +1998,10 @@ void CDarkages::render(){
   SDL_RenderClear(display->renderer);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
   for (j = lowY; j<highY; j++){
-    r.y = tileSize * (j - lowY) - display->S(offY) + tileSize/2;
+    r.y = tileSize * (j - lowY) - offY + tileSize/2;
     for (i = lowX; i<highX; i++){
       //printf("tile: %d,%d\n,", i, j);
-      r.x = tileSize * (i - lowX) - display->S(offX) + tileSize/2;
+      r.x = tileSize * (i - lowX) - offX + tileSize/2;
       if (i < 0 || i >= world[curMap].szX || j < 0 || j >= world[curMap].szY){
         SDL_RenderFillRect(display->renderer, &r);
       } else {
