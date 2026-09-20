@@ -351,16 +351,16 @@ void CBattle::init(CDisplay* d, CFont* f, CGfxCollection* g, CPlayer* p){
   for(int i=27; i < 100; i++) level[i]=51200 + (i-26) * 4500;
 
   //spell names
-  spellNames[0]="Heal (2 MP)";
-  spellNames[1]="Burn (5 MP)";
-  spellNames[2]="Great Heal (7 MP)";
-  spellNames[3]="Blindness (5 MP)";
-  spellNames[4]="Firebomb (10 MP)";
+  spellNames[0]="Heal          (2 MP)";
+  spellNames[1]="Burn          (5 MP)";
+  spellNames[2]="Great Heal    (7 MP)";
+  spellNames[3]="Blindness     (5 MP)";
+  spellNames[4]="Firebomb     (10 MP)";
   spellNames[5]="Massive Heal (12 MP)";
-  spellNames[6]="Acid Rain (18 MP)";
-  spellNames[7]="Melt Flesh (25 MP)";
-  spellNames[8]="Full Heal (20 MP)";
-  spellNames[9]="Death (30 MP)";
+  spellNames[6]="Acid Rain    (18 MP)";
+  spellNames[7]="Melt Flesh   (25 MP)";
+  spellNames[8]="Full Heal    (20 MP)";
+  spellNames[9]="Death        (30 MP)";
   spellNames[10]="Travel";
 
   //monster stats

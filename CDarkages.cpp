@@ -3647,8 +3647,8 @@ void CDarkages::setText(int i){
     script.addBlackText("You awaken to a great quaking inside the cave. The walls start to collapse. You quickly shake off your stupor and rush out of the cave.");
     script.addBlackText("The cave collapses behind you just as you escape. You look around. The world is suffering the ravages of the earthquake. You rush to the shore and look in the distance.");
     script.addBlackText("It is there and it is moving swiftly: Greyor's continent. The one that he created years ago.  In a few hours it is done. You've rejoined the continents.");
-    script.addBlackText("But there is one more thing to be done. You must stop Greyor. You return to the Northern Post to rest and gather supplies.");
-    script.addText("You cross over to Greyor's side. His tower looms high in the distance. Hideous screams erupt from within. Steeling yourself, you approach the tower.");
+    script.addBlackText("But there is one more thing to be done. You must stop Greyor. You return to the Northern Post to rest and gather supplies, then begin the month-long trek across Greyor's continent.");
+    script.addText("Finally, you reach Greyor's dominion. His tower looms high in the distance. Hideous screams erupt from within. Steeling yourself, you approach the tower.");
     break;
 
   case 130: //already have magic sword
@@ -3696,14 +3696,14 @@ void CDarkages::setText(int i){
     break;
   case 153:
     script.addText(".");
-    script.addText("You rush out of the keep as it crumbles behind you. As you run, debris rains down from above. Battered and bleeding, you stagger out of the dark castle. With a heavy sigh, you black out...");
+    script.addText("You rush out of the keep as it crumbles behind you. As you run, debris rains down from above. Battered and bleeding, you stagger away from the ruins. With a heavy sigh, you black out...");
     //the hero has blacked out: these two lines are read over a plain black screen instead of the explosion
     script.addBlackText("You wake up some time later. Your head hurts and you notice it is bandaged. You're moving. You open your eyes and see General Ryldar walking beside the horse over which your body is slung.");
     script.addBlackText("`We mustered up a force the moment you joined the continents, but it looks like you beat us to Greyor. It's a good thing we found you. You might have bled to death. Get some rest, it's a long journey.'");
     eGreyor=7;
     break;
   case 154:
-    script.addText("A week later, you return to Castle Garrison at the summons of the King.");
+    script.addText("Months later and fully recovered, you return to Castle Garrison at the summons of the King.");
     curMap=19; cam.setPos(27, 11); playerDir=0; eBattleNum=0;
     music.playSong(WorldSong); //the world/adventure theme takes over for the ending (this scene sets curMap directly, so the town song isn't picked automatically)
     eGreyor=9;
