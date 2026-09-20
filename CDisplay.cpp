@@ -167,6 +167,17 @@ void CDisplay::setFont(CFont* f){
   font = f;
 }
 
+//Reset to the full-target viewport and fill it, rather than SDL_RenderClear() - a filled rect goes through the
+//normal draw path, which applies the current (full) viewport to the device first, whereas the Direct3D
+//renderer's clear used whatever viewport the previous draw had left on the device. Verified with a standalone
+//SDL 2.0.12 test: after drawing inside a small viewport and resetting it to NULL, SDL_RenderClear left pixels
+//outside that region untouched, while SDL_RenderFillRect(NULL) cleared everything.
+void CDisplay::clearScreen(){
+  SDL_RenderSetViewport(renderer, NULL);
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+  SDL_RenderFillRect(renderer, NULL);
+}
+
 void CDisplay::beginUIPass(){
   savedScale = scale;
   scale = uiScale;

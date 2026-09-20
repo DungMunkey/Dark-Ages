@@ -2103,7 +2103,7 @@ void CDarkages::render(){
   //the reference 640x400 UI space rather than the mod's TileSize, so it stays crisp regardless of which
   //mod is loaded. See CDisplay::beginUIPass()/computeLayout() for how the two scales are kept separate.
   SDL_SetRenderTarget(display->renderer, NULL);
-  SDL_RenderClear(display->renderer);
+  display->clearScreen();
   SDL_RenderCopy(display->renderer, canvas, NULL, &display->worldRect);
 
   //a death/endgame image that doesn't fit the canvas goes over the whole window, under any dialogue text drawn below
@@ -2175,8 +2175,7 @@ void CDarkages::renderFullScreenImage(CGraphic* g){
   SDL_Rect* src = g->getTile(0);
   if(src == NULL || src->w <= 0 || src->h <= 0) return;
 
-  SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
-  SDL_RenderClear(display->renderer);
+  display->clearScreen();
 
   double fit = (double)display->screenWidth / src->w;
   double fitH = (double)display->screenHeight / src->h;
@@ -2201,8 +2200,7 @@ void CDarkages::renderFullScreenImage(CGraphic* g){
 
 bool CDarkages::renderCredits(){
 
-  SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
-  SDL_RenderClear(display->renderer);
+  display->clearScreen();
 
   display->beginUIPass();
 
@@ -2247,7 +2245,7 @@ void CDarkages::renderMenu(){
 void CDarkages::renderNew(){
   SDL_Rect r;
 
-  SDL_RenderClear(display->renderer);
+  display->clearScreen();
 
   //player sprite is mod-native-scaled bitmap art, same treatment as the world canvas
   display->beginCompatPass();
@@ -4007,7 +4005,7 @@ int CDarkages::titleLoad(){
       }
     }
 
-    SDL_RenderClear(display->renderer);
+    display->clearScreen();
     display->beginUIPass();
     loadSave->render();
     display->endUIPass();

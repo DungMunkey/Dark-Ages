@@ -56,6 +56,12 @@ public:
   void setCanvasSize(int w, int h); //stores the world canvas's native pixel size and computes the layout
   void computeLayout(); //(re)computes worldScale/worldRect/uiScale/uiRect/worldFontPx/uiFontPx from canvasW/H + current screenWidth/Height - call again after any runtime resolution/fullscreen change
 
+  //Wipes the ENTIRE backbuffer to black. Use this instead of SDL_RenderClear() for full-screen wipes: with SDL
+  //2.0.12's Direct3D renderer, SDL_RenderClear() only clears the region of whichever viewport was last drawn
+  //into (e.g. uiRect after a UI pass), leaving everything outside it untouched - so anything drawn outside
+  //uiRect, like a full-window endgame image or a wider world view, survived into later screens.
+  void clearScreen();
+
   //Brackets UI-space drawing (text, bevel boxes, selection rects) directly onto the current render
   //target (expected to be the backbuffer): temporarily repoints S() at uiScale instead of the mod's
   //native scale, and restricts drawing to uiRect so it lands in the right letterboxed position.

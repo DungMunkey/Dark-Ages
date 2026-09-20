@@ -141,7 +141,7 @@ void COptions::render(){
   SDL_Rect r;
 
   //SDL_SetRenderTarget(display->renderer, canvas);
-  SDL_RenderClear(display->renderer);
+  display->clearScreen();
 
   //Pure text/borders/small mod-independent icons - draws directly onto the backbuffer at the UI
   //layer's own scale (see CDisplay::beginUIPass()), so it's always crisp regardless of the loaded

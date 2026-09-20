@@ -38,8 +38,7 @@ int CTitle::actionEnter(){
 void CTitle::render(){
   SDL_Rect r;
 
-  SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
-  SDL_RenderClear(display->renderer);
+  display->clearScreen();
 
   //The splash image is a fixed 640x400 asset (identical across every mod, not resized per TileSize the
   //way tile/sprite art is), so unlike the battle/character-creation screens it has no mod-native

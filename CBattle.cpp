@@ -497,7 +497,7 @@ void CBattle::render(){
   SDL_Rect r;
   char str[64];
 
-  SDL_RenderClear(display->renderer);
+  display->clearScreen();
 
   //Monster sprite is mod-native-scaled bitmap art, so it stays in the mod's own (worldScale) space -
   //same reasoning as the world canvas. Its frame border is procedural (not bitmap), so it's drawn
