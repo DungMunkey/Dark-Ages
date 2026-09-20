@@ -2072,25 +2072,20 @@ void CDarkages::render(){
   //open viewport back up
   //SDL_RenderSetViewport(display->renderer, &vp);
 
-  //if dead, paste death image over tiles
-  if(hero.hp<1){
+  //if dead, or at an endgame stage, paste that full-screen image over the tiles. An image the canvas is a
+  //whole-number multiple of (the original game's 320x200 art on a TileSize 40 canvas) is stretched over the
+  //canvas as always; any other size or shape would be distorted or resampled unevenly that way, so it is
+  //instead drawn further down at its own aspect ratio over the whole window at a whole-number scale - see
+  //renderFullScreenImage(). Applies to the death image as well as the endgame ones.
+  CGraphic* fsImg = currentFullScreenImage();
+  bool fsImgFullWindow = (fsImg != NULL && !fitsCanvasInWholeScale(fsImg));
+  if(fsImg != NULL && !fsImgFullWindow){
     r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
-    SDL_RenderCopy(display->renderer, gfx.death->texture, gfx.death->getTile(0), &r);
+    SDL_RenderCopy(display->renderer, fsImg->texture, fsImg->getTile(0), &r);
   }
 
-  //show any endgame screens. An image the canvas is a whole-number multiple of (the original game's 320x200
-  //art on a TileSize 40 canvas) is stretched over the canvas as always; any other size or shape would be
-  //distorted or resampled unevenly that way, so it is instead drawn further down at its own aspect ratio over
-  //the whole window at a whole-number scale - see renderEndgameFullWindow().
-  CGraphic* endImg = currentEndgameImage();
-  bool endImgFullWindow = (endImg != NULL && !fitsCanvasInWholeScale(endImg));
-  if(endImg != NULL && !endImgFullWindow){
-    r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
-    SDL_RenderCopy(display->renderer, endImg->texture, endImg->getTile(0), &r);
-  }
-
-  //render blinds (skipped while a full-window endgame image is up, since it doesn't sit inside this frame)
-  if(!endImgFullWindow){
+  //render blinds (skipped while a full-window image is up, since it doesn't sit inside this frame)
+  if(!fsImgFullWindow){
     r.x=0; r.y=0; r.h=display->S(20); r.w=display->S(640);
     SDL_RenderFillRect(display->renderer, &r);
     r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(20);
@@ -2111,8 +2106,8 @@ void CDarkages::render(){
   SDL_RenderClear(display->renderer);
   SDL_RenderCopy(display->renderer, canvas, NULL, &display->worldRect);
 
-  //non-16:10 endgame image goes over the whole window, under any dialogue text drawn below
-  if(endImgFullWindow) renderEndgameFullWindow(endImg);
+  //a death/endgame image that doesn't fit the canvas goes over the whole window, under any dialogue text drawn below
+  if(fsImgFullWindow) renderFullScreenImage(fsImg);
 
   display->beginUIPass();
 
@@ -2148,18 +2143,21 @@ void CDarkages::render(){
 
 //renderBox() calls in this file now go through CWindow::renderBox(display, ...) - see CWindow.h/.cpp
 
-//Which endgame image, if any, the current eGreyor event stage calls for
-CGraphic* CDarkages::currentEndgameImage(){
+//Which full-screen image, if any, should currently cover the world: the endgame image for the current eGreyor
+//stage, otherwise the death image while the hero is dead. (The endgame stages win over the death image, as they
+//used to when they were drawn on top of it.)
+CGraphic* CDarkages::currentFullScreenImage(){
   if(eGreyor == 4) return gfx.endgame1;
   if(eGreyor == 7) return gfx.endgame3;
   if(eGreyor == 11) return gfx.endgame2;
+  if(hero.hp < 1) return gfx.death;
   return NULL;
 }
 
 //True when the world canvas is an exact whole-number multiple of g (same multiple on both axes). That's the case
 //for the original game's 320x200 art on a TileSize 40 canvas (2x), where drawing g stretched over the canvas
 //keeps every source pixel the same size. Anything else would be resampled by a fractional amount on the canvas
-//(e.g. a 640x400 image on a 512x320 canvas), so those go through renderEndgameFullWindow() instead.
+//(e.g. a 640x400 image on a 512x320 canvas), so those go through renderFullScreenImage() instead.
 bool CDarkages::fitsCanvasInWholeScale(CGraphic* g){
   SDL_Rect* t = g->getTile(0);
   if(t == NULL || t->w <= 0 || t->h <= 0) return false;
@@ -2173,7 +2171,7 @@ bool CDarkages::fitsCanvasInWholeScale(CGraphic* g){
 //coordinates (no viewport/scale), so it must be called between the canvas copy and beginUIPass().
 //The one case a whole-number multiple can't cover is an image larger than the window itself; it is then
 //shrunk to fit (still nearest-neighbor, never smoothed) rather than being cropped.
-void CDarkages::renderEndgameFullWindow(CGraphic* g){
+void CDarkages::renderFullScreenImage(CGraphic* g){
   SDL_Rect* src = g->getTile(0);
   if(src == NULL || src->w <= 0 || src->h <= 0) return;
 

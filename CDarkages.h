@@ -225,9 +225,9 @@ private:
   int heroTile(int dir, int frame); //maps a direction (0-3) + walk-cycle frame index into gfx.player's tile index - see CDarkages.cpp for the sheet layout convention
   int idleTile(int animIndex, int frame); //maps an idle-animation index + frame index into gfx.heroIdle's tile index
   void updateIdleAnimation(unsigned int aTicks, bool blockingUIOpen); //advances the idle countdown/animation by aTicks ms; blockingUIOpen suppresses idle entirely while a menu/dialogue/credits screen is up
-  CGraphic* currentEndgameImage(); //endgame image for the current eGreyor stage, or NULL
+  CGraphic* currentFullScreenImage(); //the endgame image for the current eGreyor stage, else the death image if the hero is dead, else NULL
   bool fitsCanvasInWholeScale(CGraphic* g); //true if the world canvas is an exact whole-number multiple of g, so stretching g over the canvas keeps its pixels uniform
-  void renderEndgameFullWindow(CGraphic* g); //aspect-preserving, centered, full-window draw for endgame images that aren't 16:10
+  void renderFullScreenImage(CGraphic* g); //aspect-preserving, centered draw at the largest whole-number scale that fits the window, for death/endgame images that don't fit the canvas
   void init();
   void loadGame(int index);
   void openLoadMenu(); //shows the load-game menu: sets both this class's showLoad and the CLoadSave layout flag, and resets its cursor to Cancel
