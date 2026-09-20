@@ -3665,7 +3665,7 @@ void CDarkages::setText(int i){
     eGreyor=7;
     break;
   case 154:
-    script.addText("A week later, you kneel before the throne of the King.");
+    script.addText("A week later, you return to Castle Garrison at the summons of the King.");
     curMap=19; cam.setPos(27, 11); playerDir=0; eBattleNum=0;
     eGreyor=9;
     break;
