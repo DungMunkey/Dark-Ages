@@ -69,6 +69,23 @@ typedef struct da1script {
   void addText(std::string s){
     text->push_back(s);
   }
+
+  //A line added with addBlackText() is shown over a plain black screen - hiding the game world and any
+  //endgame/death image - for as long as that line is on screen; the next line goes back to the normal
+  //background unless it is also a black one. (Use "." for a black screen with no text box at all.)
+  //The marker is a leading control character on the line itself, so it stays attached to its own line
+  //through every erase/copy of the text list; renderText() strips it before drawing (see plainText()).
+  static const char BlackMarker = 1;
+  void addBlackText(std::string s){
+    text->push_back(std::string(1, BlackMarker) + s);
+  }
+  bool frontIsBlack() const { //is the line currently being shown a black-background one?
+    return !text->empty() && !text->front().empty() && text->front()[0] == BlackMarker;
+  }
+  static std::string plainText(const std::string& s){ //the line without its marker, ready to draw
+    return (!s.empty() && s[0] == BlackMarker) ? s.substr(1) : s;
+  }
+
   void clear(){
     delete text;
     delete choices;

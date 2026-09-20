@@ -2077,11 +2077,19 @@ void CDarkages::render(){
   //canvas as always; any other size or shape would be distorted or resampled unevenly that way, so it is
   //instead drawn further down at its own aspect ratio over the whole window at a whole-number scale - see
   //renderFullScreenImage(). Applies to the death image as well as the endgame ones.
-  CGraphic* fsImg = currentFullScreenImage();
+  //A dialogue line added with script.addBlackText() blanks the whole scene to black while it is on screen: no
+  //full-screen image, and the world and hero are painted over.
+  bool sceneBlack = (showText && script.frontIsBlack());
+  CGraphic* fsImg = sceneBlack ? NULL : currentFullScreenImage();
   bool fsImgFullWindow = (fsImg != NULL && !fitsCanvasInWholeScale(fsImg));
   if(fsImg != NULL && !fsImgFullWindow){
     r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
     SDL_RenderCopy(display->renderer, fsImg->texture, fsImg->getTile(0), &r);
+  }
+  if(sceneBlack){
+    SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
+    r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
+    SDL_RenderFillRect(display->renderer, &r);
   }
 
   //render blinds (skipped while a full-window image is up, since it doesn't sit inside this frame)
@@ -2424,7 +2432,9 @@ void CDarkages::renderStats(){
 }
 
 void CDarkages::renderText(){
-  if(script.text->at(0).size() < 2) return;
+  //a black-background line carries a hidden marker (see da1script::addBlackText) - drop it before measuring or drawing
+  string shownText = da1script::plainText(script.text->at(0));
+  if(shownText.size() < 2) return;
 
   SDL_Rect r;
   size_t i;
@@ -2442,7 +2452,7 @@ void CDarkages::renderText(){
   r.h = boxH - inset*2;
 
   //Render word by word, applying line breaks as needed, then continue layout below it.
-  curText=script.text->at(0);
+  curText=shownText;
   lineNum = font.renderWrap(display->S(16), display->S(8), curText, display->S(608), display->S(16));
 
   //special case for user input
@@ -3660,8 +3670,9 @@ void CDarkages::setText(int i){
   case 153:
     script.addText(".");
     script.addText("You rush out of the keep as it crumbles behind you. As you run, debris rains down from above. Battered and bleeding, you stagger out of the dark castle. With a heavy sigh, you black out...");
-    script.addText("You wake up some time later. Your head hurts and you notice it is bandaged. You're moving. You open your eyes and see General Ryldar walking beside the horse over which your body is slung.");
-    script.addText("`We mustered up a force the moment you joined the continents, but it looks like you beat us to Greyor. It's a good thing we found you. You might have bled to death. Get some rest, it's a long journey.'");
+    //the hero has blacked out: these two lines are read over a plain black screen instead of the explosion
+    script.addBlackText("You wake up some time later. Your head hurts and you notice it is bandaged. You're moving. You open your eyes and see General Ryldar walking beside the horse over which your body is slung.");
+    script.addBlackText("`We mustered up a force the moment you joined the continents, but it looks like you beat us to Greyor. It's a good thing we found you. You might have bled to death. Get some rest, it's a long journey.'");
     eGreyor=7;
     break;
   case 154:
