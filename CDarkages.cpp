@@ -3276,7 +3276,7 @@ void CDarkages::setText(int i){
       } else if(eFirewand == 15){
         script.addText("Thank you for saving Gawain. He's already back on patrol. And here is some sulfur from the latest shipment. You can have it for free.");
         script.addText("He also left this note:               `I know that to beat Greyor takes a lot of courage. But it also requires a good weapon. The Magic Sword is just that weapon. It was owned by one of my ancestors, a great warrior.");
-        script.addText("During a great battle he was slain and the magic sword was buried with his body. The grave can be found at the base of a mountain peak surrounded by a small forest. Search among those forest tress to find the sword.'");
+        script.addText("During a great battle he was slain and the magic sword was buried with his body. The grave can be found at the base of a mountain peak surrounded by a small forest. Search among those forest trees to find the sword.'");
         eFirewand=16;
       } else {
         script.addText("Welcome to the Miner's Guild. Not much is happening around town right now. Feel free to explore and check out the various shops in town.");
