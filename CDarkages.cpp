@@ -2587,28 +2587,37 @@ void CDarkages::renderTitle(){
 */
 
 void CDarkages::renderTravelSpell(){
+  //order must match travel()'s selection index
+  static const string dests[] = {"Cancel", "Meadow", "Quinine Tower", "Wisp", "Trok", "Tristen", "Northern Post",
+                                 "Castle Garrison", "Amber", "Laendlich", "Rhoeyce", "Aaryak", "Floating City"};
+  const int count = (int)(sizeof(dests) / sizeof(dests[0]));
   SDL_Rect r;
+  int i;
 
-  CWindow::renderBox(display, display->S(75), display->S(39), display->S(170), display->S(116));
+  //This used to be laid out with 8-unit line spacing (a leftover from the game's smaller original layout), which
+  //overlapped the 16-unit-tall font lines every other menu uses. It now follows renderSpell(): 16-unit lines,
+  //centered on screen, with the box sized to the widest name so it fits whatever font size the UI pass is using.
+  int textW = 0;
+  for(i = 0; i < count; i++){
+    int w = font.getStringWidth(dests[i]);
+    if(w > textW) textW = w;
+  }
+  int boxW = textW + display->S(28);
+  int boxH = display->S(16) * count + display->S(28);
+  int boxX = (display->S(640) - boxW) / 2;
+  int boxY = (display->S(400) - boxH) / 2;
 
-  r.w=display->S(164); r.h=display->S(8); r.x=display->S(78); r.y=display->S(47) + display->S(8) * selection;
+  CWindow::renderBox(display, boxX, boxY, boxW, boxH);
+
+  //selection highlight and text sit at the same offsets inside the box as in renderSpell()
+  r.w = boxW - display->S(12); r.h = display->S(16); r.x = boxX + display->S(6); r.y = boxY + display->S(16) + display->S(16) * selection;
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
   SDL_RenderFillRect(display->renderer, &r);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
 
-  font.render(display->S(82), display->S(44), "Cancel");
-  font.render(display->S(82), display->S(52), "Meadow");
-  font.render(display->S(82), display->S(60), "Quinine Tower");
-  font.render(display->S(82), display->S(68), "Wisp");
-  font.render(display->S(82), display->S(76), "Trok");
-  font.render(display->S(82), display->S(84), "Tristen");
-  font.render(display->S(82), display->S(92), "Northern Post");
-  font.render(display->S(82), display->S(100), "Castle Garrison");
-  font.render(display->S(82), display->S(108), "Amber");
-  font.render(display->S(82), display->S(116), "Laendlich");
-  font.render(display->S(82), display->S(124), "Rhoeyce");
-  font.render(display->S(82), display->S(132), "Aaryak");
-  font.render(display->S(82), display->S(140), "Floating City");
+  for(i = 0; i < count; i++){
+    font.render(boxX + display->S(14), boxY + display->S(10) + display->S(16) * i, dests[i]);
+  }
 
 }
 
