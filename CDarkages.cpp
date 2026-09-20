@@ -4016,4 +4016,8 @@ void CDarkages::travel(int index){
   default:
     break;
   }
+  //switch to the destination's music like changeMap() does - this sets curMap directly, so without this the
+  //old map's song kept playing (e.g. dungeon music in a town). playSong() ignores a song that's already
+  //playing, so Cancel and town-to-town jumps don't restart anything.
+  updateMapMusic();
 }
