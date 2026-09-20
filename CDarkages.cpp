@@ -2161,11 +2161,15 @@ bool CDarkages::isCanvasShaped(CGraphic* g){
   return t != NULL && t->w * 10 == t->h * 16;
 }
 
-//Draws g scaled to the largest size that fits the whole window with its aspect ratio preserved, centered,
-//with black bars on whichever axis is left over. Draws in raw backbuffer coordinates (no viewport/scale),
-//so it must be called between the canvas copy and beginUIPass(). Linear filtering is requested for this
-//texture only: the window is rarely an integer multiple of the art, and the game-wide nearest-neighbor
-//default would give uneven pixel sizes on a non-integer fit.
+//Draws g at its own aspect ratio, centered in the window with black bars on whichever axis is left over.
+//Draws in raw backbuffer coordinates (no viewport/scale), so it must be called between the canvas copy and
+//beginUIPass(). Two ways of sizing it, chosen per image and window:
+// - Small pixel art (e.g. a 256x256 image on a 1080p screen): if a whole-number multiple of the image fills at
+//   least 85% of the largest size that fits, use that multiple with nearest-neighbor, so every source pixel is
+//   the same size and stays perfectly sharp.
+// - Otherwise (a larger image, or a window where a whole multiple would leave big borders): scale to the exact
+//   fit with linear filtering (requested for this texture only), since the game-wide nearest-neighbor default
+//   would give uneven pixel sizes on a non-integer fit.
 void CDarkages::renderEndgameFullWindow(CGraphic* g){
   SDL_Rect* src = g->getTile(0);
   if(src == NULL || src->w <= 0 || src->h <= 0) return;
@@ -2177,13 +2181,21 @@ void CDarkages::renderEndgameFullWindow(CGraphic* g){
   double fitH = (double)display->screenHeight / src->h;
   if(fitH < fit) fit = fitH;
 
+  int wholeScale = (int)fit; //largest whole-number multiple that fits (0 if the image is bigger than the window)
+  bool crisp = (wholeScale >= 1 && wholeScale >= fit * 0.85);
+
   SDL_Rect dst;
-  dst.w = (int)(src->w * fit + 0.5);
-  dst.h = (int)(src->h * fit + 0.5);
+  if(crisp){
+    dst.w = src->w * wholeScale;
+    dst.h = src->h * wholeScale;
+  } else {
+    dst.w = (int)(src->w * fit + 0.5);
+    dst.h = (int)(src->h * fit + 0.5);
+  }
   dst.x = (display->screenWidth - dst.w) / 2;
   dst.y = (display->screenHeight - dst.h) / 2;
 
-  SDL_SetTextureScaleMode(g->texture, SDL_ScaleModeLinear);
+  SDL_SetTextureScaleMode(g->texture, crisp ? SDL_ScaleModeNearest : SDL_ScaleModeLinear);
   SDL_RenderCopy(display->renderer, g->texture, src, &dst);
   SDL_SetTextureScaleMode(g->texture, SDL_ScaleModeNearest);
 }
