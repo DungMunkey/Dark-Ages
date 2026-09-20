@@ -230,6 +230,7 @@ private:
   void renderEndgameFullWindow(CGraphic* g); //aspect-preserving, centered, full-window draw for endgame images that aren't 16:10
   void init();
   void loadGame(int index);
+  void openLoadMenu(); //shows the load-game menu: sets both this class's showLoad and the CLoadSave layout flag, and resets its cursor to Cancel
   bool newGame();
   void render();
   bool renderCredits();

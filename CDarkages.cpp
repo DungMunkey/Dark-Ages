@@ -204,6 +204,16 @@ void CDarkages::actionCursorUpRel(){
   cam.keyUp(0);
 }
 
+//CLoadSave draws either the load layout (Cancel, QuickSave, Saves 1-5) or the save layout (Cancel, Saves 1-5)
+//depending on its own showLoad flag, and the Enter handler maps selection to a slot differently for each. Every
+//way of opening the load menu must therefore set BOTH flags and reset the cursor - the death screen once set only
+//this class's flag, so after using the Save menu it drew the save layout and loaded the slot above the one shown.
+void CDarkages::openLoadMenu(){
+  showLoad=true;
+  loadSave->showLoad=true;
+  loadSave->selection=0;
+}
+
 void CDarkages::actionEnter(bool bSpace){
   if(showMenu) {
     if(selection == 1){
@@ -213,9 +223,7 @@ void CDarkages::actionEnter(bool bSpace){
       loadSave->selection=0;
     } else if(selection == 2){
       showMenu=false;
-      showLoad=true;
-      loadSave->showLoad=true;
-      loadSave->selection=0;
+      openLoadMenu();
     } else if(selection == 3){
       COptions opt(display, &music, &font, &gfx, conf);
       opt.run();
@@ -227,7 +235,12 @@ void CDarkages::actionEnter(bool bSpace){
       showMenu=false;
     }
   } else if(showLoad){
-    if(loadSave->selection > 0) loadGame(loadSave->selection - 1);
+    if(loadSave->selection > 0){
+      //an empty slot has nothing to load: keep the menu open instead of closing it and dropping the player back
+      //into the game (which after a death would leave them dead with no menu)
+      if(saves[loadSave->selection - 1].level == 0) return;
+      loadGame(loadSave->selection - 1);
+    }
     else if(hero.hp < 1) stop=true; //quit if player cancels load after death
     showLoad=false;
     return;
@@ -3897,7 +3910,7 @@ void CDarkages::setText(int i){
   case 660: buySpellB(10); return;
 
   case 700:
-    showLoad=true;
+    openLoadMenu();
     showText=false;
     selection=0;
     return;
@@ -3946,9 +3959,7 @@ void CDarkages::title(){
 
 int CDarkages::titleLoad(){
   SDL_Event e;
-  loadSave->selection=0;
-  loadSave->showLoad=true;
-  showLoad=true;
+  openLoadMenu();
   while(true){
     while(SDL_PollEvent(&e) != 0) {
       if(e.type == SDL_CONTROLLERBUTTONDOWN) {
