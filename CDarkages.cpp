@@ -1453,12 +1453,19 @@ int CDarkages::checkTile(int map, int x, int y){
   return -1;
 }
 
+//The credits are drawn unwrapped, at 16 reference pixels per character starting 20 pixels in, so a line longer
+//than 38 characters runs off the right edge of the 640-wide screen. Guard the lines built from Version.h.
+static_assert(sizeof("Version " DA_VERSION) - 1 <= 38, "the credits version line is too long to fit on screen");
+static_assert(sizeof(DA_COPYRIGHT_YEARS) - 1 <= 38, "DA_COPYRIGHT_YEARS is too long to fit on one credits line");
+static_assert(sizeof(DA_COPYRIGHT_OWNER) - 1 <= 38, "DA_COPYRIGHT_OWNER is too long to fit on one credits line");
+
 void CDarkages::credits(){
   script.clear();
   script.addText("   Dark Ages: The Continents");
   script.addText(" ");
-  script.addText("Version " DA_VERSION " by Michael Hoopmann");
-  script.addText(DA_COPYRIGHT);
+  script.addText("Version " DA_VERSION);
+  script.addText(DA_COPYRIGHT_YEARS);
+  script.addText(DA_COPYRIGHT_OWNER);
   script.addText("    http://dk-software.com");
   script.addText(" ");
   script.addText("Made with SDL2 and SDL2_mixer");
