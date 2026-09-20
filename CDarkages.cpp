@@ -3616,11 +3616,12 @@ void CDarkages::setText(int i){
     curMap=28; cam.setPos(11, 8); playerDir=0; eBattleNum=0;
     hero.hp=hero.maxHP;
     hero.mp=hero.maxMP;
-    script.addText("There is a brilliant flash and you pass out...");
-    script.addText("You awaken to a great quaking inside the cave. The walls start to collapse. You quickly shake off your stupor and rush out of the cave.");
-    script.addText("The cave collapses behind you just as you escape. You look around. The world is suffering the ravages of the earthquake. You rush to the shore and look in the distance.");
-    script.addText("It is there and it is moving swiftly: Greyor's continent. The one that he created years ago.  In a few hours it is done. You've rejoined the continents.");
-    script.addText("But there is one more thing to be done. You must stop Greyor. You return to the Northern Post to rest and gather supplies.");
+    script.addText("You place the medallion on the altar. There is a brilliant flash and you pass out...");
+    script.addBlackText("You awaken to a great quaking inside the cave. The walls start to collapse. You quickly shake off your stupor and rush out of the cave.");
+    script.addBlackText("The cave collapses behind you just as you escape. You look around. The world is suffering the ravages of the earthquake. You rush to the shore and look in the distance.");
+    script.addBlackText("It is there and it is moving swiftly: Greyor's continent. The one that he created years ago.  In a few hours it is done. You've rejoined the continents.");
+    script.addBlackText("But there is one more thing to be done. You must stop Greyor. You return to the Northern Post to rest and gather supplies.");
+    script.addText("You cross over to Greyor's side. His tower looms high in the distance. Hideous screams erupt from within. Steeling yourself, you approach the tower.");
     break;
 
   case 130: //already have magic sword
@@ -3636,15 +3637,14 @@ void CDarkages::setText(int i){
 
   case 150:
     script.addText(".");
-    script.addText("You cross over to Greyor's side. His castle towers high in the distance. Hideous screams erupt from within.");
     script.addText("A chill travels down your spine as you approach. All you can think of is your own gruesome death.");
+    script.addText("You ascend the keep's steps to find Greyor in his chamber at the top.");
     eGreyor=4;
     curMap=20; cam.setPos(12, 8); playerDir=0; eBattleNum=0;
     break;
   case 151:
-    script.addText("(You ascend the keep's steps to find Greyor in his chamber at the top.)");
-    script.addText("So you're the one who has ruined my plans. It seems I must kill you now.");
-    script.addText("With that, he summons three black dragons!");
+    script.addText("'So you're the one who has ruined my plans. It seems I must kill you now.'");
+    script.addText("With that, Greyor summons three black dragons!");
     script.addChoice("Attack!", 152);
     break;
   case 152:
