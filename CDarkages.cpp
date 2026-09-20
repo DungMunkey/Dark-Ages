@@ -1511,6 +1511,7 @@ void CDarkages::credits(){
   script.addText("Thank you for playing!");
   music.playSong(TitleSong);
   showCredits=true;
+  creditsMs=0;
   selection=0;
 }
 
@@ -1747,15 +1748,6 @@ void CDarkages::run(){
       renderCount=0;
       lastFPS-=1000;
     }
-    if(ticks<6) {
-      if(showCredits) {
-        renderCredits();
-        //else render();
-        renderCount++;
-        continue;
-      }
-    }
-    
     if(fadeIn>0){
       if(ticks < 40) continue;
       ticks-=40;
@@ -1766,12 +1758,16 @@ void CDarkages::run(){
     //while(ticks>=6) ticks-=6;
 
     if(showCredits) {
-      selection++;
+      //Scroll by real elapsed time (aTicks is already clamped above), not once per frame: the old per-frame
+      //step made the speed depend on the monitor's refresh rate.
+      creditsMs += aTicks;
       if(renderCredits()){
+        creditsMs = 0;
         selection=0;
         showCredits=false;
         return;
       }
+      renderCount++;
       continue;
     }
 
@@ -2212,14 +2208,21 @@ bool CDarkages::renderCredits(){
 
   display->beginUIPass();
 
+  //How far the text has scrolled, in real screen pixels: a constant speed in the 640x400 reference space
+  //(15 reference pixels per second - the speed the old per-frame step gave at 60 Hz), converted with uiScale.
+  //It is NOT rounded to whole reference pixels, so the text moves a screen pixel at a time instead of
+  //hopping uiScale pixels every few frames.
+  const double creditsSpeedRefPxPerSec = 15.0;
+  int scrollPx = (int)(creditsMs * creditsSpeedRefPxPerSec * display->uiScale / 1000.0 + 0.5);
+
   int max=((int)script.text->size()+25) * display->S(16);
-  if(display->S(selection/4) > max){
+  if(scrollPx > max){
     display->endUIPass();
     return true;
   }
   int y;
   for(size_t i=0; i < script.text->size(); i++){
-    y=(int)i * display->S(16) - display->S(selection/4) + display->S(400);
+    y=(int)i * display->S(16) - scrollPx + display->S(400);
     if(y > display->S(400)) break;
     if(y > -display->S(16)) font.render(display->S(20), y, script.text->at(i));
   }
@@ -2681,6 +2684,7 @@ void CDarkages::renderTravelSpell(){
 void CDarkages::reset(){
   //reset flags and timers
   pendingMapChange=false;
+  creditsMs=0;
   showCredits=false;
   showLoad=false;
   showMenu=false;

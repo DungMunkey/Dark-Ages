@@ -149,6 +149,7 @@ private:
   int idleFrame;             //current frame within that animation
   unsigned int idleTicks;    //ms since last input activity; triggers an idle animation once it crosses idleTimeoutMs
   unsigned int idleFrameTicks; //ms accumulator for advancing idleFrame at idleFrameMs
+  double creditsMs;          //milliseconds the end credits have been scrolling - the scroll is time-based so its speed doesn't depend on the frame rate
   bool pendingMapChange;     //a story scene has queued a map change to happen once its dialogue box is dismissed (see queueMapChange())
   int pendingMap;
   int pendingX;
