@@ -3627,7 +3627,7 @@ void CDarkages::setText(int i){
     curMap=28; cam.setPos(11, 8); playerDir=0; eBattleNum=0;
     hero.hp=hero.maxHP;
     hero.mp=hero.maxMP;
-    script.addText("You place the medallion on the altar. There is a brilliant flash and you pass out...");
+    script.addBlackText("You place the medallion on the altar. There is a brilliant flash and you pass out...");
     script.addBlackText("You awaken to a great quaking inside the cave. The walls start to collapse. You quickly shake off your stupor and rush out of the cave.");
     script.addBlackText("The cave collapses behind you just as you escape. You look around. The world is suffering the ravages of the earthquake. You rush to the shore and look in the distance.");
     script.addBlackText("It is there and it is moving swiftly: Greyor's continent. The one that he created years ago.  In a few hours it is done. You've rejoined the continents.");
