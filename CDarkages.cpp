@@ -258,6 +258,7 @@ void CDarkages::actionEnter(bool bSpace){
       }
     } else {
       showText = false;
+      applyPendingMapChange(); //a scene that queued a map change (e.g. rescuing Gawain) moves on now that its dialogue is done
     }
   } else {
     int i = checkAction(curMap, cam.getTileX(), cam.getTileY());
@@ -1085,6 +1086,29 @@ void CDarkages::updateMapMusic(){
   music.playSong(mapMusicTable[curMap]);
 }
 
+//Story scenes used to set curMap directly while their dialogue was being built, so the new map appeared
+//underneath text that was still describing the old one. Queue the change instead and it happens when the
+//dialogue box is dismissed (actionEnter). Only the last queued change is kept.
+void CDarkages::queueMapChange(int map, int x, int y, int dir, int battleNum){
+  pendingMapChange = true;
+  pendingMap = map;
+  pendingX = x;
+  pendingY = y;
+  pendingDir = dir;
+  pendingBattleNum = battleNum;
+}
+
+void CDarkages::applyPendingMapChange(){
+  if(!pendingMapChange) return;
+  pendingMapChange = false;
+  curMap = pendingMap;
+  cam.setPos(pendingX, pendingY);
+  playerDir = pendingDir;
+  eBattleNum = pendingBattleNum;
+  eBattleCheck = 0;   //same as changeMap(): reset the battle counter on any map change
+  updateMapMusic();   //and pick up the new map's music
+}
+
 int CDarkages::doBattle(int index){
   if(index < 0) return battle.fight(index);
 
@@ -1615,6 +1639,7 @@ void CDarkages::loadGame(int index){
 
   cam.setPos(x,y);
   playerDir = 0;
+  pendingMapChange = false; //nothing queued from before the load applies to the loaded game
   updateMapMusic();
 }
 
@@ -2623,6 +2648,7 @@ void CDarkages::renderTravelSpell(){
 
 void CDarkages::reset(){
   //reset flags and timers
+  pendingMapChange=false;
   showCredits=false;
   showLoad=false;
   showMenu=false;
@@ -3488,7 +3514,7 @@ void CDarkages::setText(int i){
       eFirewand = 15;
       script.addText("(You escape with Gawain and hurry back to Aaryak in the dark. The Guild Master was waiting to meet you at the gate.");
       script.addText("(The Guild Master speaks to you.)     Thank you! Come talk to me in the  morning. But for now, get some rest.");
-      curMap=0; cam.setPos(47, 19); playerDir=1; eBattleNum=0;
+      queueMapChange(0, 47, 19, 1, 0); //Aaryak - only once this dialogue has been read, not underneath it
     }
     break;
   case 118: //dark goblin

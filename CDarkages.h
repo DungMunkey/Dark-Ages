@@ -132,6 +132,12 @@ private:
   int idleFrame;             //current frame within that animation
   unsigned int idleTicks;    //ms since last input activity; triggers an idle animation once it crosses idleTimeoutMs
   unsigned int idleFrameTicks; //ms accumulator for advancing idleFrame at idleFrameMs
+  bool pendingMapChange;     //a story scene has queued a map change to happen once its dialogue box is dismissed (see queueMapChange())
+  int pendingMap;
+  int pendingX;
+  int pendingY;
+  int pendingDir;
+  int pendingBattleNum;
   int selection;
   bool showCredits;
   bool showMenu;
@@ -244,6 +250,8 @@ private:
   int  titleLoad();
   void travel(int index);
   void updateMapMusic();
+  void queueMapChange(int map, int x, int y, int dir, int battleNum); //like a direct curMap change, but deferred until the current dialogue is dismissed
+  void applyPendingMapChange(); //performs the queued map change, if any (called when a dialogue box closes)
 };
 
 #endif
