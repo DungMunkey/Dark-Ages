@@ -768,41 +768,43 @@ void CDarkages::changeMap(int key){
     //DATA 12, 9,  13, 16, 15, 18, 16, 17, 22, 26, 23, 21, 25, 24, 23, 23, 19, 16, 12, 19, 10, 9,  15, 13, 18, 16, 21, 21, 13, 20, 24, 24, 26, 22
     //DATA 12, 10, 6,  7,  9,  6,  11, 9,  9,  9,  11, 11, 14, 16, 15, 13, 13, 13, 14, 17, 12, 19, 19, 19, 20, 21, 15, 18, 23, 20, 23, 18, 18, 22
     if(curMap == 2){
-      if(cam.getTileX() == 8 && cam.getTileY() == 8){
+      //Coordinates below are each stair's OWN tile: changeMap() now runs after the hero has walked onto the stair (see run()),
+      //not while still standing beside it. Each stair has exactly one condition, verified against Maps/Crystal1.map.
+      if(cam.getTileX() == 8 && cam.getTileY() == 9){
         cam.setPos(11, 11); playerDir=0;
-      } else if(cam.getTileX() == 14 && cam.getTileY() == 6){
+      } else if(cam.getTileX() == 15 && cam.getTileY() == 6){
         cam.setPos(12, 5); playerDir=0;
-      } else if(cam.getTileX() == 18 && cam.getTileY() == 5){
+      } else if(cam.getTileX() == 17 && cam.getTileY() == 5){
         cam.setPos(14, 8); playerDir=0;
-      } else if(cam.getTileX() == 17 && cam.getTileY() == 8){
+      } else if(cam.getTileX() == 16 && cam.getTileY() == 8){
         cam.setPos(15, 10); playerDir=0;
-      } else if(cam.getTileX() == 15 && cam.getTileY() == 13){
+      } else if(cam.getTileX() == 15 && cam.getTileY() == 12){
         cam.setPos(18, 12); playerDir=0;
-      } else if(cam.getTileX() == 19 && cam.getTileY() == 10){
+      } else if(cam.getTileX() == 20 && cam.getTileY() == 10){
         cam.setPos(22, 10); playerDir=0;
-      } else if(cam.getTileX() == 25 && cam.getTileY() == 7){
+      } else if(cam.getTileX() == 25 && cam.getTileY() == 8){
         cam.setPos(21, 8); playerDir=0;
-      } else if(cam.getTileX() == 22 && cam.getTileY() == 15){
+      } else if(cam.getTileX() == 23 && cam.getTileY() == 15){
         cam.setPos(24, 13); playerDir=0;
-      } else if(cam.getTileX() == 21 && cam.getTileY() == 17){
+      } else if(cam.getTileX() == 20 && cam.getTileY() == 17){
         cam.setPos(20, 14); playerDir=0;
-      } else if(cam.getTileX() == 22 && cam.getTileY() == 17){
+      } else if(cam.getTileX() == 23 && cam.getTileY() == 17){
         cam.setPos(23, 22); playerDir=0;
-      } else if(cam.getTileX() == 22 && cam.getTileY() == 21){
+      } else if(cam.getTileX() == 21 && cam.getTileY() == 21){
         cam.setPos(25, 17); playerDir=0;
-      } else if(cam.getTileX() == 21 && cam.getTileY() == 12){
+      } else if(cam.getTileX() == 22 && cam.getTileY() == 12){
         cam.setPos(22, 14); playerDir=0;
-      } else if(cam.getTileX() == 17 && cam.getTileY() == 16){
+      } else if(cam.getTileX() == 18 && cam.getTileY() == 16){
         cam.setPos(11, 13); playerDir=0;
-      } else if(cam.getTileX() == 14 && cam.getTileY() == 20){
+      } else if(cam.getTileX() == 15 && cam.getTileY() == 20){
         cam.setPos(17, 19); playerDir=0;
-      } else if(cam.getTileX() == 19 && cam.getTileY() == 20){
+      } else if(cam.getTileX() == 19 && cam.getTileY() == 19){
         cam.setPos(12, 22); playerDir=0;
-      } else if((cam.getTileX() == 12 && cam.getTileY() == 19) || (cam.getTileX() == 11 && cam.getTileY() == 18)){
+      } else if(cam.getTileX() == 12 && cam.getTileY() == 18){
         cam.setPos(14, 18); playerDir=0;
-      } else if((cam.getTileX() == 8 && cam.getTileY() == 19) || (cam.getTileX() == 9 && cam.getTileY() == 18)){
+      } else if(cam.getTileX() == 8 && cam.getTileY() == 18){
         cam.setPos(9, 11); playerDir=0;
-      } else if(cam.getTileX() == 25 && cam.getTileY() == 21){
+      } else if(cam.getTileX() == 25 && cam.getTileY() == 22){
         curMap=3; cam.setPos(8, 5); playerDir=0; eBattleNum=4;
       }
     } else if(curMap==3){
@@ -834,11 +836,12 @@ void CDarkages::changeMap(int key){
         curMap=23; cam.setPos(8, 5); playerDir=0; eBattleNum=5;
       }
     } else if(curMap == 25){
+      //ld4's up stairs are at (8,11), (17,13) and (25,22); tested by the stair's own row since the hero is standing on it
       if(cam.getTileY() == 11){
         curMap=24; cam.setPos(12, 18); playerDir=0; eBattleNum=5;
-      } else if(cam.getTileY() == 14){
+      } else if(cam.getTileY() == 13){
         curMap=24; cam.setPos(17, 13); playerDir=0; eBattleNum=5;
-      } else if(cam.getTileY() == 21){
+      } else if(cam.getTileY() == 22){
         curMap=24; cam.setPos(25, 22); playerDir=0; eBattleNum=5;
       }
     } else if(curMap == 26){
@@ -857,41 +860,43 @@ void CDarkages::changeMap(int key){
     //DATA 12, 9,  13, 16, 15, 18, 16, 17, 22, 26, 23, 21, 25, 24, 23, 23, 19, 16, 12, 19, 10, 9,  15, 13, 18, 16, 21, 21, 13, 20, 24, 24, 26, 22
     //DATA 12, 10, 6,  7,  9,  6,  11, 9,  9,  9,  11, 11, 14, 16, 15, 13, 13, 13, 14, 17, 12, 19, 19, 19, 20, 21, 15, 18, 23, 20, 23, 18, 18, 22
     if(curMap == 2){
-      if(cam.getTileX() == 11 && cam.getTileY() == 7){
+      //Coordinates below are each stair's OWN tile: changeMap() now runs after the hero has walked onto the stair (see run()),
+      //not while still standing beside it. Each stair has exactly one condition, verified against Maps/Crystal1.map.
+      if(cam.getTileX() == 10 && cam.getTileY() == 7){
         curMap = 31; cam.setPos(87, 99); playerDir=0; eBattleNum=1;
-      } else if(cam.getTileX() == 11 && cam.getTileY() == 10){
+      } else if(cam.getTileX() == 11 && cam.getTileY() == 11){
         cam.setPos(8, 9); playerDir=0;
-      } else if(cam.getTileX() == 8 && cam.getTileY() == 11){
+      } else if(cam.getTileX() == 9 && cam.getTileY() == 11){
         cam.setPos(8, 18); playerDir=0;
-      } else if(cam.getTileX() == 12 && cam.getTileY() == 13){
+      } else if(cam.getTileX() == 11 && cam.getTileY() == 13){
         cam.setPos(18, 16); playerDir=0;
-      } else if(cam.getTileX() == 14 && cam.getTileY() == 10){
+      } else if(cam.getTileX() == 15 && cam.getTileY() == 10){
         cam.setPos(16, 8); playerDir=0;
-      } else if(cam.getTileX() == 13 && cam.getTileY() == 8){
+      } else if(cam.getTileX() == 14 && cam.getTileY() == 8){
         cam.setPos(17, 5); playerDir=0;
-      } else if(cam.getTileX() == 11 && cam.getTileY() == 5){
+      } else if(cam.getTileX() == 12 && cam.getTileY() == 5){
         cam.setPos(15, 6); playerDir=0;
-      } else if(cam.getTileX() == 19 && cam.getTileY() == 12){
+      } else if(cam.getTileX() == 18 && cam.getTileY() == 12){
         cam.setPos(15, 12); playerDir=0;
-      } else if(cam.getTileX() == 21 && cam.getTileY() == 7){
+      } else if(cam.getTileX() == 21 && cam.getTileY() == 8){
         cam.setPos(25, 8); playerDir=0;
-      } else if(cam.getTileX() == 19 && cam.getTileY() == 14){
+      } else if(cam.getTileX() == 20 && cam.getTileY() == 14){
         cam.setPos(20, 17); playerDir=0;
-      } else if(cam.getTileX() == 23 && cam.getTileY() == 10){
+      } else if(cam.getTileX() == 22 && cam.getTileY() == 10){
         cam.setPos(20, 10); playerDir=0;
-      } else if(cam.getTileX() == 24 && cam.getTileY() == 12){
+      } else if(cam.getTileX() == 24 && cam.getTileY() == 13){
         cam.setPos(23, 15); playerDir=0;
-      } else if(cam.getTileX() == 22 && cam.getTileY() == 15){
+      } else if(cam.getTileX() == 22 && cam.getTileY() == 14){
         cam.setPos(22, 12); playerDir=0;
-      } else if(cam.getTileX() == 17 && cam.getTileY() == 18){
+      } else if(cam.getTileX() == 17 && cam.getTileY() == 19){
         cam.setPos(15, 20); playerDir=0;
-      } else if(cam.getTileX() == 15 && cam.getTileY() == 18){
+      } else if(cam.getTileX() == 14 && cam.getTileY() == 18){
         cam.setPos(12, 18); playerDir=0;
-      } else if((cam.getTileX() == 12 && cam.getTileY() == 21) || (cam.getTileX() == 11 && cam.getTileY() == 22)){
+      } else if(cam.getTileX() == 12 && cam.getTileY() == 22){
         cam.setPos(19, 19); playerDir=0;
-      } else if(cam.getTileX() == 25 && cam.getTileY() == 18){
+      } else if(cam.getTileX() == 25 && cam.getTileY() == 17){
         cam.setPos(21, 21); playerDir=0;
-      } else if(cam.getTileX() == 23 && cam.getTileY() == 21){
+      } else if(cam.getTileX() == 23 && cam.getTileY() == 22){
         cam.setPos(23, 17); playerDir=0;
       }
     } else if(curMap==3){
@@ -945,11 +950,12 @@ void CDarkages::changeMap(int key){
     } else if(curMap == 23){
       curMap=24; cam.setPos(8, 5); playerDir=0; eBattleNum=5;
     } else if(curMap == 24){
-      if(cam.getTileY() == 14){
+      //ld3's down stairs are at (17,13), (12,18) and (25,22); tested by the stair's own row since the hero is standing on it
+      if(cam.getTileY() == 13){
         curMap=25; cam.setPos(17, 13); playerDir=0; eBattleNum=5;
-      } else if(cam.getTileY() == 17){
+      } else if(cam.getTileY() == 18){
         curMap=25; cam.setPos(8, 11); playerDir=0; eBattleNum=5;
-      } else if(cam.getTileY() == 21){
+      } else if(cam.getTileY() == 22){
         curMap=25; cam.setPos(25, 22); playerDir=0; eBattleNum=5;
       }
     } else if(curMap == 25){
