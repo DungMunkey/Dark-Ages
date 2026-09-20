@@ -2078,11 +2078,12 @@ void CDarkages::render(){
     SDL_RenderCopy(display->renderer, gfx.death->texture, gfx.death->getTile(0), &r);
   }
 
-  //show any endgame screens. A 16:10 image (the original game's shape) is stretched over the canvas as
-  //always; any other shape (e.g. a square mod image) would be distorted that way, so it is instead drawn
-  //further down at its own aspect ratio over the whole window - see renderEndgameFullWindow().
+  //show any endgame screens. An image the canvas is a whole-number multiple of (the original game's 320x200
+  //art on a TileSize 40 canvas) is stretched over the canvas as always; any other size or shape would be
+  //distorted or resampled unevenly that way, so it is instead drawn further down at its own aspect ratio over
+  //the whole window at a whole-number scale - see renderEndgameFullWindow().
   CGraphic* endImg = currentEndgameImage();
-  bool endImgFullWindow = (endImg != NULL && !isCanvasShaped(endImg));
+  bool endImgFullWindow = (endImg != NULL && !fitsCanvasInWholeScale(endImg));
   if(endImg != NULL && !endImgFullWindow){
     r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
     SDL_RenderCopy(display->renderer, endImg->texture, endImg->getTile(0), &r);
@@ -2155,21 +2156,23 @@ CGraphic* CDarkages::currentEndgameImage(){
   return NULL;
 }
 
-//True when g is exactly 16:10 (the shape of the world canvas and of the original game's endgame art)
-bool CDarkages::isCanvasShaped(CGraphic* g){
+//True when the world canvas is an exact whole-number multiple of g (same multiple on both axes). That's the case
+//for the original game's 320x200 art on a TileSize 40 canvas (2x), where drawing g stretched over the canvas
+//keeps every source pixel the same size. Anything else would be resampled by a fractional amount on the canvas
+//(e.g. a 640x400 image on a 512x320 canvas), so those go through renderEndgameFullWindow() instead.
+bool CDarkages::fitsCanvasInWholeScale(CGraphic* g){
   SDL_Rect* t = g->getTile(0);
-  return t != NULL && t->w * 10 == t->h * 16;
+  if(t == NULL || t->w <= 0 || t->h <= 0) return false;
+  return display->canvasW % t->w == 0 && display->canvasH % t->h == 0 && display->canvasW / t->w == display->canvasH / t->h;
 }
 
 //Draws g at its own aspect ratio, centered in the window with black bars on whichever axis is left over.
-//Draws in raw backbuffer coordinates (no viewport/scale), so it must be called between the canvas copy and
-//beginUIPass(). Two ways of sizing it, chosen per image and window:
-// - Small pixel art (e.g. a 256x256 image on a 1080p screen): if a whole-number multiple of the image fills at
-//   least 85% of the largest size that fits, use that multiple with nearest-neighbor, so every source pixel is
-//   the same size and stays perfectly sharp.
-// - Otherwise (a larger image, or a window where a whole multiple would leave big borders): scale to the exact
-//   fit with linear filtering (requested for this texture only), since the game-wide nearest-neighbor default
-//   would give uneven pixel sizes on a non-integer fit.
+//The scale is worked out here from the image's size and the window's size (nothing is hard-coded per image):
+//the largest WHOLE-NUMBER multiple of the image that fits, drawn with nearest-neighbor, so every source pixel
+//is exactly the same size and the artwork is never filtered or resampled unevenly. Draws in raw backbuffer
+//coordinates (no viewport/scale), so it must be called between the canvas copy and beginUIPass().
+//The one case a whole-number multiple can't cover is an image larger than the window itself; it is then
+//shrunk to fit (still nearest-neighbor, never smoothed) rather than being cropped.
 void CDarkages::renderEndgameFullWindow(CGraphic* g){
   SDL_Rect* src = g->getTile(0);
   if(src == NULL || src->w <= 0 || src->h <= 0) return;
@@ -2182,10 +2185,9 @@ void CDarkages::renderEndgameFullWindow(CGraphic* g){
   if(fitH < fit) fit = fitH;
 
   int wholeScale = (int)fit; //largest whole-number multiple that fits (0 if the image is bigger than the window)
-  bool crisp = (wholeScale >= 1 && wholeScale >= fit * 0.85);
 
   SDL_Rect dst;
-  if(crisp){
+  if(wholeScale >= 1){
     dst.w = src->w * wholeScale;
     dst.h = src->h * wholeScale;
   } else {
@@ -2195,9 +2197,8 @@ void CDarkages::renderEndgameFullWindow(CGraphic* g){
   dst.x = (display->screenWidth - dst.w) / 2;
   dst.y = (display->screenHeight - dst.h) / 2;
 
-  SDL_SetTextureScaleMode(g->texture, crisp ? SDL_ScaleModeNearest : SDL_ScaleModeLinear);
-  SDL_RenderCopy(display->renderer, g->texture, src, &dst);
   SDL_SetTextureScaleMode(g->texture, SDL_ScaleModeNearest);
+  SDL_RenderCopy(display->renderer, g->texture, src, &dst);
 }
 
 bool CDarkages::renderCredits(){
@@ -3668,7 +3669,7 @@ void CDarkages::setText(int i){
     eGreyor=7;
     break;
   case 154:
-    script.addText("A week later, you return to Castle Garrison at the summons of the King.");
+    script.addText("A week later, you kneel before the throne of the King.");
     curMap=19; cam.setPos(27, 11); playerDir=0; eBattleNum=0;
     eGreyor=9;
     break;
