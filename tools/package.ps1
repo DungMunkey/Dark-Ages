@@ -78,7 +78,7 @@ function Find-MSBuild {
 if (-not $SkipBuild) {
   & (Join-Path $PSScriptRoot 'get-deps.ps1')
   $msbuild = Find-MSBuild
-  $msbuildArgs = @((Join-Path $repo 'msvc\Darkages.sln'), '/p:Configuration=Release', '/p:Platform=x64', '/m', '/nologo', '/v:m')
+  $msbuildArgs = @((Join-Path $repo 'msvc\Darkages.sln'), '/p:Configuration=Release', '/p:Platform=x64', '/m', '/nr:false', '/nologo', '/v:m')   # /nr:false: no idle worker processes left holding the folder
   if ($VersionSuffix) { $msbuildArgs += "/p:DAVersionSuffix=$VersionSuffix" }
   Write-Host "Building with $msbuild"
   & $msbuild @msbuildArgs
