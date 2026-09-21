@@ -41,3 +41,6 @@ sources/music/*.pdf
 
 # Linux build output (see Makefile)
 game/darkages
+
+# Zips produced by tools/package.ps1
+dist/
