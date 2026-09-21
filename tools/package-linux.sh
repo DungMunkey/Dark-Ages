@@ -113,7 +113,7 @@ printf '%s\n' "$readme" > "$stage/README.txt"
 # THIRD-PARTY.txt: assembled from the license files in the source trees that were compiled in
 deps="$repo/third_party/linux"
 tree() { local match; match="$(find "$deps" -maxdepth 1 -type d -name "$1" | head -n1)"; [ -n "$match" ] || { echo "No source tree matching '$1' in third_party/linux - run tools/get-deps.sh." >&2; exit 1; }; printf '%s' "$match"; }
-sdl2="$(tree 'SDL2-[0-9]*')"; ttf="$(tree 'SDL2_ttf-[0-9]*')"; mixer="$(tree 'SDL2_mixer-[0-9]*')"
+sdl3="$(tree 'SDL3-[0-9]*')"; ttf="$(tree 'SDL3_ttf-[0-9]*')"; mixer="$(tree 'SDL3_mixer-[0-9]*')"
 notice() {   # heading, site, note, files...
   local heading="$1" site="$2" note="$3"; shift 3
   printf '\n------------------------------------------------------------------------------\n%s  -  %s\n' "$heading" "$site"
@@ -128,10 +128,10 @@ notice() {   # heading, site, note, files...
 }
 {
   printf 'THIRD-PARTY SOFTWARE\n====================\nDark Ages ships with the following third-party libraries, compiled into the game.\n'
-  notice "$(basename "$sdl2")" "https://www.libsdl.org/" "" "$sdl2/LICENSE.txt"
-  notice "$(basename "$ttf")" "https://github.com/libsdl-org/SDL_ttf" "SDL2_ttf includes FreeType; its license follows." "$ttf/LICENSE.txt"
+  notice "$(basename "$sdl3")" "https://www.libsdl.org/" "" "$sdl3/LICENSE.txt"
+  notice "$(basename "$ttf")" "https://github.com/libsdl-org/SDL_ttf" "SDL3_ttf includes FreeType; its license follows." "$ttf/LICENSE.txt"
   notice "FreeType" "https://www.freetype.org/" "Portions of this software are copyright (c) The FreeType Project (www.freetype.org). All rights reserved." "$ttf/external/freetype/LICENSE.TXT" "$ttf/external/freetype/docs/FTL.TXT"
-  notice "$(basename "$mixer")" "https://github.com/libsdl-org/SDL_mixer" "SDL2_mixer includes the stb_vorbis decoder for Ogg Vorbis, released by its author under public-domain or permissive terms." "$mixer/LICENSE.txt"
+  notice "$(basename "$mixer")" "https://github.com/libsdl-org/SDL_mixer" "SDL3_mixer includes the stb_vorbis decoder for Ogg Vorbis, released by its author under public-domain or permissive terms." "$mixer/LICENSE.txt"
 } > "$stage/THIRD-PARTY.txt"
 
 # ---- self-check: refuse to produce an archive that is missing something or contains something it must not ---

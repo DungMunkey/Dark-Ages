@@ -58,13 +58,18 @@ jobs:
         shell: powershell
         run: Add-Content -Path $env:GITHUB_OUTPUT -Value "sha=$(git rev-parse HEAD)"
 
-      # tools/get-deps.ps1 verifies every download against a pinned SHA-256, so the cache only saves time
-      # (and shields us from libsdl.org being slow); it can't change what gets built.
+      # tools/get-deps.ps1 verifies every download against a pinned SHA-256 and builds SDL3, SDL3_ttf and SDL3_mixer as
+      # static libraries (a few minutes), so the cache only saves time; it can't change what gets built. It holds the
+      # built libraries, the source trees (the license files come from them) and the downloads, but not the large
+      # intermediate build folder. The key covers every file that decides how the libraries are built.
       - name: Cache the SDL libraries
         uses: actions/cache@v4
         with:
-          path: third_party
-          key: sdl-${{ hashFiles('tools/get-deps.ps1') }}
+          path: |
+            third_party/sdl3
+            third_party/sdl3-src
+            third_party/_downloads
+          key: sdl3-windows-${{ hashFiles('tools/get-deps.ps1', 'tools/cmake/**', 'tools/sdl3-static/**') }}
 
       - name: Build and package
         id: package
@@ -113,12 +118,15 @@ jobs:
             libxkbcommon-dev libwayland-dev wayland-protocols libdecor-0-dev \
             libgl1-mesa-dev libegl1-mesa-dev libgles2-mesa-dev libdrm-dev libgbm-dev
 
-      # tools/get-deps.sh verifies every download against a pinned SHA-256, so the cache only saves time.
+      # tools/get-deps.sh verifies every download against a pinned SHA-256 and pins FreeType to one commit, so the cache
+      # only saves time.
       - name: Cache the SDL sources
         uses: actions/cache@v4
         with:
-          path: third_party
-          key: sdl-linux-${{ hashFiles('tools/get-deps.sh') }}
+          path: |
+            third_party/linux
+            third_party/_downloads
+          key: sdl3-linux-${{ hashFiles('tools/get-deps.sh') }}
 
       - name: Build and package
         env:

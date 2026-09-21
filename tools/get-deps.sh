@@ -2,13 +2,15 @@
 # Downloads the SDL source releases that the Linux build compiles into the game (statically), into
 # third_party/linux/ (git-ignored):
 #
-#   third_party/linux/SDL2-2.32.10/
-#   third_party/linux/SDL2_ttf-2.24.0/
-#   third_party/linux/SDL2_mixer-2.8.1/
+#   third_party/linux/SDL3-3.4.16/
+#   third_party/linux/SDL3_ttf-3.2.2/     (with FreeType in external/freetype)
+#   third_party/linux/SDL3_mixer-3.2.4/
 #
 # CMakeLists.txt finds them by name when given -DDA_SDL_SOURCE_DIR=third_party/linux. Every download is
-# checked against a pinned SHA-256, and the script is safe to re-run: sources that are already unpacked and
-# verified are left alone. tools/package-linux.sh and the GitHub Actions workflows use this same script.
+# checked against a pinned SHA-256, and FreeType (which the SDL3_ttf archive does not bundle) is fetched at one
+# exact git commit. The script is safe to re-run: sources that are already unpacked and verified are left alone.
+# tools/package-linux.sh and the GitHub Actions workflows use this same script. The Windows counterpart is
+# tools/get-deps.ps1, which pins the same versions.
 #
 # Usage: tools/get-deps.sh [--force]
 #
@@ -24,10 +26,14 @@ downloads="$repo/third_party/_downloads"
 
 # name|file|url|sha256|folder
 deps=(
-  "SDL2 2.32.10|SDL2-2.32.10.tar.gz|https://github.com/libsdl-org/SDL/releases/download/release-2.32.10/SDL2-2.32.10.tar.gz|5f5993c530f084535c65a6879e9b26ad441169b3e25d789d83287040a9ca5165|SDL2-2.32.10"
-  "SDL2_ttf 2.24.0|SDL2_ttf-2.24.0.tar.gz|https://github.com/libsdl-org/SDL_ttf/releases/download/release-2.24.0/SDL2_ttf-2.24.0.tar.gz|0b2bf1e7b6568adbdbc9bb924643f79d9dedafe061fa1ed687d1d9ac4e453bfd|SDL2_ttf-2.24.0"
-  "SDL2_mixer 2.8.1|SDL2_mixer-2.8.1.tar.gz|https://github.com/libsdl-org/SDL_mixer/releases/download/release-2.8.1/SDL2_mixer-2.8.1.tar.gz|cb760211b056bfe44f4a1e180cc7cb201137e4d1572f2002cc1be728efd22660|SDL2_mixer-2.8.1"
+  "SDL3 3.4.16|SDL3-3.4.16.tar.gz|https://github.com/libsdl-org/SDL/releases/download/release-3.4.16/SDL3-3.4.16.tar.gz|7322236cd12090c3eb40b9728be4d49c76f66ad17d04369584d4ecad5cf77c68|SDL3-3.4.16"
+  "SDL3_ttf 3.2.2|SDL3_ttf-3.2.2.tar.gz|https://github.com/libsdl-org/SDL_ttf/releases/download/release-3.2.2/SDL3_ttf-3.2.2.tar.gz|63547d58d0185c833213885b635a2c0548201cc8f301e6587c0be1a67e1e045d|SDL3_ttf-3.2.2"
+  "SDL3_mixer 3.2.4|SDL3_mixer-3.2.4.tar.gz|https://github.com/libsdl-org/SDL_mixer/releases/download/release-3.2.4/SDL3_mixer-3.2.4.tar.gz|182a07c745375e113dc740d43964ff21b0be29f29f59876c4dbc4db3d32f6901|SDL3_mixer-3.2.4"
 )
+# SDL3_ttf's FreeType: SDL's fork (branch VER-2-13-2-SDL), pinned to one commit.
+freetype_url="https://github.com/libsdl-org/freetype.git"
+freetype_commit="9973564cfa63763a3e4ac67c09147899539b1e07"
+ttf_folder="SDL3_ttf-3.2.2"
 
 sha256_of() {
   if command -v sha256sum >/dev/null 2>&1; then
@@ -79,5 +85,23 @@ for entry in "${deps[@]}"; do
   echo "$sha" > "$marker"
   printf '%-18s ready in %s\n' "$name" "$target"
 done
+
+# FreeType: fetched by exact commit (git is content-addressed, so it cannot silently change)
+ft_dir="$dest/$ttf_folder/external/freetype"
+ft_head() { if [ -d "$ft_dir/.git" ]; then git -C "$ft_dir" rev-parse HEAD 2>/dev/null || true; fi; }
+if [ "$(ft_head)" != "$freetype_commit" ]; then
+  echo "FreeType           fetching commit $freetype_commit"
+  rm -rf "$ft_dir"
+  mkdir -p "$ft_dir"
+  git -C "$ft_dir" init -q
+  git -C "$ft_dir" remote add origin "$freetype_url"
+  git -C "$ft_dir" fetch -q --depth 1 origin "$freetype_commit"
+  git -C "$ft_dir" checkout -q FETCH_HEAD
+  if [ "$(ft_head)" != "$freetype_commit" ]; then
+    echo "FreeType checkout is not at the pinned commit $freetype_commit." >&2
+    exit 1
+  fi
+fi
+echo "FreeType           ready at commit $freetype_commit"
 
 echo "Dependencies are ready in third_party/linux/."
