@@ -2,8 +2,17 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <algorithm>
+#include <filesystem>
 #include <fstream>
-#include <windows.h>
+
+//case-insensitive string compare, spelled differently on Windows and elsewhere
+#ifdef _WIN32
+#define da_stricmp _stricmp
+#else
+#include <strings.h>
+#define da_stricmp strcasecmp
+#endif
 
 using namespace std;
 
@@ -11,18 +20,17 @@ vector<string> CMods::listMods(){
   vector<string> mods;
   mods.push_back("None");
 
-  WIN32_FIND_DATAA data;
-  HANDLE h = FindFirstFileA("Mods\\*", &data);
-  if(h != INVALID_HANDLE_VALUE){
-    do{
-      if((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
-         strcmp(data.cFileName, ".") != 0 &&
-         strcmp(data.cFileName, "..") != 0){
-        mods.push_back(data.cFileName);
-      }
-    } while(FindNextFileA(h, &data));
-    FindClose(h);
+  //every folder inside Mods/ is a mod
+  vector<string> found;
+  error_code ec; //Mods/ may not exist (or be unreadable): that just means there are no mods
+  for(filesystem::directory_iterator it("Mods", ec), end; !ec && it != end; it.increment(ec)){
+    error_code entryEc; //separate, so one unreadable entry doesn't end the listing
+    if(it->is_directory(entryEc)) found.push_back(it->path().filename().string());
   }
+
+  //directory order is up to the file system (Windows happened to give name order); sort so the Options menu is the same everywhere
+  sort(found.begin(), found.end(), [](const string& a, const string& b){ return da_stricmp(a.c_str(), b.c_str()) < 0; });
+  mods.insert(mods.end(), found.begin(), found.end());
 
   return mods;
 }
@@ -58,28 +66,28 @@ sModSettings CMods::loadModSettings(const string& modName){
     size_t vlen = strlen(val);
     while(vlen > 0 && (val[vlen - 1] == '\n' || val[vlen - 1] == '\r' || val[vlen - 1] == ' ' || val[vlen - 1] == '\t')) val[--vlen] = '\0';
 
-    if(_stricmp(key, "TileSize") == 0){
+    if(da_stricmp(key, "TileSize") == 0){
       int sz = atoi(val);
       if(sz > 0) s.tileSize = sz;
-    } else if(_stricmp(key, "MonsterSize") == 0){
+    } else if(da_stricmp(key, "MonsterSize") == 0){
       int sz = atoi(val);
       if(sz > 0) s.monsterSize = sz;
-    } else if(_stricmp(key, "HighResBorders") == 0){
-      s.highResBorders = (atoi(val) != 0 || _stricmp(val, "true") == 0 || _stricmp(val, "yes") == 0);
-    } else if(_stricmp(key, "BevelDetail") == 0){
+    } else if(da_stricmp(key, "HighResBorders") == 0){
+      s.highResBorders = (atoi(val) != 0 || da_stricmp(val, "true") == 0 || da_stricmp(val, "yes") == 0);
+    } else if(da_stricmp(key, "BevelDetail") == 0){
       int d = atoi(val);
       if(d > 0) s.bevelDetail = d;
-    } else if(_stricmp(key, "HeroWalkFrames") == 0){
+    } else if(da_stricmp(key, "HeroWalkFrames") == 0){
       int f = atoi(val);
       if(f > 0) s.heroWalkFrames = (f > 32) ? 32 : f; //DA1HeroL.bmp is 16 columns wide, 4 per direction block - 32 is as many 8-row blocks as that supports
-    } else if(_stricmp(key, "SolidTiles") == 0){
+    } else if(da_stricmp(key, "SolidTiles") == 0){
       //comma-separated list of map-tile values to additionally treat as impassable - see CDarkages::checkTile()
       char* tok = strtok(val, ",");
       while(tok != NULL){
         s.solidTiles.push_back(atoi(tok));
         tok = strtok(NULL, ",");
       }
-    } else if(_stricmp(key, "HeroIdleAnimations") == 0){
+    } else if(da_stricmp(key, "HeroIdleAnimations") == 0){
       //comma-separated frame count per idle animation, e.g. "12,16,8" = 3 animations - see Gfx/DA1HeroIdle.bmp
       char* tok = strtok(val, ",");
       while(tok != NULL){
