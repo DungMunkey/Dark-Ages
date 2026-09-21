@@ -19,12 +19,17 @@
 .PARAMETER Force
   Download, unpack and rebuild everything, even if it looks up to date.
 
+.PARAMETER ReleaseOnly
+  Build only the Release libraries (enough to package the game; the workflows and tools\package.ps1 use this).
+  Without it the Debug libraries are built too, which Visual Studio's Debug configuration needs.
+
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File tools\get-deps.ps1
 #>
 [CmdletBinding()]
 param(
-  [switch]$Force
+  [switch]$Force,
+  [switch]$ReleaseOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -85,10 +90,12 @@ $stampText = (($deps | ForEach-Object { $_.Sha256 }) -join ',') + "|$freetypeCom
 $stamp     = Get-StringSha256 $stampText
 $stampFile = Join-Path $outDir '.da-deps-stamp'
 
+# Release is what the packages use; Debug is for developing in Visual Studio. -ReleaseOnly skips the Debug libraries.
+$configs = if ($ReleaseOnly) { @('Release') } else { @('Release', 'Debug') }
 $expectedLibs = 'SDL3-static.lib', 'SDL3_ttf-static.lib', 'SDL3_mixer-static.lib', 'freetype.lib'
 function Test-Built {
   if (-not (Test-Path $stampFile) -or ((Get-Content $stampFile -Raw).Trim() -ne $stamp)) { return $false }
-  foreach ($cfg in 'Release', 'Debug') {
+  foreach ($cfg in $configs) {
     foreach ($lib in $expectedLibs) { if (-not (Test-Path (Join-Path $outDir "lib\$cfg\$lib"))) { return $false } }
   }
   return (Test-Path (Join-Path $outDir 'include\SDL3\SDL.h'))
@@ -181,7 +188,7 @@ Write-Host "Configuring the SDL3 build with $cmake"
 if ($LASTEXITCODE -ne 0) { throw "CMake configure failed (exit code $LASTEXITCODE)." }
 
 if (Test-Path $outDir) { Remove-Item $outDir -Recurse -Force }
-foreach ($cfg in 'Release', 'Debug') {
+foreach ($cfg in $configs) {
   Write-Host "Building SDL3, SDL3_ttf and SDL3_mixer ($cfg) - a few minutes..."
   & $cmake --build $buildDir --config $cfg --target da_sdl3_libs --parallel
   if ($LASTEXITCODE -ne 0) { throw "CMake build ($cfg) failed (exit code $LASTEXITCODE)." }

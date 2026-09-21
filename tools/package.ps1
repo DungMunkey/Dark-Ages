@@ -8,7 +8,7 @@
 
   The zip holds a single folder, DarkAges/, containing only what is needed to play:
 
-    Darkages.exe and the five SDL runtime DLLs
+    Darkages.exe (SDL is linked into it: no DLLs)
     Font/  Gfx/  Maps/  Music/  Mods/     (every mod in game/Mods)
     darkages.cfg                           (default settings, with -DefaultMod selected)
     README.txt  LICENSE  THIRD-PARTY.txt
@@ -88,7 +88,7 @@ function Find-MSBuild {
 }
 
 if (-not $SkipBuild) {
-  & (Join-Path $PSScriptRoot 'get-deps.ps1')
+  & (Join-Path $PSScriptRoot 'get-deps.ps1') -ReleaseOnly   # packaging only needs the Release libraries
   $msbuild = Find-MSBuild
   $msbuildArgs = @((Join-Path $repo 'msvc\Darkages.sln'), '/p:Configuration=Release', '/p:Platform=x64', '/m', '/nr:false', '/nologo', '/v:m')   # /nr:false: no idle worker processes left holding the folder
   if ($VersionSuffix) { $msbuildArgs += "/p:DAVersionSuffix=$VersionSuffix" }
@@ -105,7 +105,7 @@ $stage      = Join-Path $stageRoot 'DarkAges'
 if (Test-Path $stageRoot) { Remove-Item $stageRoot -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
 
-$runtimeFiles = 'Darkages.exe', 'SDL2.dll', 'SDL2_ttf.dll', 'SDL2_mixer.dll', 'libfreetype-6.dll', 'zlib1.dll'
+$runtimeFiles = 'Darkages.exe' #a single executable: SDL, SDL_ttf and SDL_mixer are statically linked into it
 foreach ($f in $runtimeFiles) {
   $src = Join-Path $game $f
   if (-not (Test-Path $src)) { throw "$f is missing from game/ - the build did not produce it." }
@@ -164,20 +164,20 @@ $readme = (Get-Content (Join-Path $repo 'tools\game-readme.txt') -Raw).
 Write-TextFile (Join-Path $stage 'README.txt') $readme
 
 # Third-party notices are assembled from the license files that came with the libraries we ship.
+$sdlSrc = Join-Path $thirdParty 'sdl3-src'   # the source trees tools\get-deps.ps1 built the libraries from
 $libs = @(
-  @{ Name = 'SDL2 2.0.12';       Site = 'https://www.libsdl.org/';                       Files = @('SDL2-2.0.12\COPYING.txt'); Note = '' },
-  @{ Name = 'SDL2_ttf 2.0.12';   Site = 'https://www.libsdl.org/projects/SDL_ttf/';       Files = @('SDL2_ttf-2.0.12\COPYING.txt');
-     Note = 'The bundled libfreetype-6.dll (FreeType) and zlib1.dll (zlib) come with SDL2_ttf; their licenses follow.' },
-  @{ Name = 'FreeType';          Site = 'https://www.freetype.org/';                      Files = @('SDL2_ttf-2.0.12\lib\x64\LICENSE.freetype.txt');
+  @{ Name = 'SDL3 3.4.16';       Site = 'https://www.libsdl.org/';                       Files = @('SDL3-3.4.16\LICENSE.txt'); Note = '' },
+  @{ Name = 'SDL3_ttf 3.2.2';    Site = 'https://github.com/libsdl-org/SDL_ttf';          Files = @('SDL3_ttf-3.2.2\LICENSE.txt');
+     Note = 'SDL3_ttf includes FreeType; its license follows.' },
+  @{ Name = 'FreeType';          Site = 'https://www.freetype.org/';                      Files = @('SDL3_ttf-3.2.2\external\freetype\LICENSE.TXT', 'SDL3_ttf-3.2.2\external\freetype\docs\FTL.TXT');
      Note = 'Portions of this software are copyright (c) The FreeType Project (www.freetype.org). All rights reserved.' },
-  @{ Name = 'zlib';              Site = 'https://zlib.net/';                              Files = @('SDL2_ttf-2.0.12\lib\x64\LICENSE.zlib.txt'); Note = '' },
-  @{ Name = 'SDL2_mixer 2.8.1';  Site = 'https://github.com/libsdl-org/SDL_mixer';        Files = @('SDL2_mixer-2.8.1\LICENSE.txt');
-     Note = 'SDL2_mixer includes decoders for Ogg Vorbis (stb_vorbis), FLAC (dr_flac) and MP3 (minimp3), released by their authors under public-domain or permissive terms.' }
+  @{ Name = 'SDL3_mixer 3.2.4';  Site = 'https://github.com/libsdl-org/SDL_mixer';        Files = @('SDL3_mixer-3.2.4\LICENSE.txt');
+     Note = 'SDL3_mixer includes the stb_vorbis decoder for Ogg Vorbis, released by its author under public-domain or permissive terms.' }
 )
 $notice = New-Object Text.StringBuilder
 [void]$notice.AppendLine('THIRD-PARTY SOFTWARE')
 [void]$notice.AppendLine('====================')
-[void]$notice.AppendLine('Dark Ages ships with the following third-party libraries.')
+[void]$notice.AppendLine('Dark Ages is built with the following third-party libraries, compiled into the program.')
 foreach ($lib in $libs) {
   [void]$notice.AppendLine('')
   [void]$notice.AppendLine('------------------------------------------------------------------------------')
@@ -185,8 +185,8 @@ foreach ($lib in $libs) {
   if ($lib.Note) { [void]$notice.AppendLine($lib.Note) }
   [void]$notice.AppendLine('------------------------------------------------------------------------------')
   foreach ($rel in $lib.Files) {
-    $p = Join-Path $thirdParty $rel
-    if (-not (Test-Path $p)) { throw "License file $rel not found in third_party/ - run tools\get-deps.ps1." }
+    $p = Join-Path $sdlSrc $rel
+    if (-not (Test-Path $p)) { throw "License file $rel not found in third_party/sdl3-src/ - run tools\get-deps.ps1." }
     [void]$notice.AppendLine((Get-Content $p -Raw).TrimEnd())
   }
 }
@@ -201,7 +201,7 @@ foreach ($r in $required) {
   if (-not (Test-Path (Join-Path $stage $r))) { throw "Package check failed: $r is missing from the package." }
 }
 $forbidden = Get-ChildItem $stage -Recurse -Force | Where-Object {
-  $_.Name -match '\.(pdb|obj|ilk|iobj|ipdb|exp|lib|recipe|tlog|log|cpp|h|vcxproj|sln|xcf|psd|wav|mid|pdf)$' -or
+  $_.Name -match '\.(dll|pdb|obj|ilk|iobj|ipdb|exp|lib|recipe|tlog|log|cpp|h|vcxproj|sln|xcf|psd|wav|mid|pdf)$' -or
   ($_.Name -ieq 'darkages.cfg' -and $_.DirectoryName -ne $stage) -or   # only the generated one at the top is allowed
   $_.Name -ieq 'Saves' -or $_.Name -ieq 'Darkages_d.exe'
 }
