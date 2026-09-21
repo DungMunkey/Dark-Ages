@@ -11,7 +11,7 @@ HOW TO PLAY
      file manager).
 
   Requires a 64-bit (x86_64) Linux desktop with X11 or Wayland and PulseAudio,
-  PipeWire or ALSA sound. SDL2, SDL2_ttf and SDL2_mixer are built into the
+  PipeWire or ALSA sound. SDL3, SDL3_ttf and SDL3_mixer are built into the
   program, so there is nothing to install.
 
   Controls: the arrow keys move; Enter or Space talks and selects; Esc opens
@@ -39,5 +39,5 @@ MODS
 LICENSE
 
   The game's code is released under the Apache License 2.0 (see LICENSE). It
-  uses the SDL2, SDL2_ttf and SDL2_mixer libraries; their licenses are listed in
+  uses the SDL3, SDL3_ttf and SDL3_mixer libraries; their licenses are listed in
   THIRD-PARTY.txt.

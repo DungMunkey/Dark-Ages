@@ -1,6 +1,8 @@
 # SDL3 migration: scoping record and plan
 
-**Status:** scoped, not started. Recorded 2026-09-21 from a design discussion between the game's author and Claude.
+**Status:** ported on the `SDL3` branch (2026-09-21); it builds on Windows (Debug and Release), packages, and starts,
+and a clean-clone rehearsal of the CI build passed. A human play-through, the controller, and the Linux build are still
+untested: see section 10. Recorded 2026-09-21 from a design discussion between the game's author and Claude.
 The migration comes **before** the display and scaling redesign (see [display-scaling-plan.md](display-scaling-plan.md)).
 Facts marked "verified" were checked against the SDL3 headers or source, or by running a proof of concept; items marked
 "to confirm" are understood from the API but must be checked during the port.
@@ -193,8 +195,51 @@ if possible, a real machine.
 ## 9. Open questions
 
 Answered (see section 1): the Windows build system (keep Visual Studio), float rectangles (convert mechanically), and
-the branch (`SDL3`, no parallel SDL2). Still open:
+the branch (`SDL3`, no parallel SDL2). Resolved during the port: the FreeType source is fetched by commit id (section
+10). Still open:
 
-* **Default renderer and vsync** on the development machine once ported (Direct3D 11 is expected).
-* **The exact FreeType archive URL and hash** for `get-deps`.
-* **The branch's base** (assumed `dev`, merging back into `dev`).
+* **Default renderer and vsync** on the development machine (Direct3D 11 is expected; the game does not print which
+  renderer SDL chose).
+* **The branch's base** (built from `dev`, to merge back into `dev`; not explicitly confirmed).
+
+## 10. Port status and findings
+
+**Done and checked by building or running** (Windows, 2026-09-21):
+
+* All game sources ported: rendering to `SDL_FRect` mechanically, `bool` return checks, nearest-neighbor default
+  texture scale mode, window and fullscreen (borderless desktop) and display-mode list, `SDL_GetBasePath` (not freed),
+  `SDL_main.h`, uppercase letter key codes (`SDLK_Q`), text input on the window, SDL3_mixer rewrite of `CMusic`
+  (`playSong` loops, `playSongOnce`, `getSongDuration`, 0-10 volume), and gamepad open/close/hot-plug through
+  `DA_PollEvent` (in `CInput.cpp`), which every event loop uses. The build has only the three warnings it had before.
+* Debug and Release both build; `get-deps.ps1` builds the three static libraries per configuration; the exe is 3.9 MB
+  and imports only Windows system DLLs. `package.ps1` makes a zip with no DLLs, and `Darkages.exe` from a clean
+  clone of the branch (built by the same steps CI runs) starts, shows the title screen with the right version string,
+  and the Project32 title screen and font look identical to SDL2.
+* Linux: all 18 sources compile for x86_64 Linux against the SDL3 headers (with a cross-compiler), the root CMake
+  configures in bundled mode, and `get-deps.sh` runs. **Not** linked or run.
+
+**Findings worth remembering:**
+
+* **The process is DPI-aware by default in SDL3** (confirmed by measurement): a 1280x1024 window is 1280x1024 physical
+  pixels at 150% Windows scaling, where SDL2 let Windows stretch it to 1920x1536 with smoothing. Windows are therefore
+  physically smaller on scaled displays than they were, which the display redesign will address.
+* Default resolution behavior is unchanged: 1280x1024, or the largest listed mode that fits inside the saved size.
+* SDL3_ttf and SDL3_mixer do not bundle FreeType, so `get-deps` fetches the fork at the pinned commit
+  (`git init`, `git fetch --depth 1 <sha>`), which is what makes it reproducible. SDL3_mixer needs no external codec
+  library (Ogg Vorbis through built-in stb_vorbis).
+* The library and target names are `SDL3-static`, `SDL3_ttf-static`, `SDL3_mixer-static` and `freetype`; a single
+  aggregate CMake target (`da_sdl3_libs`) builds them together.
+* The Windows static build needs the static C++ runtime matching the game (`MultiThreaded` / `MultiThreadedDebug`),
+  and its path budget is tight (MSBuild's 260-character limit), hence the 90-character repository-path guard in
+  `get-deps.ps1`.
+* Bulk-editing source files with `sed -i` under Git Bash strips carriage returns, and several source files are
+  committed with CRLF line endings; check `git ls-files --eol` (it should not show `i/crlf w/lf`) after any bulk edit.
+
+**Still needs a human (the author):**
+
+* Play through: title and menu, Options (fullscreen, vsync, scale, volume), new game and text entry, walking,
+  dialogue, shops, stats, spells, save/load, battle, death, endgame scenes and credits (music timing and the title
+  music restarting afterward).
+* The Xbox One Elite Controller everywhere the keyboard works, including unplugging and re-plugging mid-game.
+* A 48 px test mod.
+* Linux: link and run under WSL2, or through the first GitHub Actions run (which also proves the Windows CI job).

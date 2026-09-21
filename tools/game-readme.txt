@@ -43,5 +43,5 @@ WINDOWS WARNS ABOUT THIS FILE
 LICENSE
 
   The game's code is released under the Apache License 2.0 (see LICENSE). It
-  uses the SDL2, SDL2_ttf and SDL2_mixer libraries; their licenses are listed in
+  uses the SDL3, SDL3_ttf and SDL3_mixer libraries; their licenses are listed in
   THIRD-PARTY.txt.

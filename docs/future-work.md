@@ -8,23 +8,11 @@ A running list of updates we will need or might want. Add to it freely; delete i
   10 x TileSize canvas without the black frame, windowed mode exactly the size of the game, and best-fit art. It is
   fully worked out in [display-scaling-plan.md](display-scaling-plan.md) and waits on the SDL3 migration.
 
-* **Migrate to SDL3** (with SDL3_ttf and SDL3_mixer). It is a real port, scoped and planned in
-  [sdl3-migration-plan.md](sdl3-migration-plan.md): statically linked on both platforms, a like-for-like port first,
-  and it comes before the display redesign.
-* **The SDL libraries are old.** SDL2 is 2.0.12 (2020), SDL2_ttf is 2.0.12 (2015), and the FreeType and zlib DLLs
-  that come with it date from 2015. SDL2 2.0.12 also has a bug that already bit us: `SDL_GetBasePath()` returns
-  the wrong folder when the exe's path is long. `src/Darkages.cpp` works around it on Windows with
-  `GetModuleFileNameW`; a newer SDL would let us drop that.
-* **Windows could use the newer SDL2 too.** The Linux build already uses SDL2 2.32.10, SDL2_ttf 2.24.0 and
-  SDL2_mixer 2.8.1. The game was run on those exact versions (built statically on Windows) and its title screen
-  renders correctly on SDL's Direct3D 11 and software renderers. Two things to know before switching Windows over:
-  SDL 2.32 multiplies the rectangle given to `SDL_RenderSetViewport` by the current render scale (2.0.12 did not),
-  which the game is unaffected by, since every viewport call (all in `CDisplay.cpp`) is made while the scale is 1; and on the
-  machine used for that test, even a minimal SDL 2.32 program showed nothing on the Direct3D 9 and OpenGL backends
-  (2.32 picks Direct3D 9 first on Windows), so re-check on other hardware, and consider the hint
-  `SDL_HINT_RENDER_DRIVER=direct3d11` if needed.
+* **SDL3 port: finish testing and merge.** The port (SDL3, SDL3_ttf and SDL3_mixer, statically linked on both
+  platforms, like-for-like) is done on the `SDL3` branch; see [sdl3-migration-plan.md](sdl3-migration-plan.md) for
+  what changed and what still needs a human play-through. It comes before the display redesign.
 * **Test the Linux build on real systems.** It has been cross-compiled and packaged, but running it needs a Linux
-  machine or WSL2: check X11 and Wayland, PulseAudio/PipeWire/ALSA, and the default OpenGL renderer. An AppImage or
+  machine or WSL2: check X11 and Wayland, PulseAudio/PipeWire/ALSA, and the default renderer. An AppImage or
   Flatpak could follow, as could an ARM64 build.
 * **macOS build**, if there is interest.
 * **Windows on ARM**: the project is x64 only.
@@ -60,5 +48,4 @@ A running list of updates we will need or might want. Add to it freely; delete i
   starts and stays up, and/or check that every map and asset loads.
 * **Build the Debug configuration in CI** too, and run a code-analysis pass.
 * **Keep the Actions current.** Consider Dependabot for the action versions, or pinning them to commit hashes.
-* **Mirror the SDL zips** in this repository if libsdl.org turns out to be unreliable (see `docs/releasing.md`).
 * **A release-notes helper** that groups commits by type, and a script that bumps `DA_VERSION_BASE`.

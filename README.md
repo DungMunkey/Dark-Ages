@@ -1,6 +1,6 @@
 # Dark Ages: The Continents
 
-A classic tile-based role-playing game for Windows and Linux, written in C++ with SDL2.
+A classic tile-based role-playing game for Windows and Linux, written in C++ with SDL3.
 
 ## Download
 
@@ -29,10 +29,13 @@ controls.
 ## Building from source (Windows)
 
 You need Visual Studio 2022 (the free Community edition is fine) with the **Desktop development with C++**
-workload.
+workload, plus Git and CMake (Visual Studio's C++ workload includes CMake). Keep the repository in a folder with a
+short path (under about 90 characters, for example `C:\dev\Dark-Ages`): building SDL creates deeply nested files and
+Windows' build tools cannot open paths over 260 characters.
 
-1. Fetch the SDL libraries (one time; they are downloaded, checked against pinned SHA-256 values, and unpacked into
-   `third_party/`):
+1. Build the SDL libraries (one time, a few minutes). The script downloads SDL3, SDL3_ttf and SDL3_mixer (checked
+   against pinned SHA-256 values, with FreeType fetched at one exact commit) and builds them as **static libraries**
+   into `third_party/sdl3/`, so the game ends up as a single executable with no DLLs:
 
    ```
    powershell -ExecutionPolicy Bypass -File tools\get-deps.ps1
@@ -73,16 +76,16 @@ cmake --build build/linux --parallel
 cd game && ./Darkages
 ```
 
-`-DDA_SDL_SOURCE_DIR=...` builds SDL2, SDL2_ttf and SDL2_mixer from source and links them in statically, which is
-what the releases do. Leave it out to use the SDL development packages installed on your machine instead (SDL2_mixer
-2.6 or newer, plus `pkg-config`).
+`-DDA_SDL_SOURCE_DIR=...` builds SDL3, SDL3_ttf and SDL3_mixer from source and links them in statically, which is
+what the releases do. Leave it out to use the SDL3 development packages installed on your machine instead (with
+`pkg-config`).
 
 ## Repository layout
 
 | Folder | Contents |
 | --- | --- |
 | `src/` | All C++ source |
-| `game/` | Everything the game loads at run time (`Font`, `Gfx`, `Maps`, `Music`, `Mods`). Building puts the exe and DLLs here too; your saves and `darkages.cfg` appear here when you play. |
+| `game/` | Everything the game loads at run time (`Font`, `Gfx`, `Maps`, `Music`, `Mods`). Building puts the exe here too (SDL is linked into it); your saves and `darkages.cfg` appear here when you play. |
 | `msvc/` | The Visual Studio 2022 solution and project |
 | `sources/` | Art, audio and font sources the game itself never loads (the FontForge project, GIMP files for mods, MIDI files, ...) |
 | `tools/` | `get-deps.ps1` / `get-deps.sh` (fetch SDL), `package.ps1` / `package-linux.sh` (build the Windows zip / Linux archive), and the READMEs that go in them |
@@ -105,5 +108,5 @@ is the first thing players see.
 
 ## License
 
-The game's code is under the [Apache License 2.0](LICENSE). It uses SDL2, SDL2_ttf and SDL2_mixer; their licenses
+The game's code is under the [Apache License 2.0](LICENSE). It uses SDL3, SDL3_ttf and SDL3_mixer; their licenses
 are included in every download as `THIRD-PARTY.txt`.

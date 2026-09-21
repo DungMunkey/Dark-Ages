@@ -47,14 +47,16 @@ needs the merge in step 1 anyway.
 
 ## What is in the downloads
 
-One folder, `DarkAges/`, holding the program (`Darkages.exe` plus the five SDL runtime DLLs on Windows; the single
-`Darkages` executable on Linux), `Font/`, `Gfx/`, `Maps/`, `Music/`, every mod in `Mods/`, `darkages.cfg`,
+One folder, `DarkAges/`, holding the program (a single executable on each platform: SDL is linked into it, so there
+are no DLLs), `Font/`, `Gfx/`, `Maps/`, `Music/`, every mod in `Mods/`, `darkages.cfg`,
 `README.txt`, `LICENSE` and `THIRD-PARTY.txt`. Never: source code, object or `.pdb` files, project or build files,
 save games, or art-source files (`.xcf`, `.psd`, `.wav`, `.mid`, ...). Each script copies a fixed list of items
 rather than "everything in `game/`", and checks its own result before writing the archive.
 
-* **Windows:** the exe links the C++ runtime statically, so players don't need the Visual C++ Redistributable.
-* **Linux:** SDL2, SDL2_ttf and SDL2_mixer 2.8.1 are compiled from source (pinned in `tools/get-deps.sh`) and linked
+* **Windows:** SDL3, SDL3_ttf and SDL3_mixer are built from source as static libraries (`tools/get-deps.ps1`) and
+  the exe links the C++ runtime statically, so players need neither DLLs nor the Visual C++ Redistributable. The
+  exe imports only Windows system DLLs, and `package.ps1` refuses a package containing any `.dll`.
+* **Linux:** SDL3, SDL3_ttf and SDL3_mixer are compiled from source (pinned in `tools/get-deps.sh`) and linked
   in statically, along with the C++ runtime, so the download needs nothing installed. It is built on Ubuntu 22.04
   (glibc 2.35), so it runs on most current distributions; SDL loads the X11/Wayland/audio libraries of the player's
   system at run time. The archive is root-owned with sensible permissions, and the executable keeps its execute bit.
@@ -75,10 +77,17 @@ which are git-ignored); the automated builds only see what is committed.
   and starts with "Version "). `package.ps1` and a `static_assert` in the source both refuse anything longer, so
   run numbers stop fitting at 5 digits or with a much longer base version.
 * **SDL downloads:** `tools/get-deps.ps1` (Windows) and `tools/get-deps.sh` (Linux) check every download against a
-  pinned SHA-256. Windows uses SDL2 2.0.12 / SDL2_ttf 2.0.12 / SDL2_mixer 2.8.1; Linux builds SDL2 2.32.10 /
-  SDL2_ttf 2.24.0 / SDL2_mixer 2.8.1 from source. SDL2_ttf 2.0.12 is only hosted on libsdl.org (not GitHub), so the
-  workflow caches `third_party/`. If libsdl.org is ever unavailable and the cache is cold, mirror the zips in this
-  repository and point `get-deps.ps1` at them.
+  pinned SHA-256; both platforms use SDL3 3.4.16, SDL3_ttf 3.2.2 and SDL3_mixer 3.2.4, all built from source. The
+  SDL3_ttf release tarball no longer bundles FreeType, so the scripts fetch the SDL project's FreeType fork
+  (`libsdl-org/freetype`, branch `VER-2-13-2-SDL`) at one pinned commit id, which is as fixed as a hash. The tarballs
+  come from GitHub releases; if GitHub is ever unavailable and the cache is cold, the build cannot run. To move to
+  newer SDL versions, change the pins at the top of both scripts (and the notices in `package.ps1` if a license
+  file moved).
+* **Windows build details:** the SDL libraries are built through a small CMake wrapper (`tools/sdl3-static/`, sharing
+  settings with the Linux build in `tools/cmake/SDL3Bundled.cmake`) with the static C++ runtime to match the game
+  (`/MT`, `/MTd` for Debug). The built libraries live in `third_party/sdl3/lib/<Configuration>`, and the Visual
+  Studio project only links them. Windows tools cannot open paths over 260 characters and SDL's build nests deeply,
+  so `get-deps.ps1` refuses a repository path longer than 90 characters; the Actions runner's path is short enough.
 * **The Linux runner image:** the Linux job uses `ubuntu-22.04` on purpose (an older glibc runs on more systems).
   If GitHub retires that image, moving to a newer one raises the minimum distribution version.
 * **Action versions:** the workflows use `actions/checkout`, `cache`, `upload-artifact` and `download-artifact` at

@@ -49,9 +49,8 @@ names are given instead of line numbers so the references survive edits.
   `uiScale`. Text is drawn at `32 * uiScale` px.
 * `beginUIPass` / `endUIPass` and `beginCompatPass` / `endCompatPass` switch between them. Because the two rects are
   letterboxed independently, they are not always the same size for mods whose canvas is not 640x400.
-* SDL 2.0.12 needed a workaround: `CDisplay::clearScreen` fills a rect instead of calling `SDL_RenderClear`. (SDL 2.32
-  multiplies the rectangle given to `SDL_RenderSetViewport` by the current render scale; every viewport call in the
-  game is made while the scale is 1, so the game is unaffected.)
+* `CDisplay::clearScreen` fills a rect instead of calling `SDL_RenderClear` (a workaround from SDL 2.0.12 that the
+  SDL3 port kept as is). SDL3 does not multiply viewport rectangles by the render scale.
 
 ### 2.4 The black frame ("blinds")
 * `CDarkages::render` draws a 16x10-tile grid, offset by half a tile, onto the canvas, with the hero sprite at
@@ -101,7 +100,10 @@ names are given instead of line numbers so the references survive edits.
 * Both work acceptably today. See the decision in section 3.
 
 ### 2.8 DPI
-* The game is **not DPI-aware**. At 125%, 150% or 175% Windows scaling, Windows stretches the whole window with
+* **Update:** the SDL3 port is done and **confirmed** that SDL3 makes the process DPI-aware by default (a 1280x1024
+  window measures 1280x1024 physical pixels at 150% scaling). The paragraph below describes the SDL2 behavior the
+  port removed; windows are now crisp but physically smaller on scaled displays, as the last bullet of this section says.
+* Under SDL2 the game was **not DPI-aware**. At 125%, 150% or 175% Windows scaling, Windows stretches the whole window with
   smoothing, which blurs pixel art whatever the game does inside. At 100% and 200% the stretch is a whole-number
   factor and looks mostly fine. Screenshots do not show this because they capture before the stretch.
 * On SDL2 this can be fixed today without SDL3: an application manifest, or calling `SetProcessDPIAware` (or, on newer
@@ -250,7 +252,7 @@ no-fractional rule.
 * Whether the half tiles feel right in play, especially in mazes.
 * How a mod declares its title-screen size (or whether the image size alone is enough).
 * The exact maximum-scale rule (usable area, multi-monitor: which display).
-* DPI awareness: manifest or API call on SDL2 now, or wait for SDL3.
+* DPI awareness: settled by the SDL3 port (on by default); what remains is how the default scale accounts for it.
 * The config migration approach.
 * The SDL3 scope (its own discussion).
 

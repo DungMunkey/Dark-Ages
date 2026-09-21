@@ -105,7 +105,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      # SDL2, SDL2_ttf and SDL2_mixer are compiled from source and linked into the game (see CMakeLists.txt), so all
+      # SDL3, SDL3_ttf and SDL3_mixer are compiled from source and linked into the game (see CMakeLists.txt), so all
       # that is needed here is what SDL itself needs in order to build its X11, Wayland, audio and OpenGL backends.
       # They are loaded at run time, so the finished game does not need these packages.
       - name: Install what SDL needs to build
