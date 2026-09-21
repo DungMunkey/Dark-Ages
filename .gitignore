@@ -38,3 +38,6 @@ game/Mods/Test2/
 # Large audio sources that are not kept in git
 sources/music/*.wav
 sources/music/*.pdf
+
+# Linux build output (see Makefile)
+game/darkages

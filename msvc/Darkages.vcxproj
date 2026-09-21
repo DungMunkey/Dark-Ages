@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{ac45c5f0-8ea0-4a79-9848-96dbead62a9d}</ProjectGuid>
+    <RootNamespace>Darkages</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="DarkAgesPaths">
+    <!-- The SDL libraries live in third_party/ (fetched by tools\get-deps.ps1). To use a copy elsewhere, pass
+         /p:DAThirdParty=C:\path\to\folder\ - it must hold SDL2-2.0.12, SDL2_ttf-2.0.12 and SDL2_mixer-2.8.1. -->
+    <DAThirdParty Condition="'$(DAThirdParty)'==''">$(MSBuildThisFileDirectory)..\third_party\</DAThirdParty>
+    <DASDL2>$(DAThirdParty)SDL2-2.0.12\</DASDL2>
+    <DASDLTTF>$(DAThirdParty)SDL2_ttf-2.0.12\</DASDLTTF>
+    <DASDLMixer>$(DAThirdParty)SDL2_mixer-2.8.1\</DASDLMixer>
+    <!-- CI sets this (e.g. /p:DAVersionSuffix=-dev.47+a1b2c3d) so the title screen shows which build it is. -->
+    <DAVersionDefine Condition="'$(DAVersionSuffix)'!=''">DA_VERSION_SUFFIX=\"$(DAVersionSuffix)\";</DAVersionDefine>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- The exe is built straight into game/ so it runs against the real assets with no copying; objects and
+         symbol files go to build/ and never end up in the shipped folder. -->
+    <OutDir>$(MSBuildThisFileDirectory)..\game\</OutDir>
+    <IntDir>$(MSBuildThisFileDirectory)..\build\obj\$(Configuration)\</IntDir>
+    <!-- Visual Studio's F5 must run from the folder holding Font/, Gfx/, Maps/ ... -->
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>Darkages_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>Darkages</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>$(DAVersionDefine)_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(DASDL2)include;$(DASDLTTF)include;$(DASDLMixer)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalLibraryDirectories>$(DASDL2)lib\x64;$(DASDLTTF)lib\x64;$(DASDLMixer)lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>$(DAVersionDefine)NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <!-- Static C++ runtime: the shipped zip runs without the Visual C++ Redistributable installed. -->
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(DASDL2)include;$(DASDLTTF)include;$(DASDLMixer)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalLibraryDirectories>$(DASDL2)lib\x64;$(DASDLTTF)lib\x64;$(DASDLMixer)lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\CBattle.cpp" />
+    <ClCompile Include="..\src\CCamera.cpp" />
+    <ClCompile Include="..\src\CDarkages.cpp" />
+    <ClCompile Include="..\src\CDisplay.cpp" />
+    <ClCompile Include="..\src\CFont.cpp" />
+    <ClCompile Include="..\src\CGfxCollection.cpp" />
+    <ClCompile Include="..\src\CGraphic.cpp" />
+    <ClCompile Include="..\src\CInput.cpp" />
+    <ClCompile Include="..\src\CLoadSave.cpp" />
+    <ClCompile Include="..\src\CMap.cpp" />
+    <ClCompile Include="..\src\CMods.cpp" />
+    <ClCompile Include="..\src\CMusic.cpp" />
+    <ClCompile Include="..\src\COptions.cpp" />
+    <ClCompile Include="..\src\CPlayer.cpp" />
+    <ClCompile Include="..\src\CTitle.cpp" />
+    <ClCompile Include="..\src\CWindow.cpp" />
+    <ClCompile Include="..\src\CWorld.cpp" />
+    <ClCompile Include="..\src\Darkages.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\CBattle.h" />
+    <ClInclude Include="..\src\CCamera.h" />
+    <ClInclude Include="..\src\CDarkages.h" />
+    <ClInclude Include="..\src\CDisplay.h" />
+    <ClInclude Include="..\src\CFont.h" />
+    <ClInclude Include="..\src\CGfxCollection.h" />
+    <ClInclude Include="..\src\CGraphic.h" />
+    <ClInclude Include="..\src\CInput.h" />
+    <ClInclude Include="..\src\CLoadSave.h" />
+    <ClInclude Include="..\src\CMap.h" />
+    <ClInclude Include="..\src\CMods.h" />
+    <ClInclude Include="..\src\CMusic.h" />
+    <ClInclude Include="..\src\COptions.h" />
+    <ClInclude Include="..\src\CPlayer.h" />
+    <ClInclude Include="..\src\CTitle.h" />
+    <ClInclude Include="..\src\CWindow.h" />
+    <ClInclude Include="..\src\CWorld.h" />
+    <ClInclude Include="..\src\Structs.h" />
+    <ClInclude Include="..\src\Version.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <!-- Stop early, with a useful message, if the SDL libraries have not been fetched yet. -->
+  <Target Name="DACheckDependencies" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(DASDL2)include\SDL.h') Or !Exists('$(DASDLTTF)include\SDL_ttf.h') Or !Exists('$(DASDLMixer)include\SDL_mixer.h')"
+           Text="The SDL libraries were not found in $(DAThirdParty). Run tools\get-deps.ps1 first (see README)." />
+  </Target>
+  <!-- The exe needs the SDL DLLs next to it; keep them in game/ up to date after every build. -->
+  <Target Name="DACopyRuntimeDlls" AfterTargets="Build">
+    <ItemGroup>
+      <DARuntimeDll Include="$(DASDL2)lib\x64\SDL2.dll" />
+      <DARuntimeDll Include="$(DASDLTTF)lib\x64\SDL2_ttf.dll;$(DASDLTTF)lib\x64\libfreetype-6.dll;$(DASDLTTF)lib\x64\zlib1.dll" />
+      <DARuntimeDll Include="$(DASDLMixer)lib\x64\SDL2_mixer.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DARuntimeDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>
