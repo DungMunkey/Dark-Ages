@@ -18,3 +18,23 @@ x86/
 *.log
 *.recipe
 *.exe
+
+# Build output: objects and symbols land here (see msvc/Darkages.vcxproj)
+build/
+
+# SDL and friends, downloaded by tools/get-deps.ps1
+third_party/
+
+# Files created by building or running the game from game/
+game/*.exe
+game/*.dll
+game/darkages.cfg
+game/Saves/
+
+# Mods that stay on this machine only
+game/Mods/Test/
+game/Mods/Test2/
+
+# Large audio sources that are not kept in git
+sources/music/*.wav
+sources/music/*.pdf
