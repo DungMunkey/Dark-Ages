@@ -135,7 +135,7 @@ if ($VersionSuffix -match 'dev') {
 
 "@
 }
-$readme = (Get-Content (Join-Path $repo 'docs\game-readme.txt') -Raw).
+$readme = (Get-Content (Join-Path $repo 'tools\game-readme.txt') -Raw).
   Replace('{{VERSION}}', $version).Replace('{{COPYRIGHT}}', $copyright).Replace('{{DEV_NOTE}}', $devNote)
 Write-TextFile (Join-Path $stage 'README.txt') $readme
 
