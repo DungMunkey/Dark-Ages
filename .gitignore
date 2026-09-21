@@ -39,8 +39,9 @@ game/Mods/Test2/
 sources/music/*.wav
 sources/music/*.pdf
 
-# Linux build output (see Makefile)
-game/darkages
+# Linux build output (see CMakeLists.txt)
+game/Darkages
+game/Darkages_d
 
 # Zips produced by tools/package.ps1
 dist/
