@@ -1,7 +1,15 @@
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define DA_VERSION   "2.0 alpha 3"
+//DA_VERSION_BASE is the version being worked toward; bump it on dev right after each release so development builds
+//don't label themselves as the release that just shipped. The automated dev builds add DA_VERSION_SUFFIX (for
+//example "-dev.47+a1b2c3d", passed through msbuild's /p:DAVersionSuffix=...); a release or local build has none.
+//The whole string has to fit the credits line: at most 30 characters (see the static_asserts next to credits()).
+#define DA_VERSION_BASE "2.0.0-alpha.3"
+#ifndef DA_VERSION_SUFFIX
+#define DA_VERSION_SUFFIX ""
+#endif
+#define DA_VERSION   DA_VERSION_BASE DA_VERSION_SUFFIX
 
 //The copyright is kept in two pieces because the end credits show them on separate lines (the credits font is
 //16 reference pixels per character and lines aren't wrapped, so a credits line can hold at most 38 characters -
