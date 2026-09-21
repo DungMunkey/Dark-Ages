@@ -8,7 +8,7 @@ Every build is published on the [Releases page](https://github.com/DungMunkey/Da
 
 | What | How to recognize it | Who it is for |
 | --- | --- | --- |
-| **Release** | Titled "Dark Ages 2.0.0-alpha.3" (a `v...` tag) and *not* marked "Pre-release" | Everyone |
+| **Release** | Titled "Dark Ages 2.0.0-alpha.4" (a `v...` tag) and *not* marked "Pre-release" | Everyone |
 | **Dev build** | Titled "Dev build 47 (...)" (a `dev-...` tag), marked "Pre-release" | Early adopters. Built automatically from the `dev` branch on every push: expect bugs, unfinished features, and back up your saves. |
 
 A release that is still marked "Pre-release" has not been approved yet. (GitHub's "latest release" link
@@ -67,7 +67,8 @@ workload.
 Each folder in `game/Mods` is a mod that can replace the game's graphics, maps and music, and is chosen from the
 Options menu (it takes effect on the next start). A mod holds its own `Gfx`, `Maps` and `Music` files plus a
 `mod.cfg`; anything a mod doesn't provide falls back to the base game. `game/Mods/Project32` is a full example.
-Every mod in `game/Mods` is included in the zips.
+Every mod in `game/Mods` is included in the zips, and the `darkages.cfg` in the zips selects `Project32`, so that
+is the first thing players see.
 
 ## Branches
 

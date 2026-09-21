@@ -10,12 +10,14 @@
 
     Darkages.exe and the five SDL runtime DLLs
     Font/  Gfx/  Maps/  Music/  Mods/     (every mod in game/Mods)
+    darkages.cfg                           (default settings, with -DefaultMod selected)
     README.txt  LICENSE  THIRD-PARTY.txt
 
-  It never contains source code, object files, symbol (.pdb) files, Visual Studio files, save
-  games or darkages.cfg. Only the fixed list above is copied - not "everything in game/" - so
-  files that building or playing from game/ leaves behind cannot leak in. Art-source files
-  (.xcf, .psd, .wav, .mid ...) are left out even when they sit inside a mod's folder.
+  It never contains source code, object files, symbol (.pdb) files, Visual Studio files or save
+  games. Only the fixed list above is copied - not "everything in game/" - so files that building
+  or playing from game/ leaves behind cannot leak in; in particular the darkages.cfg in the zip is
+  generated fresh (by Darkages.exe --write-default-config), never copied from game/. Art-source
+  files (.xcf, .psd, .wav, .mid ...) are left out even when they sit inside a mod's folder.
 
   Note: mods that exist only on your machine (game/Mods/Test, Test2) are inside game/Mods, so a
   zip made locally includes them. CI builds from a clean checkout and does not have them.
@@ -26,6 +28,10 @@
   Appended to the base version from src/Version.h, e.g. "-dev.47+a1b2c3d". Leave empty for a
   release build.
 
+.PARAMETER DefaultMod
+  The mod selected in the zip's darkages.cfg, so it is the first thing players see. It must exist
+  in game/Mods. Default: Project32
+
 .PARAMETER OutputDir
   Where the zip and checksum go. Default: <repo>/dist
 
@@ -34,11 +40,16 @@
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File tools\package.ps1
-  powershell -ExecutionPolicy Bypass -File tools\package.ps1 -VersionSuffix "-dev.47+a1b2c3d"
+
+.EXAMPLE
+  # A development version: run it from a PowerShell prompt. ("powershell -File ..." mangles a value that
+  # starts with "-", so don't pass a suffix that way.)
+  .\tools\package.ps1 -VersionSuffix "-dev.47+a1b2c3d"
 #>
 [CmdletBinding()]
 param(
   [string]$VersionSuffix = '',
+  [string]$DefaultMod = 'Project32',
   [string]$OutputDir = '',
   [switch]$SkipBuild
 )
@@ -58,8 +69,9 @@ $copyright = (Get-VersionDefine 'DA_COPYRIGHT_YEARS') + ', ' + (Get-VersionDefin
 $version   = $base + $VersionSuffix
 if ($version.Length -gt 30) { throw "Version '$version' is longer than 30 characters and won't fit on the credits line." }
 
-# '+' (build metadata) is legal in a Windows file name but not reliably kept by every download host
-$zipName = 'DarkAges-' + ($version -replace '\+', '-') + '-win64.zip'
+# The file name carries the version and dev number only: the build metadata after '+' (the commit id) stays out of it,
+# though it is still in the version shown in the game.
+$zipName = 'DarkAges-' + ($version -replace '\+.*$', '') + '-win64.zip'
 Write-Host "Packaging Dark Ages $version  ->  $zipName"
 
 # ---- build -----------------------------------------------------------------------------------
@@ -117,6 +129,18 @@ foreach ($dir in $assetFolders) {
   }
 }
 
+# darkages.cfg: every setting at its default, except the mod, so the game opens with it on first run. The game writes
+# the file itself (it owns the struct's layout and the default values); it opens no window and exits straight away.
+if (-not (Test-Path (Join-Path $stage "Mods\$DefaultMod"))) { throw "The default mod '$DefaultMod' is not in game/Mods." }
+$cfgPath = Join-Path $stage 'darkages.cfg'
+$cfgRun = Start-Process -FilePath (Join-Path $stage 'Darkages.exe') -Wait -PassThru `
+            -ArgumentList @('--write-default-config', ('"' + $cfgPath + '"'), $DefaultMod)
+if ($cfgRun.ExitCode -ne 0 -or -not (Test-Path $cfgPath)) { throw "Darkages.exe --write-default-config failed (exit code $($cfgRun.ExitCode))." }
+$cfgBytes = [IO.File]::ReadAllBytes($cfgPath)
+if ($cfgBytes.Length -lt 46 -or [Text.Encoding]::ASCII.GetString($cfgBytes, 14, 32).TrimEnd([char]0) -ne $DefaultMod) {
+  throw "darkages.cfg was written but does not select '$DefaultMod' (the layout of sConf in src/Structs.h may have changed)."
+}
+
 # Text files: written with Windows line endings so they open cleanly in Notepad.
 function Write-TextFile([string]$path, [string]$text) {
   [IO.File]::WriteAllText($path, ($text -replace "`r?`n", "`r`n"), (New-Object Text.UTF8Encoding($false)))
@@ -169,7 +193,7 @@ foreach ($lib in $libs) {
 Write-TextFile (Join-Path $stage 'THIRD-PARTY.txt') $notice.ToString()
 
 # ---- self-check: refuse to produce a zip that is missing something or contains something it must not
-$required = @('Darkages.exe', 'README.txt', 'LICENSE', 'THIRD-PARTY.txt', 'Font\DA1qb.ttf', 'Maps\Aaryak.map') +
+$required = @('Darkages.exe', 'darkages.cfg', 'README.txt', 'LICENSE', 'THIRD-PARTY.txt', 'Font\DA1qb.ttf', 'Maps\Aaryak.map') +
             ($runtimeFiles | Where-Object { $_ -ne 'Darkages.exe' }) +
             @('DA1TilesL', 'DA1HeroL', 'DA1ExtraL', 'DA1MonstL', 'death', 'daend1', 'daend2', 'explode', 'datitle' | ForEach-Object { "Gfx\$_.bmp" }) +
             @('battle', 'dungeon', 'title', 'town' | ForEach-Object { "Music\$_.ogg" })
@@ -178,7 +202,8 @@ foreach ($r in $required) {
 }
 $forbidden = Get-ChildItem $stage -Recurse -Force | Where-Object {
   $_.Name -match '\.(pdb|obj|ilk|iobj|ipdb|exp|lib|recipe|tlog|log|cpp|h|vcxproj|sln|xcf|psd|wav|mid|pdf)$' -or
-  $_.Name -ieq 'darkages.cfg' -or $_.Name -ieq 'Saves' -or $_.Name -ieq 'Darkages_d.exe'
+  ($_.Name -ieq 'darkages.cfg' -and $_.DirectoryName -ne $stage) -or   # only the generated one at the top is allowed
+  $_.Name -ieq 'Saves' -or $_.Name -ieq 'Darkages_d.exe'
 }
 if ($forbidden) { throw ("Package check failed: unexpected files in the package: " + (($forbidden | ForEach-Object { $_.FullName.Substring($stage.Length + 1) }) -join ', ')) }
 

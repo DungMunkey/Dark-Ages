@@ -17,16 +17,21 @@ HOW TO PLAY
 YOUR SAVE GAMES AND SETTINGS
 
   Save games are kept in the Saves folder next to Darkages.exe, and your
-  settings in darkages.cfg (written when you quit the game). To move to a newer
-  version, extract it over the old folder - or copy Saves and darkages.cfg into
-  the new one. Both are always kept beside the game, so keep the folder
-  somewhere you can write to.
+  settings (window size, volume, which mod is selected) in darkages.cfg, which
+  the game rewrites when you quit. Both are always kept beside the game, so keep
+  the folder somewhere you can write to.
+
+  This download comes with a darkages.cfg holding the default settings. To move
+  to a newer version, extract it into a NEW folder and then copy your Saves
+  folder and your darkages.cfg from the old folder into it. (Extracting on top
+  of the old folder would replace your darkages.cfg with the default one.)
 
 MODS
 
   Every folder inside Mods is a mod that can replace the game's graphics, maps
-  and music. Choose one from the Options menu; the change takes effect the next
-  time you start the game. See the mods that come with the game for examples.
+  and music. The game starts with the Project32 mod selected. Choose another
+  from the Options menu; the change takes effect the next time you start the
+  game.
 
 WINDOWS WARNS ABOUT THIS FILE
 
