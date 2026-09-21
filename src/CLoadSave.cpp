@@ -16,7 +16,7 @@ CLoadSave::~CLoadSave(){
 }
 
 void CLoadSave::render(){
-  SDL_Rect r;
+  SDL_FRect r;
   int i;
   char str[64];
 
@@ -25,7 +25,7 @@ void CLoadSave::render(){
     renderBox(display->S(80), display->S(52), display->S(480), display->S(296));
 
     //Draw selection
-    r.x=display->S(86); r.y=display->S(64) + selection * display->S(40); r.w=display->S(468); r.h=display->S(32);
+    r.x = (float)(display->S(86)); r.y = (float)(display->S(64) + selection * display->S(40)); r.w = (float)(display->S(468)); r.h = (float)(display->S(32));
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
     SDL_RenderFillRect(display->renderer, &r);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
@@ -44,7 +44,7 @@ void CLoadSave::render(){
     renderBox(display->S(80), display->S(72), display->S(480), display->S(256));
 
     //Draw selection
-    r.x=display->S(86); r.y=display->S(84) + selection * display->S(40); r.w=display->S(468); r.h=display->S(32);
+    r.x = (float)(display->S(86)); r.y = (float)(display->S(84) + selection * display->S(40)); r.w = (float)(display->S(468)); r.h = (float)(display->S(32));
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
     SDL_RenderFillRect(display->renderer, &r);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);

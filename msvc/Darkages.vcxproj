@@ -44,12 +44,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Label="DarkAgesPaths">
-    <!-- The SDL libraries live in third_party/ (fetched by tools\get-deps.ps1). To use a copy elsewhere, pass
-         /p:DAThirdParty=C:\path\to\folder\ - it must hold SDL2-2.0.12, SDL2_ttf-2.0.12 and SDL2_mixer-2.8.1. -->
+    <!-- SDL3, SDL3_ttf and SDL3_mixer are built as STATIC libraries into third_party\sdl3\ by tools\get-deps.ps1, so the
+         game is a single executable. To use a copy elsewhere, pass /p:DAThirdParty=C:\path\to\folder\ - it must hold
+         sdl3\include and sdl3\lib\Release and sdl3\lib\Debug. -->
     <DAThirdParty Condition="'$(DAThirdParty)'==''">$(MSBuildThisFileDirectory)..\third_party\</DAThirdParty>
-    <DASDL2>$(DAThirdParty)SDL2-2.0.12\</DASDL2>
-    <DASDLTTF>$(DAThirdParty)SDL2_ttf-2.0.12\</DASDLTTF>
-    <DASDLMixer>$(DAThirdParty)SDL2_mixer-2.8.1\</DASDLMixer>
+    <DASDL3>$(DAThirdParty)sdl3\</DASDL3>
     <!-- CI sets this (e.g. /p:DAVersionSuffix=-dev.47+a1b2c3d) so the title screen shows which build it is. -->
     <DAVersionDefine Condition="'$(DAVersionSuffix)'!=''">DA_VERSION_SUFFIX="$(DAVersionSuffix)";</DAVersionDefine>
   </PropertyGroup>
@@ -77,14 +76,14 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(DASDL2)include;$(DASDLTTF)include;$(DASDLMixer)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DASDL3)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(DASDL2)lib\x64;$(DASDLTTF)lib\x64;$(DASDLMixer)lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(DASDL3)lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL3_mixer-static.lib;SDL3_ttf-static.lib;freetype.lib;SDL3-static.lib;user32.lib;gdi32.lib;winmm.lib;imm32.lib;ole32.lib;oleaut32.lib;version.lib;uuid.lib;advapi32.lib;setupapi.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -98,7 +97,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <!-- Static C++ runtime: the shipped zip runs without the Visual C++ Redistributable installed. -->
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(DASDL2)include;$(DASDLTTF)include;$(DASDLMixer)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DASDL3)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -106,8 +105,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(DASDL2)lib\x64;$(DASDLTTF)lib\x64;$(DASDLMixer)lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(DASDL3)lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL3_mixer-static.lib;SDL3_ttf-static.lib;freetype.lib;SDL3-static.lib;user32.lib;gdi32.lib;winmm.lib;imm32.lib;ole32.lib;oleaut32.lib;version.lib;uuid.lib;advapi32.lib;setupapi.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -156,16 +155,7 @@
   </ImportGroup>
   <!-- Stop early, with a useful message, if the SDL libraries have not been fetched yet. -->
   <Target Name="DACheckDependencies" BeforeTargets="PrepareForBuild">
-    <Error Condition="!Exists('$(DASDL2)include\SDL.h') Or !Exists('$(DASDLTTF)include\SDL_ttf.h') Or !Exists('$(DASDLMixer)include\SDL_mixer.h')"
-           Text="The SDL libraries were not found in $(DAThirdParty). Run tools\get-deps.ps1 first (see README)." />
-  </Target>
-  <!-- The exe needs the SDL DLLs next to it; keep them in game/ up to date after every build. -->
-  <Target Name="DACopyRuntimeDlls" AfterTargets="Build">
-    <ItemGroup>
-      <DARuntimeDll Include="$(DASDL2)lib\x64\SDL2.dll" />
-      <DARuntimeDll Include="$(DASDLTTF)lib\x64\SDL2_ttf.dll;$(DASDLTTF)lib\x64\libfreetype-6.dll;$(DASDLTTF)lib\x64\zlib1.dll" />
-      <DARuntimeDll Include="$(DASDLMixer)lib\x64\SDL2_mixer.dll" />
-    </ItemGroup>
-    <Copy SourceFiles="@(DARuntimeDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Error Condition="!Exists('$(DASDL3)include\SDL3\SDL.h') Or !Exists('$(DASDL3)lib\$(Configuration)\SDL3-static.lib')"
+           Text="The SDL3 libraries were not found in $(DAThirdParty)sdl3. Run tools\get-deps.ps1 first (see README)." />
   </Target>
 </Project>

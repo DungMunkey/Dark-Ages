@@ -3,6 +3,7 @@
 #include "CInput.h"
 #include "Structs.h"
 #include <time.h>
+#include <SDL3/SDL_main.h> //SDL3 provides the platform entry point (WinMain on Windows) through this header, in the one file that defines main()
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -22,9 +23,9 @@ using namespace std;
 //folder the game lives in. It then works no matter how it was started (shortcut, terminal, file manager).
 static void changeToExeFolder(){
 #ifdef _WIN32
-  //Ask Windows directly rather than using SDL_GetBasePath(): the 2.0.12 version returns the wrong folder when the exe's
-  //path is long (roughly 130+ characters, e.g. a zip extracted deep in a folder tree), and its UTF-8 result wouldn't
-  //suit _chdir for folder names with non-ASCII characters anyway.
+  //Ask Windows directly rather than using SDL_GetBasePath(): SDL 2.0.12's version returned the wrong folder when the
+  //exe's path was long (roughly 130+ characters, e.g. a zip extracted deep in a folder tree), and its UTF-8 result
+  //wouldn't suit _chdir for folder names with non-ASCII characters anyway.
   vector<wchar_t> path(MAX_PATH);
   for(;;){
     DWORD len = GetModuleFileNameW(NULL, &path[0], (DWORD)path.size());
@@ -38,11 +39,10 @@ static void changeToExeFolder(){
   *lastSlash = 0;                       //drop "Darkages.exe", leaving the folder
   _wchdir(&path[0]);
 #else
-  char* basePath = SDL_GetBasePath();
+  const char* basePath = SDL_GetBasePath(); //owned by SDL: it must not be freed
   if(basePath != NULL){
     int ignored = chdir(basePath);
     (void)ignored;
-    SDL_free(basePath);
   }
 #endif
 }

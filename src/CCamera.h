@@ -1,7 +1,7 @@
 #ifndef _CCAMERA_H
 #define _CCAMERA_H
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 typedef struct sKeypress{
   sKeypress* next;

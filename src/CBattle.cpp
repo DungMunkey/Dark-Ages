@@ -1,3 +1,4 @@
+#include "CInput.h"
 #include "CBattle.h"
 #include "CWindow.h"
 
@@ -243,24 +244,24 @@ int CBattle::fight(int index){
 
   while(true){
 
-    while(SDL_PollEvent(&e) != 0) {
-      if(e.type == SDL_KEYDOWN)  {
+    while(DA_PollEvent(&e)) {
+      if(e.type == SDL_EVENT_KEY_DOWN)  {
         //Select surfaces based on key press
-        switch(e.key.keysym.sym)  {
+        switch(e.key.key)  {
         case SDLK_UP: actionCursorUp(); break;
         case SDLK_DOWN: actionCursorDown(); break;
-        //case SDLK_b: return 0;
+        //case SDLK_B: return 0;
         case SDLK_RETURN:
         case SDLK_SPACE:
           actionEnter();
           break;
         default: break;
         }
-      } else if(e.type == SDL_CONTROLLERBUTTONDOWN) {
-        switch(e.cbutton.button){
-        case SDL_CONTROLLER_BUTTON_A: actionEnter(); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_UP: actionCursorUp(); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: actionCursorDown(); break;
+      } else if(e.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
+        switch(e.gbutton.button){
+        case SDL_GAMEPAD_BUTTON_SOUTH: actionEnter(); break;
+        case SDL_GAMEPAD_BUTTON_DPAD_UP: actionCursorUp(); break;
+        case SDL_GAMEPAD_BUTTON_DPAD_DOWN: actionCursorDown(); break;
         default:break;
         }
       }
@@ -494,7 +495,7 @@ void CBattle::playerAttack(){
 }
 
 void CBattle::render(){
-  SDL_Rect r;
+  SDL_FRect r;
   char str[64];
 
   display->clearScreen();
@@ -508,9 +509,9 @@ void CBattle::render(){
   int monsterSize = display->modSettings.monsterSize;
   monsterFrame.x = display->S(10); monsterFrame.y = display->S(52);
   monsterFrame.w = monsterSize+20; monsterFrame.h = monsterSize+20;
-  r.w=monsterSize;  r.h=monsterSize;  r.x = display->S(10)+10;  r.y = display->S(52)+10;
-  if(curMon.hp <= curMon.maxHP / 2) SDL_RenderCopy(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx+1), &r);
-  else SDL_RenderCopy(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx), &r);
+  r.w = (float)(monsterSize);  r.h = (float)(monsterSize);  r.x = (float)(display->S(10)+10);  r.y = (float)(display->S(52)+10);
+  if(curMon.hp <= curMon.maxHP / 2) SDL_RenderTexture(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx+1), &r);
+  else SDL_RenderTexture(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx), &r);
   display->endCompatPass();
 
   //Everything else here is procedural UI (borders, text, selection highlight) with no mod-native
@@ -543,7 +544,7 @@ void CBattle::render(){
   font->render(display->S(240), display->S(82), str);
   sprintf(str, "MP = %d", hero->mp);
   font->render(display->S(240), display->S(98), str);
-  r.w=display->S(336); r.h=display->S(16); r.x=display->S(216); r.y=display->S(152)+display->S(16)*selection;
+  r.w = (float)(display->S(336)); r.h = (float)(display->S(16)); r.x = (float)(display->S(216)); r.y = (float)(display->S(152)+display->S(16)*selection);
   SDL_SetRenderDrawColor(display->renderer, 0,0,128, 255);
   SDL_RenderFillRect(display->renderer, &r);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
@@ -562,13 +563,13 @@ void CBattle::render(){
 //renderBox() calls in this file now go through CWindow::renderBox(display, ...) - see CWindow.h/.cpp
 
 void CBattle::renderSpell(){
-  SDL_Rect r;
+  SDL_FRect r;
   int lineCount=0;
   size_t i;
 
   CWindow::renderBox(display, display->S(150), display->S(80), display->S(342), display->S(242));
 
-  r.w=display->S(230); r.h=display->S(16); r.x=display->S(156); r.y=display->S(88) + display->S(16) * spellSelection;
+  r.w = (float)(display->S(230)); r.h = (float)(display->S(16)); r.x = (float)(display->S(156)); r.y = (float)(display->S(88) + display->S(16) * spellSelection);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
   SDL_RenderFillRect(display->renderer, &r);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);

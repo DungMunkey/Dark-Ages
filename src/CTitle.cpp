@@ -1,3 +1,4 @@
+#include "CInput.h"
 #include "CTitle.h"
 #include "Version.h"
 
@@ -36,7 +37,7 @@ int CTitle::actionEnter(){
 }
 
 void CTitle::render(){
-  SDL_Rect r;
+  SDL_FRect r;
 
   display->clearScreen();
 
@@ -46,8 +47,8 @@ void CTitle::render(){
   //composited with, and gets the biggest crisp integer-scaled fit for whatever resolution is active.
   display->beginUIPass();
 
-  r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
-  SDL_RenderCopy(display->renderer, gfx->title->texture, gfx->title->getTile(0), &r);
+  r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->S(400)); r.w = (float)(display->S(640));
+  SDL_RenderTexture(display->renderer, gfx->title->texture, gfx->title->getTile(0), &r);
 
   font->setFontSize(display->S(16));
   font->render(display->S(10), display->S(380), DA_COPYRIGHT);
@@ -61,11 +62,11 @@ void CTitle::render(){
   font->render(display->S(260), display->S(330), "Exit");
 
   //draw indicator
-  r.w=display->S(16);
-  r.h=display->S(16);
-  r.x = display->S(240);
-  r.y = display->S(244) + selection * display->S(30);
-  SDL_RenderCopy(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
+  r.w = (float)(display->S(16));
+  r.h = (float)(display->S(16));
+  r.x = (float)(display->S(240));
+  r.y = (float)(display->S(244) + selection * display->S(30));
+  SDL_RenderTexture(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
 
   display->endUIPass();
 
@@ -85,9 +86,9 @@ int CTitle::run(){
 
   while(true){
 
-    while(SDL_PollEvent(&e) != 0) {
-      if(e.type == SDL_KEYDOWN)  {
-        switch(e.key.keysym.sym)  {
+    while(DA_PollEvent(&e)) {
+      if(e.type == SDL_EVENT_KEY_DOWN)  {
+        switch(e.key.key)  {
         case SDLK_UP: actionCursorUp(); break;
         case SDLK_DOWN: actionCursorDown(); break;
         case SDLK_RETURN:
@@ -95,11 +96,11 @@ int CTitle::run(){
           return actionEnter();
         default: break;
         }
-      } else if(e.type == SDL_CONTROLLERBUTTONDOWN) {
-        switch(e.cbutton.button){
-        case SDL_CONTROLLER_BUTTON_A: return actionEnter();
-        case SDL_CONTROLLER_BUTTON_DPAD_UP: actionCursorUp(); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: actionCursorDown(); break;
+      } else if(e.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
+        switch(e.gbutton.button){
+        case SDL_GAMEPAD_BUTTON_SOUTH: return actionEnter();
+        case SDL_GAMEPAD_BUTTON_DPAD_UP: actionCursorUp(); break;
+        case SDL_GAMEPAD_BUTTON_DPAD_DOWN: actionCursorDown(); break;
         default:break;
         }
       }

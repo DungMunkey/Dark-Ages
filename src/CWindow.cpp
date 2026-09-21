@@ -55,8 +55,8 @@ int CWindow::renderBox(CDisplay* display, int x, int y, int w, int h, eBevelStyl
   vector<float> ramp = buildBevelRamp(depth, minBrightness);
   int totalStrokes = (int)ramp.size() * pixelsPerBand;
 
-  SDL_Rect r;
-  r.x = x; r.y = y; r.w = w; r.h = h;
+  SDL_FRect r;
+  r.x = (float)(x); r.y = (float)(y); r.w = (float)(w); r.h = (float)(h);
   if(drawBackground){
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 200);
     SDL_RenderFillRect(display->renderer, &r);
@@ -69,9 +69,9 @@ int CWindow::renderBox(CDisplay* display, int x, int y, int w, int h, eBevelStyl
     Uint8 cb = (Uint8)(baseColor.b * ramp[i]);
     SDL_SetRenderDrawColor(display->renderer, cr, cg, cb, 255);
     for(int p = 0; p < pixelsPerBand; p++){
-      SDL_RenderDrawRect(display->renderer, &r);
+      SDL_RenderRect(display->renderer, &r);
       strokeIndex++;
-      if(strokeIndex < totalStrokes){ r.w -= 2; r.h -= 2; r.x++; r.y++; } //no shrink after the innermost stroke
+      if(strokeIndex < totalStrokes){ r.w -= (float)(2); r.h -= (float)(2); r.x++; r.y++; } //no shrink after the innermost stroke
     }
   }
 

@@ -2,7 +2,7 @@
 #define _CDISPLAY_H
 
 #include "Structs.h"
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <stdio.h>
 #include <string>
 #include <vector>

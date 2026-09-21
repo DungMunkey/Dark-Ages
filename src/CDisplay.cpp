@@ -25,7 +25,7 @@ CDisplay::CDisplay(){
 CDisplay::~CDisplay(){
   if(renderer!=NULL) SDL_DestroyRenderer(renderer);
   renderer=NULL;
-  //if(screenSurface != NULL) SDL_FreeSurface(screenSurface);
+  //if(screenSurface != NULL) SDL_DestroySurface(screenSurface);
 	//screenSurface = NULL;
   if(window != NULL) SDL_DestroyWindow(window);
   window = NULL;
@@ -36,8 +36,8 @@ bool CDisplay::init(sConf& conf) {
 	//Initialization flag
 	bool success = true;
 
-	//Initialize SDL
-  if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0){
+	//Initialize SDL (SDL3 functions return true on success)
+  if(!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO)){
 		printf( "SDL could not initialize! SDL Error: %s\n", SDL_GetError() );
 		success = false;
 	}	else	{
@@ -45,32 +45,40 @@ bool CDisplay::init(sConf& conf) {
     modSettings = CMods::loadModSettings(conf.modName);
     scale = modSettings.tileSize / 40.0;
 
-    int display_count = 0, display_index = 0, mode_index = 0;
-    SDL_DisplayMode mode ={SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0};
-
-    SDL_GetCurrentDisplayMode(0, &mode);
-    Uint32 pFormat=mode.format;
-    int rRate=mode.refresh_rate;
+    //The list of window sizes offered in Options: every mode of the primary display that has the desktop's current pixel
+    //format and refresh rate, smallest first.
+    SDL_DisplayID displayId = SDL_GetPrimaryDisplay();
+    const SDL_DisplayMode* desktop = SDL_GetDesktopDisplayMode(displayId);
     sDAVidMode vm;
     char str[32];
     bool exactMode=false; //did the display offer exactly the size saved in conf?
 
-    for(int i=SDL_GetNumDisplayModes(0)-1; i >=0; i--){
-      if(SDL_GetDisplayMode(0, i, &mode) != 0) {
-        SDL_Log("SDL_GetDisplayMode failed: %s", SDL_GetError());
-      } else {
-        if(mode.format != pFormat || mode.refresh_rate != rRate) continue;
-        vm.h=mode.h;
-        vm.w=mode.w;
-        sprintf(str, "%dx%d", mode.w, mode.h);
+    int modeCount = 0;
+    SDL_DisplayMode** modes = SDL_GetFullscreenDisplayModes(displayId, &modeCount);
+    if(modes != NULL && desktop != NULL){
+      for(int i=modeCount-1; i >=0; i--){ //SDL lists the largest mode first; the game's list runs smallest to largest
+        const SDL_DisplayMode* mode = modes[i];
+        if(mode->format != desktop->format || mode->refresh_rate != desktop->refresh_rate) continue;
+        vm.h=mode->h;
+        vm.w=mode->w;
+        sprintf(str, "%dx%d", mode->w, mode->h);
         vm.name=str;
         if(conf.w==vm.w && conf.h==vm.h){
           currentScreenMode=screenModes.size();
           exactMode=true;
         }
         screenModes.push_back(vm);
-        //printf("%d\tSDL_GetDisplayMode(0, 0, &mode):\t\t%i bpp\t%i x %i, %ihz\n", i,SDL_BITSPERPIXEL(mode.format), mode.w, mode.h,mode.refresh_rate);
       }
+    }
+    SDL_free(modes);
+    if(screenModes.empty()){ //no usable mode was reported: offer the desktop's own size (or a safe default) so the list is never empty
+      vm.w = (desktop != NULL) ? desktop->w : 1280;
+      vm.h = (desktop != NULL) ? desktop->h : 1024;
+      sprintf(str, "%dx%d", vm.w, vm.h);
+      vm.name=str;
+      screenModes.push_back(vm);
+      currentScreenMode=0;
+      exactMode=true;
     }
     if(!exactMode){
       //The saved size isn't one this display offers - e.g. the default 1280x1024 on a small or high-refresh display, or a
@@ -90,38 +98,33 @@ bool CDisplay::init(sConf& conf) {
     //}
     screenWidth=screenModes[currentScreenMode].w;
     screenHeight=screenModes[currentScreenMode].h;
-    int wf;
-    if(conf.fullScreen) {
-      wf=SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP;
-    } else {
-      wf=SDL_WINDOW_SHOWN;
-    }
-
-    //Set texture filtering to nearest neighbor. Pixels rule!!!
-		if( !SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "0" ) ) {
-			printf( "Warning: nearest neighbor texture filtering not enabled!" );
-		}
+    //In SDL3 a fullscreen window with no fullscreen mode set is borderless "desktop" fullscreen - the same thing the
+    //game has always used (it never changes the display's resolution).
+    SDL_WindowFlags wf = 0;
+    if(conf.fullScreen) wf |= SDL_WINDOW_FULLSCREEN;
 
 		//Create window
-		window = SDL_CreateWindow( "Dark Ages: The Continents", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, wf );
+		window = SDL_CreateWindow( "Dark Ages: The Continents", screenWidth, screenHeight, wf );
 		if( window == NULL )	{
 			printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
 			success = false;
 		}	else	{
-			//SDL_WINDOW_FULLSCREEN_DESKTOP ignores the w/h passed to SDL_CreateWindow and instead takes over
-			//the desktop at its own current resolution, so screenWidth/screenHeight (used everywhere below
-			//to compute the world/UI layout) must be re-queried from the real, resulting window size rather
-			//than trusted from the display-mode list picked above.
+			//Desktop fullscreen ignores the w/h passed to SDL_CreateWindow and instead takes over the desktop at its own
+			//current resolution, so screenWidth/screenHeight (used everywhere below to compute the world/UI layout) must
+			//be re-queried from the real, resulting window size rather than trusted from the display-mode list picked above.
 			SDL_GetWindowSize(window, &screenWidth, &screenHeight);
 
-			//Get window surface
-			//screenSurface = SDL_GetWindowSurface(window);
-      if(conf.vSync) renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-      else renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+      renderer = SDL_CreateRenderer(window, NULL);
 			if( renderer == NULL ) {
 				printf( "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
 				success = false;
 			} else {
+        SDL_SetRenderVSync(renderer, conf.vSync ? 1 : 0);
+
+        //Nearest-neighbor filtering for every texture created from now on (SDL3's default is linear, which would blur
+        //the pixel art). Pixels rule!!!
+        SDL_SetDefaultTextureScaleMode(renderer, SDL_SCALEMODE_NEAREST);
+
 				//Initialize renderer color
 				SDL_SetRenderDrawColor( renderer, 0xFF, 0xFF, 0xFF, 0xFF );
         SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);
@@ -185,7 +188,7 @@ void CDisplay::setFont(CFont* f){
 //SDL 2.0.12 test: after drawing inside a small viewport and resetting it to NULL, SDL_RenderClear left pixels
 //outside that region untouched, while SDL_RenderFillRect(NULL) cleared everything.
 void CDisplay::clearScreen(){
-  SDL_RenderSetViewport(renderer, NULL);
+  SDL_SetRenderViewport(renderer, NULL);
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   SDL_RenderFillRect(renderer, NULL);
 }
@@ -193,25 +196,25 @@ void CDisplay::clearScreen(){
 void CDisplay::beginUIPass(){
   savedScale = scale;
   scale = uiScale;
-  SDL_RenderSetScale(renderer, 1.0f, 1.0f); //S() does the scaling in software here, so SDL's own scale must stay neutral
-  SDL_RenderSetViewport(renderer, &uiRect);
+  SDL_SetRenderScale(renderer, 1.0f, 1.0f); //S() does the scaling in software here, so SDL's own scale must stay neutral
+  SDL_SetRenderViewport(renderer, &uiRect);
   if(font != NULL) font->setFontSize(uiFontPx);
 }
 
 void CDisplay::endUIPass(){
   scale = savedScale;
-  SDL_RenderSetViewport(renderer, NULL);
+  SDL_SetRenderViewport(renderer, NULL);
 }
 
 void CDisplay::beginCompatPass(){
-  SDL_RenderSetViewport(renderer, &worldRect);
-  SDL_RenderSetScale(renderer, (float)worldScale, (float)worldScale);
+  SDL_SetRenderViewport(renderer, &worldRect);
+  SDL_SetRenderScale(renderer, (float)worldScale, (float)worldScale);
   if(font != NULL) font->setFontSize(worldFontPx);
 }
 
 void CDisplay::endCompatPass(){
-  SDL_RenderSetScale(renderer, 1.0f, 1.0f);
-  SDL_RenderSetViewport(renderer, NULL);
+  SDL_SetRenderScale(renderer, 1.0f, 1.0f);
+  SDL_SetRenderViewport(renderer, NULL);
 }
 
 SDL_Rect CDisplay::compatRectToScreenRect(SDL_Rect r){
@@ -224,9 +227,9 @@ SDL_Rect CDisplay::compatRectToScreenRect(SDL_Rect r){
 }
 
 void CDisplay::beginUnclippedUI(){
-  SDL_RenderSetViewport(renderer, NULL);
+  SDL_SetRenderViewport(renderer, NULL);
 }
 
 void CDisplay::endUnclippedUI(){
-  SDL_RenderSetViewport(renderer, &uiRect);
+  SDL_SetRenderViewport(renderer, &uiRect);
 }

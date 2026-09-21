@@ -21,7 +21,7 @@ CGraphic::CGraphic(const char* fn, SDL_Renderer* rend, bool alpha, Uint8 r, Uint
 }
 
 CGraphic::~CGraphic(){
-  if(surface!=NULL) SDL_FreeSurface(surface);
+  if(surface!=NULL) SDL_DestroySurface(surface);
   if(texture!=NULL) SDL_DestroyTexture(texture);
   surface=NULL;
   texture=NULL;
@@ -29,7 +29,7 @@ CGraphic::~CGraphic(){
   tiles = NULL;
 }
 
-SDL_Rect* CGraphic::getTile(int index){
+SDL_FRect* CGraphic::getTile(int index){
   return &tiles[index];
 }
 
@@ -38,7 +38,7 @@ bool CGraphic::loadTexture(const char* fn, SDL_Renderer* rend, bool surf, bool a
   if(texture!=NULL) SDL_DestroyTexture(texture);
   texture=NULL;
 
-  if(surface!=NULL) SDL_FreeSurface(surface);
+  if(surface!=NULL) SDL_DestroySurface(surface);
   surface=NULL;
   
   //Load image at specified path 
@@ -47,7 +47,7 @@ bool CGraphic::loadTexture(const char* fn, SDL_Renderer* rend, bool surf, bool a
     printf( "Unable to load image %s! SDL_image Error: %s\n", fn, SDL_GetError() );
     return false;
   } else {
-    if(alpha) SDL_SetColorKey( surface, SDL_TRUE, SDL_MapRGB( surface->format, r, g, b ) );
+    if(alpha) SDL_SetSurfaceColorKey( surface, true, SDL_MapSurfaceRGB( surface, r, g, b ) );
     //Create texture from surface pixels 
     texture = SDL_CreateTextureFromSurface( rend, surface ); 
     if( texture == NULL ) { 
@@ -57,7 +57,7 @@ bool CGraphic::loadTexture(const char* fn, SDL_Renderer* rend, bool surf, bool a
     
     //Get rid of old loaded surface 
     if(!surf){
-      SDL_FreeSurface( surface ); 
+      SDL_DestroySurface( surface ); 
       surface=NULL;
     }
   } 
@@ -69,8 +69,9 @@ bool CGraphic::createTiles(int szX, int szY){
   if(texture==NULL) return false;
 
   //get number of tiles that actually fit in the loaded texture
-  int canX, canY;
-  SDL_QueryTexture(texture, NULL, NULL, &canX, &canY);
+  float texW, texH;
+  SDL_GetTextureSize(texture, &texW, &texH);
+  int canX=(int)texW, canY=(int)texH;
   int x=canX/szX;
   int y=canY/szY;
   tileCount=x*y;
@@ -78,16 +79,16 @@ bool CGraphic::createTiles(int szX, int szY){
 
   //allocate memory
   if(tiles!=NULL) delete [] tiles;
-  tiles=new SDL_Rect[tileCount];
+  tiles=new SDL_FRect[tileCount];
 
   //generate tiles, left to right, top to bottom
   int count=0;
   for(int i=0;i<y;i++){
     for(int j=0;j<x;j++){
-      tiles[count].x=j*szX;
-      tiles[count].y=i*szY;
-      tiles[count].w=szX;
-      tiles[count].h=szY;
+      tiles[count].x=(float)(j*szX);
+      tiles[count].y=(float)(i*szY);
+      tiles[count].w=(float)(szX);
+      tiles[count].h=(float)(szY);
       count++;
     }
   }
@@ -97,16 +98,17 @@ bool CGraphic::createTiles(int szX, int szY){
 bool CGraphic::createTiles(){
   if(texture==NULL) return false;
 
-  int canX, canY;
-  SDL_QueryTexture(texture, NULL, NULL, &canX, &canY);
+  float texW, texH;
+  SDL_GetTextureSize(texture, &texW, &texH);
+  int canX=(int)texW, canY=(int)texH;
 
   tileCount=1;
   if(tiles!=NULL) delete [] tiles;
-  tiles=new SDL_Rect[1];
-  tiles[0].x=0;
-  tiles[0].y=0;
-  tiles[0].w=canX;
-  tiles[0].h=canY;
+  tiles=new SDL_FRect[1];
+  tiles[0].x=(float)(0);
+  tiles[0].y=(float)(0);
+  tiles[0].w=(float)(canX);
+  tiles[0].h=(float)(canY);
   return true;
 }
 
@@ -125,20 +127,20 @@ bool CGraphic::createTiles(const char* fn){
 
   //allocate memory
   if(tiles!=NULL) delete [] tiles;
-  tiles=new SDL_Rect[tileCount];
+  tiles=new SDL_FRect[tileCount];
 
   //read tiles
   int count=0;
   for(int i=0;i<tileCount;i++){
     fgets(str,256,f);
     tok=strtok(str,",\r\n");
-    tiles[count].x=atoi(tok);
+    tiles[count].x=(float)(atoi(tok));
     tok=strtok(NULL,",\r\n");
-    tiles[count].y=atoi(tok);
+    tiles[count].y=(float)(atoi(tok));
     tok=strtok(NULL,",\r\n");
-    tiles[count].w=atoi(tok);
+    tiles[count].w=(float)(atoi(tok));
     tok=strtok(NULL,",\r\n");
-    tiles[count].h=atoi(tok);
+    tiles[count].h=(float)(atoi(tok));
     count++;
   }
 

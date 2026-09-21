@@ -5,9 +5,9 @@
 #include <string>
 
 #ifdef GCC
-#include <SDL2/SDL_ttf.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #else
-#include <SDL_ttf.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #endif
 
 #include "CDisplay.h"

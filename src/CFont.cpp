@@ -87,7 +87,7 @@ bool CFont::loadFont(const char* fname) {
 void CFont::ensureSize(int sz) {
   if (glyphCache.find(sz) != glyphCache.end()) return; //already cached
 
-  font = TTF_OpenFont(fontPath.c_str(), sz);
+  font = TTF_OpenFont(fontPath.c_str(), (float)sz);
   if (font == NULL) return;
 
   GlyphSet& gs = glyphCache[sz];
@@ -98,7 +98,10 @@ void CFont::ensureSize(int sz) {
       glyphCache.erase(sz);
       return;
     }
-    SDL_QueryTexture(gs.texture[k], NULL, NULL, &gs.rect[k].w, &gs.rect[k].h);
+    float glyphW, glyphH;
+    SDL_GetTextureSize(gs.texture[k], &glyphW, &glyphH);
+    gs.rect[k].w = (int)glyphW;
+    gs.rect[k].h = (int)glyphH;
   }
   TTF_CloseFont(font);
   font = NULL;
@@ -109,8 +112,8 @@ void CFont::render(int x, int y, char* str, int color, bool rotate) {
   int index;
   int posX = x;
   int posY = y;
-  SDL_Rect r;
-  SDL_Point p;
+  SDL_FRect r;
+  SDL_FPoint p;
   GlyphSet& gs = glyphCache.at(fontSize);
 
   for (i = 0; i<strlen(str); i++){
@@ -118,18 +121,19 @@ void CFont::render(int x, int y, char* str, int color, bool rotate) {
 
     SDL_SetTextureColorMod(gs.texture[index], display->txtColors[color].r, display->txtColors[color].g, display->txtColors[color].b);
 
-    r = gs.rect[index];
-    r.x = posX;
-    r.y = posY;
+    r.w = (float)gs.rect[index].w;
+    r.h = (float)gs.rect[index].h;
+    r.x = (float)posX;
+    r.y = (float)posY;
     if (rotate){
       p.x = 0;
       p.y = 0;
-      SDL_RenderCopyEx(display->renderer, gs.texture[index], NULL, &r, -90.0, &p, SDL_FLIP_NONE);
-      posY -= r.w;
+      SDL_RenderTextureRotated(display->renderer, gs.texture[index], NULL, &r, -90.0, &p, SDL_FLIP_NONE);
+      posY -= gs.rect[index].w;
     }
     else {
-      SDL_RenderCopy(display->renderer, gs.texture[index], NULL, &r);
-      posX += r.w;
+      SDL_RenderTexture(display->renderer, gs.texture[index], NULL, &r);
+      posX += gs.rect[index].w;
     }
   }
 
@@ -144,8 +148,8 @@ void CFont::renderInt(int x, int y, int num, int color, bool rotate) {
   int index;
   int posX = x;
   int posY = y;
-  SDL_Rect r;
-  SDL_Point p;
+  SDL_FRect r;
+  SDL_FPoint p;
 
   string s;
   char str[64];
@@ -171,20 +175,21 @@ void CFont::renderInt(int x, int y, int num, int color, bool rotate) {
 
     SDL_SetTextureColorMod(gs.texture[index], display->txtColors[color].r, display->txtColors[color].g, display->txtColors[color].b);
 
-    r = gs.rect[index];
-    offset = (bigSpace - r.w) / 2;
-    r.x = posX;
-    r.y = posY;
-    if (s[i] != ',') r.x += offset;
+    r.w = (float)gs.rect[index].w;
+    r.h = (float)gs.rect[index].h;
+    offset = (bigSpace - gs.rect[index].w) / 2;
+    r.x = (float)posX;
+    r.y = (float)posY;
+    if (s[i] != ',') r.x += (float)offset;
     if (rotate){
       p.x = 0;
       p.y = 0;
-      SDL_RenderCopyEx(display->renderer, gs.texture[index], NULL, &r, -90.0, &p, SDL_FLIP_NONE);
+      SDL_RenderTextureRotated(display->renderer, gs.texture[index], NULL, &r, -90.0, &p, SDL_FLIP_NONE);
       if (s[i] != ',') posY -= bigSpace;
       else posY += littleSpace;
     }
     else {
-      SDL_RenderCopy(display->renderer, gs.texture[index], NULL, &r);
+      SDL_RenderTexture(display->renderer, gs.texture[index], NULL, &r);
       if (s[i] != ',') posX += bigSpace;
       else posX += littleSpace;
     }
@@ -269,11 +274,11 @@ bool CFont::setText(char c, SDL_Texture*& dest) {
   col.b = 255;
   col.a = 255;
   SDL_Surface* surf;
-  surf = TTF_RenderText_Blended(font, str, col);
+  surf = TTF_RenderText_Blended(font, str, 0, col);
   if (surf == NULL) return false;
   dest = SDL_CreateTextureFromSurface(display->renderer, surf);
   if (dest == NULL) return false;
   SDL_SetTextureBlendMode(dest, SDL_BLENDMODE_BLEND);
-  SDL_FreeSurface(surf);
+  SDL_DestroySurface(surf);
   return true;
 }

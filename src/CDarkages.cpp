@@ -1,3 +1,4 @@
+#include "CInput.h"
 #include "CDarkages.h"
 #include "CWindow.h"
 
@@ -267,7 +268,7 @@ void CDarkages::actionEnter(bool bSpace){
         //check riddle answer
         setText(224);
         showTextInput=false;
-        SDL_StopTextInput();
+        SDL_StopTextInput(display->window);
       }
     } else {
       showText = false;
@@ -1685,7 +1686,7 @@ bool CDarkages::newGame(){
   reset();
 
   userText.clear();
-  SDL_StartTextInput();
+  SDL_StartTextInput(display->window);
   showTextInput=true;
   showText=true;
 
@@ -1699,20 +1700,20 @@ bool CDarkages::newGame(){
   while(true){
 
     //printf("%d %d\n", world[30].szX, world[30].szY);
-    while(SDL_PollEvent(&e) != 0) {
-      if(e.type == SDL_TEXTINPUT){
+    while(DA_PollEvent(&e)) {
+      if(e.type == SDL_EVENT_TEXT_INPUT){
         if(showTextInput && userText.size()<16) userText+=e.text.text;
-      } else if(e.type == SDL_KEYUP){
-        switch(e.key.keysym.sym)  {
+      } else if(e.type == SDL_EVENT_KEY_UP){
+        switch(e.key.key)  {
         case SDLK_UP: cam.keyUp(0); break;
         case SDLK_DOWN: cam.keyUp(2); break;
         case SDLK_LEFT: cam.keyUp(3); break;
         case SDLK_RIGHT: cam.keyUp(1); break;
         default: break;
         }
-      } else if(e.type == SDL_KEYDOWN)  {
+      } else if(e.type == SDL_EVENT_KEY_DOWN)  {
         //Select surfaces based on key press
-        switch(e.key.keysym.sym)  {
+        switch(e.key.key)  {
         case SDLK_ESCAPE:
           return false;
           break;
@@ -1722,9 +1723,9 @@ bool CDarkages::newGame(){
         case SDLK_RETURN:
           if(showText) {
             if(showTextInput){
-              if(e.key.keysym.sym == SDLK_RETURN){
+              if(e.key.key == SDLK_RETURN){
                 strcpy(hero.name,&userText[0]);
-                SDL_StopTextInput();
+                SDL_StopTextInput(display->window);
                 showTextInput=false;
                 showText=false;
                 return true;
@@ -1755,12 +1756,12 @@ void CDarkages::run(){
   /*unsigned int*/ ticks =0;
   unsigned int aTicks;
   unsigned int curTicks;
-  unsigned int lastTicks=SDL_GetTicks();
-  unsigned int lastFPS=SDL_GetTicks();
+  unsigned int lastTicks=(unsigned int)SDL_GetTicks();
+  unsigned int lastFPS=(unsigned int)SDL_GetTicks();
 
   while (true){
 
-    curTicks=SDL_GetTicks();
+    curTicks=(unsigned int)SDL_GetTicks();
     aTicks=curTicks - lastTicks;
     if(aTicks > 250) aTicks = 250; //clamp so a hitch/alt-tab can't cause a big movement jump
     ticks+=aTicks;
@@ -1794,8 +1795,8 @@ void CDarkages::run(){
       continue;
     }
 
-    while (SDL_PollEvent(&e) != 0) {
-      if(e.type == SDL_KEYDOWN || e.type == SDL_CONTROLLERBUTTONDOWN){
+    while (DA_PollEvent(&e)) {
+      if(e.type == SDL_EVENT_KEY_DOWN || e.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN){
         idleTicks = 0;
         if(idlePlaying){
           idlePlaying = false;
@@ -1803,47 +1804,47 @@ void CDarkages::run(){
           playerAnim = 0;
         }
       }
-      if(e.type == SDL_TEXTINPUT){
+      if(e.type == SDL_EVENT_TEXT_INPUT){
         if(showTextInput && userText.size() < 16 && e.text.text[0] != ' ') userText+=e.text.text;
-      } else if(e.type == SDL_CONTROLLERBUTTONUP) {
-        switch(e.cbutton.button)  {
-        case SDL_CONTROLLER_BUTTON_DPAD_UP: actionCursorUpRel(); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: actionCursorDownRel(); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: actionCursorLeftRel(); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: actionCursorRightRel(); break;
+      } else if(e.type == SDL_EVENT_GAMEPAD_BUTTON_UP) {
+        switch(e.gbutton.button)  {
+        case SDL_GAMEPAD_BUTTON_DPAD_UP: actionCursorUpRel(); break;
+        case SDL_GAMEPAD_BUTTON_DPAD_DOWN: actionCursorDownRel(); break;
+        case SDL_GAMEPAD_BUTTON_DPAD_LEFT: actionCursorLeftRel(); break;
+        case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: actionCursorRightRel(); break;
         default: break;
         }
-      } else if(e.type == SDL_CONTROLLERBUTTONDOWN) {
-        switch(e.cbutton.button){
-        case SDL_CONTROLLER_BUTTON_A: actionEnter(); break;
-        case SDL_CONTROLLER_BUTTON_B: actionSpell(); break;
-        case SDL_CONTROLLER_BUTTON_X: actionStats(); break;
-        case SDL_CONTROLLER_BUTTON_Y: actionESC(); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_UP: actionCursorUp(); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: actionCursorDown(); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: actionCursorLeft(); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: actionCursorRight(); break;
+      } else if(e.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
+        switch(e.gbutton.button){
+        case SDL_GAMEPAD_BUTTON_SOUTH: actionEnter(); break;
+        case SDL_GAMEPAD_BUTTON_EAST: actionSpell(); break;
+        case SDL_GAMEPAD_BUTTON_WEST: actionStats(); break;
+        case SDL_GAMEPAD_BUTTON_NORTH: actionESC(); break;
+        case SDL_GAMEPAD_BUTTON_DPAD_UP: actionCursorUp(); break;
+        case SDL_GAMEPAD_BUTTON_DPAD_DOWN: actionCursorDown(); break;
+        case SDL_GAMEPAD_BUTTON_DPAD_LEFT: actionCursorLeft(); break;
+        case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: actionCursorRight(); break;
         default:break;
         }
           
-      } else if(e.type == SDL_KEYUP){
-        switch(e.key.keysym.sym)  {
+      } else if(e.type == SDL_EVENT_KEY_UP){
+        switch(e.key.key)  {
         case SDLK_UP: actionCursorUpRel(); break;
         case SDLK_DOWN: actionCursorDownRel(); break;
         case SDLK_LEFT: actionCursorLeftRel(); break;
         case SDLK_RIGHT: actionCursorRightRel(); break;
         default: break;
         }
-      } else if(e.type == SDL_KEYDOWN)  {
-        switch (e.key.keysym.sym)  {
+      } else if(e.type == SDL_EVENT_KEY_DOWN)  {
+        switch (e.key.key)  {
         case SDLK_UP: actionCursorUp(); break;
         case SDLK_DOWN: actionCursorDown(); break;
         case SDLK_LEFT: actionCursorLeft(); break;
         case SDLK_RIGHT: actionCursorRight(); break;
         case SDLK_ESCAPE: actionESC(); break;
-        //case SDLK_b: if(battle.fight(checkBattle())==3) death(); break;
-        case SDLK_c: actionSpell(); break;
-        case SDLK_z: actionStats(); break;
+        //case SDLK_B: if(battle.fight(checkBattle())==3) death(); break;
+        case SDLK_C: actionSpell(); break;
+        case SDLK_Z: actionStats(); break;
         case SDLK_BACKSPACE:
           if(showTextInput && userText.size()>0) userText.pop_back();
           break;
@@ -2016,13 +2017,13 @@ void CDarkages::render(){
   int lowX, lowY;
   int highX, highY;
   int tileSize = modSettings.tileSize;
-  SDL_Rect r;
+  SDL_FRect r;
   //SDL_Rect vp;
 
   //set the viewport for the game
-  //SDL_RenderGetViewport(display->renderer, &vp);
+  //SDL_GetRenderViewport(display->renderer, &vp);
   //r.x=10; r.y=10; r.w=300; r.h=180;
-  //SDL_RenderSetViewport(display->renderer, &r);
+  //SDL_SetRenderViewport(display->renderer, &r);
 
   //The camera's own position stays in a fixed 40-per-tile coordinate space regardless of the mod's visual tile
   //size. Convert its exact (fractional) position to canvas pixels with a SINGLE rounding. Truncating to whole
@@ -2045,8 +2046,8 @@ void CDarkages::render(){
   lowY = b - 4;
   highY = b + 5+1;
 
-  r.h = tileSize;
-  r.w = tileSize;
+  r.h = (float)(tileSize);
+  r.w = (float)(tileSize);
 
   //printf("A: %d, B: %d, lowX: %d, lowY: %d\n", a, b, lowX, lowY);
 
@@ -2055,41 +2056,41 @@ void CDarkages::render(){
   SDL_RenderClear(display->renderer);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
   for (j = lowY; j<highY; j++){
-    r.y = tileSize * (j - lowY) - offY + tileSize/2;
+    r.y = (float)(tileSize * (j - lowY) - offY + tileSize/2);
     for (i = lowX; i<highX; i++){
       //printf("tile: %d,%d\n,", i, j);
-      r.x = tileSize * (i - lowX) - offX + tileSize/2;
+      r.x = (float)(tileSize * (i - lowX) - offX + tileSize/2);
       if (i < 0 || i >= world[curMap].szX || j < 0 || j >= world[curMap].szY){
         SDL_RenderFillRect(display->renderer, &r);
       } else {
         k = world[curMap].getTile(i, j);
         if (k == 0) SDL_RenderFillRect(display->renderer, &r);
-        else SDL_RenderCopy(display->renderer, gfx.tiles->texture, gfx.tiles->getTile(world[curMap].getTile(i, j) - 1), &r);
+        else SDL_RenderTexture(display->renderer, gfx.tiles->texture, gfx.tiles->getTile(world[curMap].getTile(i, j) - 1), &r);
       }
     }
   }
 
   //special effect to begin game
   if(fadeIn>0){
-    r.x=0; r.y=0; r.w=display->S(640); r.h=display->S(400);
+    r.x = (float)(0); r.y = (float)(0); r.w = (float)(display->S(640)); r.h = (float)(display->S(400));
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, fadeIn);
     SDL_RenderFillRect(display->renderer, &r);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
-    r.h = tileSize;
-    r.w = tileSize;
+    r.h = (float)(tileSize);
+    r.w = (float)(tileSize);
   }
 
   //draw player
-  r.x = display->S(300);
-  r.y = display->S(180);
+  r.x = (float)(display->S(300));
+  r.y = (float)(display->S(180));
   if(idlePlaying && gfx.heroIdle != NULL){
-    SDL_RenderCopy(display->renderer, gfx.heroIdle->texture, gfx.heroIdle->getTile(idleTile(idleAnimIndex, idleFrame)), &r);
+    SDL_RenderTexture(display->renderer, gfx.heroIdle->texture, gfx.heroIdle->getTile(idleTile(idleAnimIndex, idleFrame)), &r);
   } else {
-    SDL_RenderCopy(display->renderer, gfx.player->texture, gfx.player->getTile(heroTile(playerDir, playerAnim)), &r);
+    SDL_RenderTexture(display->renderer, gfx.player->texture, gfx.player->getTile(heroTile(playerDir, playerAnim)), &r);
   }
 
   //open viewport back up
-  //SDL_RenderSetViewport(display->renderer, &vp);
+  //SDL_SetRenderViewport(display->renderer, &vp);
 
   //if dead, or at an endgame stage, paste that full-screen image over the tiles. An image the canvas is a
   //whole-number multiple of (the original game's 320x200 art on a TileSize 40 canvas) is stretched over the
@@ -2102,24 +2103,24 @@ void CDarkages::render(){
   CGraphic* fsImg = sceneBlack ? NULL : currentFullScreenImage();
   bool fsImgFullWindow = (fsImg != NULL && !fitsCanvasInWholeScale(fsImg));
   if(fsImg != NULL && !fsImgFullWindow){
-    r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
-    SDL_RenderCopy(display->renderer, fsImg->texture, fsImg->getTile(0), &r);
+    r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->S(400)); r.w = (float)(display->S(640));
+    SDL_RenderTexture(display->renderer, fsImg->texture, fsImg->getTile(0), &r);
   }
   if(sceneBlack){
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
-    r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(640);
+    r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->S(400)); r.w = (float)(display->S(640));
     SDL_RenderFillRect(display->renderer, &r);
   }
 
   //render blinds (skipped while a full-window image is up, since it doesn't sit inside this frame)
   if(!fsImgFullWindow){
-    r.x=0; r.y=0; r.h=display->S(20); r.w=display->S(640);
+    r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->S(20)); r.w = (float)(display->S(640));
     SDL_RenderFillRect(display->renderer, &r);
-    r.x=0; r.y=0; r.h=display->S(400); r.w=display->S(20);
+    r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->S(400)); r.w = (float)(display->S(20));
     SDL_RenderFillRect(display->renderer, &r);
-    r.x=0; r.y=display->S(400)-display->S(20); r.h=display->S(20); r.w=display->S(640);
+    r.x = (float)(0); r.y = (float)(display->S(400)-display->S(20)); r.h = (float)(display->S(20)); r.w = (float)(display->S(640));
     SDL_RenderFillRect(display->renderer, &r);
-    r.x=display->S(640)-display->S(20); r.y=0; r.h=display->S(400); r.w=display->S(20);
+    r.x = (float)(display->S(640)-display->S(20)); r.y = (float)(0); r.h = (float)(display->S(400)); r.w = (float)(display->S(20));
     SDL_RenderFillRect(display->renderer, &r);
   }
 
@@ -2131,7 +2132,9 @@ void CDarkages::render(){
   //mod is loaded. See CDisplay::beginUIPass()/computeLayout() for how the two scales are kept separate.
   SDL_SetRenderTarget(display->renderer, NULL);
   display->clearScreen();
-  SDL_RenderCopy(display->renderer, canvas, NULL, &display->worldRect);
+  SDL_FRect worldDst;
+  SDL_RectToFRect(&display->worldRect, &worldDst);
+  SDL_RenderTexture(display->renderer, canvas, NULL, &worldDst);
 
   //a death/endgame image that doesn't fit the canvas goes over the whole window, under any dialogue text drawn below
   if(fsImgFullWindow) renderFullScreenImage(fsImg);
@@ -2180,9 +2183,10 @@ CGraphic* CDarkages::currentFullScreenImage(){
 //keeps every source pixel the same size. Anything else would be resampled by a fractional amount on the canvas
 //(e.g. a 640x400 image on a 512x320 canvas), so those go through renderFullScreenImage() instead.
 bool CDarkages::fitsCanvasInWholeScale(CGraphic* g){
-  SDL_Rect* t = g->getTile(0);
+  SDL_FRect* t = g->getTile(0);
   if(t == NULL || t->w <= 0 || t->h <= 0) return false;
-  return display->canvasW % t->w == 0 && display->canvasH % t->h == 0 && display->canvasW / t->w == display->canvasH / t->h;
+  int tw = (int)t->w, th = (int)t->h;
+  return display->canvasW % tw == 0 && display->canvasH % th == 0 && display->canvasW / tw == display->canvasH / th;
 }
 
 //Draws g at its own aspect ratio, centered in the window with black bars on whichever axis is left over.
@@ -2193,30 +2197,31 @@ bool CDarkages::fitsCanvasInWholeScale(CGraphic* g){
 //The one case a whole-number multiple can't cover is an image larger than the window itself; it is then
 //shrunk to fit (still nearest-neighbor, never smoothed) rather than being cropped.
 void CDarkages::renderFullScreenImage(CGraphic* g){
-  SDL_Rect* src = g->getTile(0);
+  SDL_FRect* src = g->getTile(0);
   if(src == NULL || src->w <= 0 || src->h <= 0) return;
 
   display->clearScreen();
 
-  double fit = (double)display->screenWidth / src->w;
-  double fitH = (double)display->screenHeight / src->h;
+  int srcW = (int)src->w, srcH = (int)src->h;
+  double fit = (double)display->screenWidth / srcW;
+  double fitH = (double)display->screenHeight / srcH;
   if(fitH < fit) fit = fitH;
 
   int wholeScale = (int)fit; //largest whole-number multiple that fits (0 if the image is bigger than the window)
 
-  SDL_Rect dst;
+  int dstW, dstH;
   if(wholeScale >= 1){
-    dst.w = src->w * wholeScale;
-    dst.h = src->h * wholeScale;
+    dstW = srcW * wholeScale;
+    dstH = srcH * wholeScale;
   } else {
-    dst.w = (int)(src->w * fit + 0.5);
-    dst.h = (int)(src->h * fit + 0.5);
+    dstW = (int)(srcW * fit + 0.5);
+    dstH = (int)(srcH * fit + 0.5);
   }
-  dst.x = (display->screenWidth - dst.w) / 2;
-  dst.y = (display->screenHeight - dst.h) / 2;
+  //whole-number position and size, so nothing is ever drawn at a fractional pixel
+  SDL_FRect dst = { (float)((display->screenWidth - dstW) / 2), (float)((display->screenHeight - dstH) / 2), (float)dstW, (float)dstH };
 
-  SDL_SetTextureScaleMode(g->texture, SDL_ScaleModeNearest);
-  SDL_RenderCopy(display->renderer, g->texture, src, &dst);
+  SDL_SetTextureScaleMode(g->texture, SDL_SCALEMODE_NEAREST);
+  SDL_RenderTexture(display->renderer, g->texture, src, &dst);
 }
 
 bool CDarkages::renderCredits(){
@@ -2250,13 +2255,13 @@ bool CDarkages::renderCredits(){
 }
 
 void CDarkages::renderMenu(){
-  SDL_Rect r;
+  SDL_FRect r;
 
   //Draw Menu
   CWindow::renderBox(display, display->S(196), display->S(146), display->S(248), display->S(108));
 
   //Draw selection
-  r.x=display->S(202); r.y=display->S(160) + selection * display->S(16); r.w=display->S(236); r.h=display->S(16);
+  r.x = (float)(display->S(202)); r.y = (float)(display->S(160) + selection * display->S(16)); r.w = (float)(display->S(236)); r.h = (float)(display->S(16));
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
   SDL_RenderFillRect(display->renderer, &r);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
@@ -2270,17 +2275,17 @@ void CDarkages::renderMenu(){
 }
 
 void CDarkages::renderNew(){
-  SDL_Rect r;
+  SDL_FRect r;
 
   display->clearScreen();
 
   //player sprite is mod-native-scaled bitmap art, same treatment as the world canvas
   display->beginCompatPass();
-  r.w=modSettings.tileSize;
-  r.h=modSettings.tileSize;
-  r.x = display->S(300);
-  r.y = display->S(180);
-  SDL_RenderCopy(display->renderer, gfx.player->texture, gfx.player->getTile(heroTile(playerDir, playerAnim)), &r);
+  r.w = (float)(modSettings.tileSize);
+  r.h = (float)(modSettings.tileSize);
+  r.x = (float)(display->S(300));
+  r.y = (float)(display->S(180));
+  SDL_RenderTexture(display->renderer, gfx.player->texture, gfx.player->getTile(heroTile(playerDir, playerAnim)), &r);
   display->endCompatPass();
 
   //draw any text
@@ -2296,7 +2301,7 @@ void CDarkages::renderNew(){
 
 /*
 void CDarkages::renderSaves(){
-  SDL_Rect r;
+  SDL_FRect r;
   int i;
   char str[64];
 
@@ -2305,7 +2310,7 @@ void CDarkages::renderSaves(){
     renderBox(80, 52, 480, 296);
 
     //Draw selection
-    r.x=86; r.y=64 + selection * 40; r.w=468; r.h=32;
+    r.x = (float)(86); r.y = (float)(64 + selection * 40); r.w = (float)(468); r.h = (float)(32);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
     SDL_RenderFillRect(display->renderer, &r);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
@@ -2324,7 +2329,7 @@ void CDarkages::renderSaves(){
     renderBox(80, 72, 480, 256);
 
     //Draw selection
-    r.x=86; r.y=84 + selection * 40; r.w=468; r.h=32;
+    r.x = (float)(86); r.y = (float)(84 + selection * 40); r.w = (float)(468); r.h = (float)(32);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
     SDL_RenderFillRect(display->renderer, &r);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
@@ -2342,13 +2347,13 @@ void CDarkages::renderSaves(){
 */
 
 void CDarkages::renderSpell(){
-  SDL_Rect r;
+  SDL_FRect r;
   int lineCount=0;
   size_t i;
 
   CWindow::renderBox(display, display->S(150), display->S(138), display->S(340), display->S(124));
 
-  r.w=display->S(328); r.h=display->S(16); r.x=display->S(156); r.y=display->S(154) + display->S(16) * selection;
+  r.w = (float)(display->S(328)); r.h = (float)(display->S(16)); r.x = (float)(display->S(156)); r.y = (float)(display->S(154) + display->S(16) * selection);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
   SDL_RenderFillRect(display->renderer, &r);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
@@ -2455,7 +2460,7 @@ void CDarkages::renderText(){
   string shownText = da1script::plainText(script.text->at(0));
   if(shownText.size() < 2) return;
 
-  SDL_Rect r;
+  SDL_FRect r;
   size_t i;
   string curText;
   int lineNum;
@@ -2465,10 +2470,10 @@ void CDarkages::renderText(){
   int maxLines = (showEquipShop || showSpellShop) ? 14 : (showShop ? 17 : 5);
 
   int inset = CWindow::renderBox(display, 0, 0, display->S(640), boxH, BevelRich);
-  r.x = inset;
-  r.y = inset;
-  r.w = display->S(640) - inset*2;
-  r.h = boxH - inset*2;
+  r.x = (float)(inset);
+  r.y = (float)(inset);
+  r.w = (float)(display->S(640) - inset*2);
+  r.h = (float)(boxH - inset*2);
 
   //Render word by word, applying line breaks as needed, then continue layout below it.
   curText=shownText;
@@ -2501,11 +2506,11 @@ void CDarkages::renderText(){
     font.render(priceX - font.getStringWidth(priceStr), display->S(12) + display->S(16) * lineNum, priceStr);
     lineNum+=2;
   }
-  SDL_Rect r2;
-  r2.x = display->S(36);
-  r2.y = display->S(16) * lineNum + display->S(8);
-  r2.w = display->S(568);
-  r2.h = display->S(4);
+  SDL_FRect r2;
+  r2.x = (float)(display->S(36));
+  r2.y = (float)(display->S(16) * lineNum + display->S(8));
+  r2.w = (float)(display->S(568));
+  r2.h = (float)(display->S(4));
   if (showEquipShop || showSpellShop) {
     SDL_SetRenderDrawColor(display->renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(display->renderer, &r2);
@@ -2514,10 +2519,10 @@ void CDarkages::renderText(){
   if(script.text->size()==1 && script.choices->size()>0){
     for(i=script.offset; i < script.choices->size();i++){
       if(script.selection==i){
-        r.w -= 4;
-        r.h = display->S(16);
+        r.w -= (float)(4);
+        r.h = (float)(display->S(16));
         r.x++;
-        r.y = display->S(18) + display->S(16) * lineNum;
+        r.y = (float)(display->S(18) + display->S(16) * lineNum);
         SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
         SDL_RenderFillRect(display->renderer, &r);
         SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
@@ -2561,18 +2566,18 @@ void CDarkages::renderText(){
 
   //Draw arrows if necessary
   if(script.offset>0) {
-    r.w=display->S(16);
-    r.h=display->S(16);
-    r.x = display->S(16);
-    r.y = display->S(18) + display->S(16) * choiceLine;
-    SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(1), &r);
+    r.w = (float)(display->S(16));
+    r.h = (float)(display->S(16));
+    r.x = (float)(display->S(16));
+    r.y = (float)(display->S(18) + display->S(16) * choiceLine);
+    SDL_RenderTexture(display->renderer, gfx.extra->texture, gfx.extra->getTile(1), &r);
   }
   if(bDownArrow){
-    r.w=display->S(16);
-    r.h=display->S(16);
-    r.x = display->S(16);
-    r.y = (showEquipShop || showSpellShop) ? boxH - display->S(58) : boxH - display->S(34);
-    SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(0), &r);
+    r.w = (float)(display->S(16));
+    r.h = (float)(display->S(16));
+    r.x = (float)(display->S(16));
+    r.y = (float)((showEquipShop || showSpellShop) ? boxH - display->S(58) : boxH - display->S(34));
+    SDL_RenderTexture(display->renderer, gfx.extra->texture, gfx.extra->getTile(0), &r);
   }
 
   //Equipment/spell shop: bottom summary (attack power / armor value / gold)
@@ -2589,7 +2594,7 @@ void CDarkages::renderText(){
       else { armDelta=delta; showArm=true; }
     }
 
-    r2.y = boxH - display->S(56);
+    r2.y = (float)(boxH - display->S(56));
     SDL_SetRenderDrawColor(display->renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(display->renderer, &r2);
 
@@ -2623,13 +2628,13 @@ void CDarkages::renderText(){
 
 /*
 void CDarkages::renderTitle(){
-  SDL_Rect r;
+  SDL_FRect r;
 
   SDL_RenderClear(display->renderer);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
 
-  r.x=0; r.y=0; r.h=400; r.w=640;
-  SDL_RenderCopy(display->renderer, gfx.title->texture, gfx.title->getTile(0), &r);
+  r.x = (float)(0); r.y = (float)(0); r.h = (float)(400); r.w = (float)(640);
+  SDL_RenderTexture(display->renderer, gfx.title->texture, gfx.title->getTile(0), &r);
 
   font.setFontSize(16);
   font.render(10, 380, "Copyright (C) 1997-2017, Dark Knight Software");
@@ -2648,11 +2653,11 @@ void CDarkages::renderTitle(){
     font.render(260, 330, "Exit");
 
     //draw indicator
-    r.w=16;
-    r.h=16;
-    r.x = 240;
-    r.y = 244 + selection * 30;
-    SDL_RenderCopy(display->renderer, gfx.extra->texture, gfx.extra->getTile(2), &r);
+    r.w = (float)(16);
+    r.h = (float)(16);
+    r.x = (float)(240);
+    r.y = (float)(244 + selection * 30);
+    SDL_RenderTexture(display->renderer, gfx.extra->texture, gfx.extra->getTile(2), &r);
 
   }
 
@@ -2667,7 +2672,7 @@ void CDarkages::renderTravelSpell(){
   static const string dests[] = {"Cancel", "Meadow", "Quinine Tower", "Wisp", "Trok", "Tristen", "Northern Post",
                                  "Castle Garrison", "Amber", "Laendlich", "Rhoeyce", "Aaryak", "Floating City"};
   const int count = (int)(sizeof(dests) / sizeof(dests[0]));
-  SDL_Rect r;
+  SDL_FRect r;
   int i;
 
   //This used to be laid out with 8-unit line spacing (a leftover from the game's smaller original layout), which
@@ -2686,7 +2691,7 @@ void CDarkages::renderTravelSpell(){
   CWindow::renderBox(display, boxX, boxY, boxW, boxH);
 
   //selection highlight and text sit at the same offsets inside the box as in renderSpell()
-  r.w = boxW - display->S(12); r.h = display->S(16); r.x = boxX + display->S(6); r.y = boxY + display->S(16) + display->S(16) * selection;
+  r.w = (float)(boxW - display->S(12)); r.h = (float)(display->S(16)); r.x = (float)(boxX + display->S(6)); r.y = (float)(boxY + display->S(16) + display->S(16) * selection);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 128, 255);
   SDL_RenderFillRect(display->renderer, &r);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
@@ -3039,7 +3044,7 @@ void CDarkages::setText(int i){
         script.addText("(You hurriedly ask where to find the Diamant.)                              Hehehe. Need it, do you? Ahh, but I'm not so senile in all these years. You, like all the other adventurers, must play the game.");
         script.addText("It's quite simple, just a riddle. Tell me my name, and I will tell you where to find the Diamant.");
         userText.clear();
-        SDL_StartTextInput();
+        SDL_StartTextInput(display->window);
         showTextInput=true;
         //add name part here
       } else if(eHelpDwarf >= 6){
@@ -4003,23 +4008,23 @@ int CDarkages::titleLoad(){
   SDL_Event e;
   openLoadMenu();
   while(true){
-    while(SDL_PollEvent(&e) != 0) {
-      if(e.type == SDL_CONTROLLERBUTTONDOWN) {
-        switch(e.cbutton.button){
-        case SDL_CONTROLLER_BUTTON_A:
+    while(DA_PollEvent(&e)) {
+      if(e.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
+        switch(e.gbutton.button){
+        case SDL_GAMEPAD_BUTTON_SOUTH:
           {
             bool loaded = (loadSave->selection > 0 && saves[loadSave->selection - 1].level != 0);
             actionEnter();
             showLoad=false;
             return loaded ? 1 : 0;
           }
-        case SDL_CONTROLLER_BUTTON_DPAD_UP: actionCursorUp(); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: actionCursorDown(); break;
+        case SDL_GAMEPAD_BUTTON_DPAD_UP: actionCursorUp(); break;
+        case SDL_GAMEPAD_BUTTON_DPAD_DOWN: actionCursorDown(); break;
         default:break;
         }
 
-      } else if(e.type == SDL_KEYDOWN)  {
-        switch(e.key.keysym.sym)  {
+      } else if(e.type == SDL_EVENT_KEY_DOWN)  {
+        switch(e.key.key)  {
         case SDLK_UP: actionCursorUp(); break;
         case SDLK_DOWN: actionCursorDown(); break;
         case SDLK_ESCAPE:

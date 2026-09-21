@@ -1,24 +1,23 @@
 <#
 .SYNOPSIS
-  Downloads the SDL libraries the game builds against into third_party/.
+  Downloads and builds the SDL libraries the game links: SDL3, SDL3_ttf and SDL3_mixer, as static libraries.
 
 .DESCRIPTION
-  Fetches the pinned SDL2, SDL2_ttf and SDL2_mixer "devel VC" packages, verifies each
-  download against a SHA-256 checksum, and unpacks them under third_party/ (git-ignored):
+  1. Downloads the pinned SDL3, SDL3_ttf and SDL3_mixer source releases, verifying each against a SHA-256, and unpacks
+     them under third_party/sdl3-src/.
+  2. Fetches the FreeType fork that SDL3_ttf uses, at one exact commit, into SDL3_ttf's external/freetype (the SDL3_ttf
+     release archive does not bundle it). Git verifies the commit, so no moving branch can change what gets built.
+  3. Builds all three libraries with CMake (tools/sdl3-static) for Release and Debug, with a static C runtime (/MT and
+     /MTd), and installs the results into third_party/sdl3/ (include/ and lib/<Configuration>/).
 
-    third_party/SDL2-2.0.12/
-    third_party/SDL2_ttf-2.0.12/
-    third_party/SDL2_mixer-2.8.1/
+  msvc/Darkages.vcxproj links those static libraries, so the game is one executable with nothing else to ship. Run this
+  once after cloning, and again whenever the pins below change. It is safe to re-run: if everything is already built for
+  the same pins and build files, it does nothing. The GitHub Actions workflows use this same script.
 
-  msvc/Darkages.vcxproj looks for the libraries there. Run this once after cloning, and again
-  whenever the pinned versions below change. It is safe to re-run: packages that are already
-  unpacked and verified are left alone.
-
-  The same script is used by the GitHub Actions workflows, so a local build and a CI build get
-  exactly the same library files.
+  Needs: Git, CMake, and Visual Studio 2022 with "Desktop development with C++" (all present on GitHub's Windows runners).
 
 .PARAMETER Force
-  Download and unpack everything again, even if it looks up to date.
+  Download, unpack and rebuild everything, even if it looks up to date.
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File tools\get-deps.ps1
@@ -35,57 +34,86 @@ $ProgressPreference    = 'SilentlyContinue'   # Invoke-WebRequest is very slow w
 $repoRoot   = Split-Path -Parent $PSScriptRoot
 $thirdParty = Join-Path $repoRoot 'third_party'
 $downloads  = Join-Path $thirdParty '_downloads'
+$srcRoot    = Join-Path $thirdParty 'sdl3-src'
+$buildDir   = Join-Path $thirdParty 'sdl3-build'
+$outDir     = Join-Path $thirdParty 'sdl3'
 
-# To move to a newer version: change the entry here (url, sha256, folder) and re-run.
-# SDL2_ttf 2.0.12 was only ever published on libsdl.org, not on GitHub releases.
+# To move to newer versions, change the entries here (url, sha256, folder) and re-run. SDL3 3.4.x patch releases come
+# out roughly monthly, so bump deliberately.
 $deps = @(
   @{
-    Name   = 'SDL2 2.0.12'
-    File   = 'SDL2-devel-2.0.12-VC.zip'
-    Url    = 'https://github.com/libsdl-org/SDL/releases/download/release-2.0.12/SDL2-devel-2.0.12-VC.zip'
-    Sha256 = '00c55a597cebdb9a4eb2723f2ad2387a4d7fd605e222c69b46099b15d5d8b32d'
-    Folder = 'SDL2-2.0.12'
+    Name   = 'SDL3 3.4.16'
+    File   = 'SDL3-3.4.16.tar.gz'
+    Url    = 'https://github.com/libsdl-org/SDL/releases/download/release-3.4.16/SDL3-3.4.16.tar.gz'
+    Sha256 = '7322236cd12090c3eb40b9728be4d49c76f66ad17d04369584d4ecad5cf77c68'
+    Folder = 'SDL3-3.4.16'
   },
   @{
-    Name   = 'SDL2_ttf 2.0.12'
-    File   = 'SDL2_ttf-devel-2.0.12-VC.zip'
-    Url    = 'https://www.libsdl.org/projects/SDL_ttf/release/SDL2_ttf-devel-2.0.12-VC.zip'
-    Sha256 = '0c74634a8e74f0a909194962ce9512e638e66d7fc71677a9273fd6a34e627628'
-    Folder = 'SDL2_ttf-2.0.12'
+    Name   = 'SDL3_ttf 3.2.2'
+    File   = 'SDL3_ttf-3.2.2.tar.gz'
+    Url    = 'https://github.com/libsdl-org/SDL_ttf/releases/download/release-3.2.2/SDL3_ttf-3.2.2.tar.gz'
+    Sha256 = '63547d58d0185c833213885b635a2c0548201cc8f301e6587c0be1a67e1e045d'
+    Folder = 'SDL3_ttf-3.2.2'
   },
   @{
-    Name   = 'SDL2_mixer 2.8.1'
-    File   = 'SDL2_mixer-devel-2.8.1-VC.zip'
-    Url    = 'https://github.com/libsdl-org/SDL_mixer/releases/download/release-2.8.1/SDL2_mixer-devel-2.8.1-VC.zip'
-    Sha256 = '12dc2bb724afaf19bcc23fdd7e6fcdcf40274edf13b8c6ec3723089a72537832'
-    Folder = 'SDL2_mixer-2.8.1'
+    Name   = 'SDL3_mixer 3.2.4'
+    File   = 'SDL3_mixer-3.2.4.tar.gz'
+    Url    = 'https://github.com/libsdl-org/SDL_mixer/releases/download/release-3.2.4/SDL3_mixer-3.2.4.tar.gz'
+    Sha256 = '182a07c745375e113dc740d43964ff21b0be29f29f59876c4dbc4db3d32f6901'
+    Folder = 'SDL3_mixer-3.2.4'
   }
 )
+# SDL3_ttf's FreeType: SDL's fork (branch VER-2-13-2-SDL), pinned to one commit.
+$freetypeUrl    = 'https://github.com/libsdl-org/freetype.git'
+$freetypeCommit = '9973564cfa63763a3e4ac67c09147899539b1e07'
+$ttfFolder      = 'SDL3_ttf-3.2.2'
 
 function Get-Sha256([string]$path) {
   return (Get-FileHash -Path $path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
-New-Item -ItemType Directory -Force -Path $downloads | Out-Null
+function Get-StringSha256([string]$text) {
+  $sha = [Security.Cryptography.SHA256]::Create()
+  return ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($text))) -replace '-', '').ToLowerInvariant()
+}
+
+# What the built libraries depend on: every pin above plus the build files. If any of it changes, rebuild.
+$wrapperCmake = Join-Path $PSScriptRoot 'sdl3-static\CMakeLists.txt'
+$bundledCmake = Join-Path $PSScriptRoot 'cmake\SDL3Bundled.cmake'
+$stampText = (($deps | ForEach-Object { $_.Sha256 }) -join ',') + "|$freetypeCommit|" +
+             (Get-Content $wrapperCmake -Raw) + '|' + (Get-Content $bundledCmake -Raw) + '|static-crt-v1'
+$stamp     = Get-StringSha256 $stampText
+$stampFile = Join-Path $outDir '.da-deps-stamp'
+
+$expectedLibs = 'SDL3-static.lib', 'SDL3_ttf-static.lib', 'SDL3_mixer-static.lib', 'freetype.lib'
+function Test-Built {
+  if (-not (Test-Path $stampFile) -or ((Get-Content $stampFile -Raw).Trim() -ne $stamp)) { return $false }
+  foreach ($cfg in 'Release', 'Debug') {
+    foreach ($lib in $expectedLibs) { if (-not (Test-Path (Join-Path $outDir "lib\$cfg\$lib"))) { return $false } }
+  }
+  return (Test-Path (Join-Path $outDir 'include\SDL3\SDL.h'))
+}
+
+if (-not $Force -and (Test-Built)) {
+  Write-Host 'SDL3 libraries are up to date in third_party/sdl3/.'
+  return
+}
+
+# ---- 1. sources ---------------------------------------------------------------------------------------------
+New-Item -ItemType Directory -Force -Path $downloads, $srcRoot | Out-Null
 
 foreach ($d in $deps) {
-  $zip    = Join-Path $downloads $d.File
-  $target = Join-Path $thirdParty $d.Folder
-  $marker = Join-Path $target '.da-deps-sha256'   # records which package the unpacked folder came from
+  $archive = Join-Path $downloads $d.File
+  $target  = Join-Path $srcRoot $d.Folder
 
-  if (-not $Force -and (Test-Path $marker) -and ((Get-Content $marker -Raw).Trim() -eq $d.Sha256)) {
-    Write-Host ("{0,-18} up to date" -f $d.Name)
-    continue
-  }
-
-  # Use the cached download if it is intact, otherwise fetch it (a few retries for flaky networks).
-  if (-not (Test-Path $zip) -or (Get-Sha256 $zip) -ne $d.Sha256) {
+  # use the cached download if it is intact, otherwise fetch it (a few retries for flaky networks)
+  if (-not (Test-Path $archive) -or (Get-Sha256 $archive) -ne $d.Sha256) {
     $ok = $false
     for ($attempt = 1; $attempt -le 3 -and -not $ok; $attempt++) {
       Write-Host ("{0,-18} downloading (attempt {1}) {2}" -f $d.Name, $attempt, $d.Url)
       try {
-        Invoke-WebRequest -Uri $d.Url -OutFile $zip -UseBasicParsing
-        $ok = ((Get-Sha256 $zip) -eq $d.Sha256)
+        Invoke-WebRequest -Uri $d.Url -OutFile $archive -UseBasicParsing
+        $ok = ((Get-Sha256 $archive) -eq $d.Sha256)
         if (-not $ok) { Write-Warning "Checksum mismatch for $($d.File)." }
       } catch {
         Write-Warning "Download failed: $($_.Exception.Message)"
@@ -93,16 +121,93 @@ foreach ($d in $deps) {
       if (-not $ok -and $attempt -lt 3) { Start-Sleep -Seconds (2 * $attempt) }
     }
     if (-not $ok) {
-      if (Test-Path $zip) { Remove-Item $zip -Force }
+      if (Test-Path $archive) { Remove-Item $archive -Force }
       throw "Could not obtain a verified copy of $($d.File). Expected SHA-256 $($d.Sha256)."
     }
   }
 
-  if (Test-Path $target) { Remove-Item $target -Recurse -Force }
-  Expand-Archive -Path $zip -DestinationPath $thirdParty -Force
-  if (-not (Test-Path $target)) { throw "$($d.File) did not contain the expected folder '$($d.Folder)'." }
-  Set-Content -Path $marker -Value $d.Sha256 -Encoding ASCII
+  # Unpack once per verified archive. Windows' tar cannot create the macOS-framework symlinks inside these archives
+  # (it says so and returns an error code), which is harmless here, so the result is checked by looking for the files
+  # that matter instead of trusting the exit code.
+  $marker = Join-Path $target '.da-deps-sha256'
+  if ($Force -or -not (Test-Path $marker) -or ((Get-Content $marker -Raw).Trim() -ne $d.Sha256)) {
+    if (Test-Path $target) { Remove-Item $target -Recurse -Force }
+    $saved = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    & tar -xzf $archive -C $srcRoot 2>$null
+    $ErrorActionPreference = $saved
+    if (-not (Test-Path (Join-Path $target 'CMakeLists.txt'))) { throw "$($d.File) did not unpack a usable '$($d.Folder)' folder." }
+    Set-Content -Path $marker -Value $d.Sha256 -Encoding ASCII
+  }
   Write-Host ("{0,-18} ready in {1}" -f $d.Name, $target)
 }
 
-Write-Host 'Dependencies are ready in third_party/.'
+# FreeType: fetched by exact commit (content-addressed, so it cannot silently change)
+$ftDir = Join-Path $srcRoot "$ttfFolder\external\freetype"
+function Get-GitHead([string]$dir) {
+  if (-not (Test-Path (Join-Path $dir '.git'))) { return '' }
+  $saved = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+  $head = (& git -C $dir rev-parse HEAD 2>$null)
+  $ErrorActionPreference = $saved
+  if ($head) { return "$head".Trim() } else { return '' }
+}
+if ((Get-GitHead $ftDir) -ne $freetypeCommit) {
+  Write-Host "FreeType           fetching commit $freetypeCommit"
+  if (Test-Path $ftDir) { Remove-Item $ftDir -Recurse -Force }
+  New-Item -ItemType Directory -Force -Path $ftDir | Out-Null
+  & git -C $ftDir init -q
+  & git -C $ftDir remote add origin $freetypeUrl
+  & git -C $ftDir fetch -q --depth 1 origin $freetypeCommit
+  if ($LASTEXITCODE -ne 0) { throw "Could not fetch FreeType commit $freetypeCommit from $freetypeUrl." }
+  & git -C $ftDir checkout -q FETCH_HEAD
+  if ((Get-GitHead $ftDir) -ne $freetypeCommit) { throw "FreeType checkout is not at the pinned commit $freetypeCommit." }
+}
+Write-Host "FreeType           ready at commit $freetypeCommit"
+
+# ---- 2. build -----------------------------------------------------------------------------------------------
+$cmake = (Get-Command cmake -ErrorAction SilentlyContinue).Source
+if (-not $cmake) {
+  $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+  if (Test-Path $vswhere) {
+    $cmake = & $vswhere -latest -products * -find 'Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe' | Select-Object -First 1
+  }
+}
+if (-not $cmake) { throw 'CMake was not found. Install CMake, or Visual Studio 2022 with "Desktop development with C++".' }
+
+# The build folder is kept between runs (CMake rebuilds only what changed); -Force starts from scratch.
+if ($Force -and (Test-Path $buildDir)) { Remove-Item $buildDir -Recurse -Force }
+Write-Host "Configuring the SDL3 build with $cmake"
+& $cmake -S (Join-Path $PSScriptRoot 'sdl3-static') -B $buildDir -G 'Visual Studio 17 2022' -A x64 `
+         "-DDA_SDL_SOURCE_DIR=$srcRoot" '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>'
+if ($LASTEXITCODE -ne 0) { throw "CMake configure failed (exit code $LASTEXITCODE)." }
+
+if (Test-Path $outDir) { Remove-Item $outDir -Recurse -Force }
+foreach ($cfg in 'Release', 'Debug') {
+  Write-Host "Building SDL3, SDL3_ttf and SDL3_mixer ($cfg) - a few minutes..."
+  & $cmake --build $buildDir --config $cfg --target da_sdl3_libs --parallel
+  if ($LASTEXITCODE -ne 0) { throw "CMake build ($cfg) failed (exit code $LASTEXITCODE)." }
+
+  # collect the finished libraries under fixed names (a Debug build may add a "d" postfix)
+  $libDir = Join-Path $outDir "lib\$cfg"
+  New-Item -ItemType Directory -Force -Path $libDir | Out-Null
+  $found = Get-ChildItem $buildDir -Recurse -File -Filter *.lib | Where-Object {
+    $_.Directory.Name -eq $cfg -and $_.Name -match '^(SDL3-static|SDL3_ttf-static|SDL3_mixer-static|freetype)d?\.lib$'
+  }
+  foreach ($f in $found) {
+    $fixed = ($f.Name -replace 'd\.lib$', '.lib')
+    if ($f.Name -match '^freetype') { $fixed = 'freetype.lib' }
+    Copy-Item $f.FullName (Join-Path $libDir $fixed) -Force
+  }
+  foreach ($lib in $expectedLibs) {
+    if (-not (Test-Path (Join-Path $libDir $lib))) { throw "The $cfg build did not produce $lib." }
+  }
+}
+
+# ---- 3. headers ---------------------------------------------------------------------------------------------
+$incDir = Join-Path $outDir 'include'
+New-Item -ItemType Directory -Force -Path $incDir | Out-Null
+Copy-Item (Join-Path $srcRoot 'SDL3-3.4.16\include\SDL3')             (Join-Path $incDir 'SDL3')       -Recurse -Force
+Copy-Item (Join-Path $srcRoot "$ttfFolder\include\SDL3_ttf")          (Join-Path $incDir 'SDL3_ttf')   -Recurse -Force
+Copy-Item (Join-Path $srcRoot 'SDL3_mixer-3.2.4\include\SDL3_mixer')  (Join-Path $incDir 'SDL3_mixer') -Recurse -Force
+
+Set-Content -Path $stampFile -Value $stamp -Encoding ASCII
+Write-Host 'SDL3 libraries are ready in third_party/sdl3/.'

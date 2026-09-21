@@ -1,7 +1,7 @@
 #ifndef _CGRAPHIC_H
 #define _CGRAPHIC_H
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <stdio.h>
 #include <string>
 
@@ -15,7 +15,7 @@ public:
   SDL_Surface* surface;
   int          gridCols; //tile columns from the last createTiles(szX,szY) call - lets a row-major grid (e.g. one row per animation) be addressed as row*gridCols+col
 
-  SDL_Rect* getTile(int index);
+  SDL_FRect* getTile(int index);
   int       getTileCount() const { return tileCount; }
   bool      loadTexture(const char* fn, SDL_Renderer* rend, bool surf=false, bool alpha=false, Uint8 r=0, Uint8 g=0, Uint8 b=0);
   bool      createTiles(int szX, int szY); //slices the actual loaded texture into szX x szY tiles, however many fit
@@ -25,7 +25,7 @@ public:
 private:
 
   int       tileCount;
-  SDL_Rect* tiles;
+  SDL_FRect* tiles;
 
 
 };
