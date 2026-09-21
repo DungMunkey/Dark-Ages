@@ -1,5 +1,5 @@
 # Development builds: every push to the dev branch is built and published as a GitHub *pre-release*
-# tagged dev-<run number>, e.g. dev-47, with a development version string (2.0.0-alpha.3-dev.47+a1b2c3d).
+# tagged dev-<run number>, e.g. dev-47, with a development version string (2.0.0-alpha.4-dev.47+a1b2c3d).
 # They are work-in-progress builds for early adopters; stable releases come from release.yml.
 # Pushes that only touch documentation (docs/ or Markdown files) don't trigger a build.
 # The newest 10 development pre-releases are kept; older ones (and their tags) are deleted.

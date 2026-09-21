@@ -5,7 +5,7 @@
 //don't label themselves as the release that just shipped. The automated dev builds add DA_VERSION_SUFFIX (for
 //example "-dev.47+a1b2c3d", passed through msbuild's /p:DAVersionSuffix=...); a release or local build has none.
 //The whole string has to fit the credits line: at most 30 characters (see the static_asserts next to credits()).
-#define DA_VERSION_BASE "2.0.0-alpha.3"
+#define DA_VERSION_BASE "2.0.0-alpha.4"
 #ifndef DA_VERSION_SUFFIX
 #define DA_VERSION_SUFFIX ""
 #endif
