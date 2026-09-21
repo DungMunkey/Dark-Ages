@@ -14,6 +14,9 @@ Facts marked "verified" were checked against the SDL3 headers or source, or by r
 | 3 | Scope | A like-for-like port first: behavior unchanged. The DPI and scale redesign comes afterward. |
 | 4 | Audio parity | Looping music, play-once for the credits, the song duration for the credits timing, a 0-10 volume, and an "is it playing" check. Nothing else is needed. |
 | 5 | Gamepad | Supported and tested. The author has an Xbox One Elite Controller connected to the development machine and will test beyond what Claude can do. |
+| 6 | Windows build system | **Keep Visual Studio**: `msvc/Darkages.vcxproj` stays and links prebuilt static libraries, so F5 keeps working. Linux keeps using `CMakeLists.txt`. |
+| 7 | Rectangles | **Convert mechanically** to `SDL_FRect` in the drawing calls. No wrapper layer in `CDisplay`. |
+| 8 | Branch | The branch is called **`SDL3`**. SDL2 is **not** kept alive in parallel: there is no SDL2 maintenance branch and no code that supports both. `master` and `dev` keep their SDL2 code only until the port is merged, after which SDL2 is gone. *(Assumed: the branch starts from `dev` and merges back into `dev`; to be confirmed when it is created.)* |
 
 ## 2. Versions to pin
 
@@ -178,8 +181,8 @@ if possible, a real machine.
 
 ## 8. Sequence
 
-1. Create the branch; update `get-deps` and the build files so all three libraries build statically on Windows and
-   Linux (compile-first, no code changes yet).
+1. Create the `SDL3` branch; update `get-deps` and the build files so all three libraries build statically on Windows
+   and Linux (compile-first, no code changes yet).
 2. Core port: `CDisplay`, `CGraphic`, `CFont`, `CMusic`, `CInput`, `main`, then the drawing calls screen by screen.
    Milestone: the game compiles and the title screen renders identically.
 3. Behavior parity: run the checklist; fix differences.
@@ -189,10 +192,9 @@ if possible, a real machine.
 
 ## 9. Open questions
 
-* **Windows build system:** keep `msvc/Darkages.vcxproj` linking the prebuilt static libraries (the plan above), or
-  move both platforms to CMake (one build description; Visual Studio can open a CMake project)?
-* **Float rectangles:** convert the drawing calls mechanically to `SDL_FRect`, or add a small wrapper in `CDisplay`
-  that keeps `SDL_Rect` in the game code and converts at the render boundary?
+Answered (see section 1): the Windows build system (keep Visual Studio), float rectangles (convert mechanically), and
+the branch (`SDL3`, no parallel SDL2). Still open:
+
 * **Default renderer and vsync** on the development machine once ported (Direct3D 11 is expected).
-* **Branch name** and how long the SDL2 branch is maintained in parallel.
 * **The exact FreeType archive URL and hash** for `get-deps`.
+* **The branch's base** (assumed `dev`, merging back into `dev`).
