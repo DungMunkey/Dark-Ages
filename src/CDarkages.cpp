@@ -2156,12 +2156,6 @@ void CDarkages::render(){
   //draw travel spell menu
   if(showTravel) renderTravelSpell();
 
-  //for diagnostics
-  char str[32];
-  //sprintf(str, "%d %d,%d||%.2lf,%.2lf:%d  %d,%d  %d", curMap, cam.getTileX(), cam.getTileY(), cam.getdX(),cam.getdY(), world[curMap].getTile(cam.getTileX(), cam.getTileY()), curMap,eBattleCheck, fps);
-  sprintf(str, "%d %d,%d", curMap, cam.getX(), cam.getY());
-  font.render(display->S(10), display->S(370), str);
-
   display->endUIPass();
 
   SDL_RenderPresent(display->renderer);
