@@ -12,6 +12,7 @@ typedef struct sConf{
   bool vSync;
   char modName[32];
   sConf(){
+    memset(this, 0, sizeof(*this)); //this struct is written to darkages.cfg as raw bytes: zero the padding and the unused tail of modName so the file is identical every time
     w=1280;
     h=200;
     vol=5;

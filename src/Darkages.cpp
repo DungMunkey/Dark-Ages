@@ -47,7 +47,27 @@ static void changeToExeFolder(){
 #endif
 }
 
+//Used by tools/package.ps1 to make the darkages.cfg that ships in the zip: "Darkages.exe --write-default-config <file> [mod]".
+//It writes every setting at its default, except the mod when one is named, then exits. Doing it here (rather than in
+//the script) keeps the file's layout and the default values in one place, the sConf struct.
+static int writeDefaultConfig(const char* path, const char* modName){
+  sConf conf;
+  if(modName != NULL){
+    strncpy(conf.modName, modName, sizeof(conf.modName) - 1);
+    conf.modName[sizeof(conf.modName) - 1] = 0;
+  }
+  FILE* f = fopen(path, "wb");
+  if(f == NULL) return 1;
+  size_t written = fwrite(&conf, sizeof(sConf), 1, f);
+  fclose(f);
+  return (written == 1) ? 0 : 1;
+}
+
 int main(int argc, char* args[]) {
+
+  if(argc >= 3 && strcmp(args[1], "--write-default-config") == 0){
+    return writeDefaultConfig(args[2], (argc >= 4) ? args[3] : NULL);
+  }
 
   changeToExeFolder();
 
