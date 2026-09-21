@@ -53,6 +53,7 @@ bool CDisplay::init(sConf& conf) {
     int rRate=mode.refresh_rate;
     sDAVidMode vm;
     char str[32];
+    bool exactMode=false; //did the display offer exactly the size saved in conf?
 
     for(int i=SDL_GetNumDisplayModes(0)-1; i >=0; i--){
       if(SDL_GetDisplayMode(0, i, &mode) != 0) {
@@ -65,10 +66,21 @@ bool CDisplay::init(sConf& conf) {
         vm.name=str;
         if(conf.w==vm.w && conf.h==vm.h){
           currentScreenMode=screenModes.size();
+          exactMode=true;
         }
         screenModes.push_back(vm);
         //printf("%d\tSDL_GetDisplayMode(0, 0, &mode):\t\t%i bpp\t%i x %i, %ihz\n", i,SDL_BITSPERPIXEL(mode.format), mode.w, mode.h,mode.refresh_rate);
       }
+    }
+    if(!exactMode){
+      //The saved size isn't one this display offers - e.g. the default 1280x1024 on a small or high-refresh display, or a
+      //monitor that changed since the size was saved. Use the largest mode that fits inside it, or the smallest if none does.
+      int best=-1;
+      for(size_t i=0; i < screenModes.size(); i++){
+        if(screenModes[i].w > conf.w || screenModes[i].h > conf.h) continue;
+        if(best < 0 || screenModes[i].w*screenModes[i].h > screenModes[best].w*screenModes[best].h) best=(int)i;
+      }
+      currentScreenMode=(best >= 0) ? best : 0;
     }
     conf.w=screenModes[currentScreenMode].w;
     conf.h=screenModes[currentScreenMode].h;
