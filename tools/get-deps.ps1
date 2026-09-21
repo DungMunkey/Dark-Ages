@@ -106,6 +106,14 @@ if (-not $Force -and (Test-Built)) {
   return
 }
 
+# Building SDL creates files with long names several folders deep, and MSBuild (which CMake drives here) cannot open a
+# path longer than 260 characters. From a deep folder that fails with confusing "could not find a part of the path"
+# errors halfway through, so say so up front.
+if ($repoRoot.Length -gt 90) {
+  throw ("This folder's path is $($repoRoot.Length) characters long ($repoRoot). Building the SDL libraries needs paths " +
+         "under 260 characters, so please clone or move the repository somewhere with a shorter path (for example C:\dev\Dark-Ages).")
+}
+
 # ---- 1. sources ---------------------------------------------------------------------------------------------
 New-Item -ItemType Directory -Force -Path $downloads, $srcRoot | Out-Null
 
