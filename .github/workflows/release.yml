@@ -1,0 +1,107 @@
+# Release: run by hand from the Actions tab ("Run workflow"). It builds the master branch and publishes the
+# result as a GitHub *pre-release* named after the version in src/Version.h (tag v<version>).
+#
+# Nothing here marks a release as final. To approve it, open the release on GitHub and untick
+# "Set as a pre-release" (tick "Set as the latest release").
+#
+# The workflow file must exist on the default branch (master) for the "Run workflow" button to appear.
+# Before running it: merge dev into master, and make sure DA_VERSION_BASE in src/Version.h is the version to
+# release. If a v<version> tag already exists the run stops immediately instead of overwriting anything.
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Work out the version and make sure it is unused
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version=$(tr -d '\r' < src/Version.h | sed -n 's/^#define DA_VERSION_BASE[[:space:]]*"\(.*\)".*/\1/p')
+          [ -n "$version" ] || { echo "::error::Could not read DA_VERSION_BASE from src/Version.h"; exit 1; }
+          tag="v${version}"
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null || gh release view "$tag" >/dev/null 2>&1; then
+            echo "::error::${tag} already exists. Bump DA_VERSION_BASE in src/Version.h on master, then run this again."
+            exit 1
+          fi
+          echo "Releasing ${version} as ${tag}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: check
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: master
+      artifact_retention_days: 30   # no channel: a plain release version
+
+  publish:
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # create the release and its tag
+    steps:
+      - name: Check out exactly the commit that was built
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build.outputs.sha }}
+          fetch-depth: 0
+
+      - name: Fetch the zip made by the build job
+        uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: dist
+
+      - name: Publish the pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+          SHA: ${{ needs.build.outputs.sha }}
+        run: |
+          set -euo pipefail
+          tag="v${VERSION}"
+
+          prev_tag=$(git describe --tags --abbrev=0 --match 'v*' "${SHA}" 2>/dev/null || true)
+          if [ -n "$prev_tag" ]; then
+            heading="Changes since ${prev_tag}"
+            changes=$(git log --no-merges --pretty='- %s (%h)' "${prev_tag}..${SHA}")
+          else
+            heading="About this release"
+            changes="- First release built by the automated pipeline."
+          fi
+          [ -n "$changes" ] || changes="- (no changes)"
+
+          {
+            echo "Dark Ages ${VERSION}"
+            echo
+            echo "Download the zip, extract the whole folder, and run \`Darkages.exe\` (64-bit Windows 10 or later). The README inside explains the rest."
+            echo
+            echo "### ${heading}"
+            echo "${changes}"
+            echo
+            echo "### SHA-256 of the zip"
+            echo '```'
+            cat dist/*.sha256
+            echo '```'
+          } > notes.md
+
+          gh release create "$tag" dist/*.zip dist/*.sha256 \
+            --target "$SHA" --prerelease \
+            --title "Dark Ages ${VERSION}" \
+            --notes-file notes.md

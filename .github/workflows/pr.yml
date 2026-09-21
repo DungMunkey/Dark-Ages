@@ -1,0 +1,22 @@
+# Pull request check: makes sure the game still builds and packages. Nothing is published; the zip is only
+# kept as a short-lived workflow artifact so a change can be tried out. Docs-only pull requests are skipped.
+name: Pull request check
+
+on:
+  pull_request:
+    branches: [dev, master]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '**/*.md'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      channel: pr
+      build_number: ${{ github.event.number }}
+      artifact_retention_days: 3

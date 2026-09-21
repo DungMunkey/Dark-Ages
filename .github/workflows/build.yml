@@ -1,0 +1,90 @@
+# Reusable build: builds the game and packs the distributable zip with tools/package.ps1.
+# It is called by dev.yml (every push to dev), release.yml (manual release) and pr.yml (pull requests);
+# it does not publish anything itself. The zip is handed to the caller as the "package" artifact.
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build. Empty means the ref that triggered the calling workflow.
+        type: string
+        default: ''
+      channel:
+        description: >-
+          "dev" or "pr" makes a development version - the base version in src/Version.h plus a suffix such as
+          -dev.47+a1b2c3d (channel, build number, short commit id). Empty means a plain release version.
+        type: string
+        default: ''
+      build_number:
+        description: The number shown in the development version suffix (run number, or pull request number).
+        type: string
+        default: ''
+      artifact_retention_days:
+        type: number
+        default: 14
+    outputs:
+      version:
+        description: Full version string that was built
+        value: ${{ jobs.build.outputs.version }}
+      zip_name:
+        description: File name of the zip
+        value: ${{ jobs.build.outputs.zip_name }}
+      sha:
+        description: The commit that was built
+        value: ${{ jobs.build.outputs.sha }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022   # has Visual Studio 2022 (MSVC v143); pinned so a runner-image change can't surprise us
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+      zip_name: ${{ steps.package.outputs.zip_name }}
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Record the commit being built
+        id: commit
+        shell: powershell
+        run: Add-Content -Path $env:GITHUB_OUTPUT -Value "sha=$(git rev-parse HEAD)"
+
+      # tools/get-deps.ps1 verifies every download against a pinned SHA-256, so the cache only saves time
+      # (and shields us from libsdl.org being slow); it can't change what gets built.
+      - name: Cache the SDL libraries
+        uses: actions/cache@v4
+        with:
+          path: third_party
+          key: sdl-${{ hashFiles('tools/get-deps.ps1') }}
+
+      - name: Build and package
+        id: package
+        shell: powershell
+        env:
+          CHANNEL: ${{ inputs.channel }}
+          BUILD_NUMBER: ${{ inputs.build_number }}
+        run: |
+          Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+          $suffix = ''
+          if ($env:CHANNEL) {
+            $short = (git rev-parse --short=7 HEAD).Trim()
+            $suffix = "-$($env:CHANNEL).$($env:BUILD_NUMBER)+$short"
+          }
+          Write-Host "Version suffix: '$suffix'"
+          # called in-process (not "powershell -File") so a suffix that starts with "-" is taken as a value
+          & ./tools/package.ps1 -VersionSuffix $suffix
+
+      - name: Keep the zip for the next job
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: dist/*
+          if-no-files-found: error
+          retention-days: ${{ inputs.artifact_retention_days }}

@@ -1,0 +1,97 @@
+# Development builds: every push to the dev branch is built and published as a GitHub *pre-release*
+# tagged dev-<run number>, e.g. dev-47, with a development version string (2.0.0-alpha.3-dev.47+a1b2c3d).
+# They are work-in-progress builds for early adopters; stable releases come from release.yml.
+# Pushes that only touch documentation (docs/ or Markdown files) don't trigger a build.
+# The newest 10 development pre-releases are kept; older ones (and their tags) are deleted.
+name: Dev build
+
+on:
+  push:
+    branches: [dev]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '**/*.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/dev'   # a manual run from another branch must not publish a dev build
+    uses: ./.github/workflows/build.yml
+    with:
+      channel: dev
+      build_number: ${{ github.run_number }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # create the release and its tag, delete old dev releases
+    steps:
+      - name: Check out the code (with history, for the change list)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch the zip made by the build job
+        uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: dist
+
+      - name: Publish the pre-release and prune old ones
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+          SHA: ${{ needs.build.outputs.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          tag="dev-${RUN_NUMBER}"
+
+          # what changed since the previous dev build
+          prev_tag=$(gh release list --limit 100 --json tagName,createdAt \
+            --jq '[.[] | select(.tagName | startswith("dev-"))] | sort_by(.createdAt) | reverse | .[0].tagName // empty')
+          if [ -n "$prev_tag" ] && git rev-parse -q --verify "refs/tags/${prev_tag}" >/dev/null; then
+            heading="Changes since ${prev_tag}"
+            changes=$(git log --no-merges --pretty='- %s (%h)' "${prev_tag}..${SHA}")
+          else
+            heading="Recent changes"
+            changes=$(git log --no-merges -n 20 --pretty='- %s (%h)' "${SHA}")
+          fi
+          [ -n "$changes" ] || changes="- (no new commits)"
+
+          {
+            echo "> **Development build, for early adopters.** This is an automatic, work-in-progress build of the \`dev\` branch (commit \`${SHA:0:7}\`). Expect bugs; features may be incomplete or change without notice. It is **not** a stable release. Please back up your save games."
+            echo
+            echo "**Version:** \`${VERSION}\`"
+            echo
+            echo "Download the zip, extract the whole folder, and run \`Darkages.exe\` (64-bit Windows 10 or later)."
+            echo
+            echo "### ${heading}"
+            echo "${changes}"
+            echo
+            echo "### SHA-256 of the zip"
+            echo '```'
+            cat dist/*.sha256
+            echo '```'
+          } > notes.md
+
+          # re-running a failed run must not trip over its own tag
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release delete "$tag" --cleanup-tag --yes
+          fi
+          gh release create "$tag" dist/*.zip dist/*.sha256 \
+            --target "$SHA" --prerelease \
+            --title "Dev build ${RUN_NUMBER} (${VERSION})" \
+            --notes-file notes.md
+
+          # keep only the newest 10 dev builds
+          gh release list --limit 200 --json tagName,createdAt \
+            --jq '[.[] | select(.tagName | startswith("dev-"))] | sort_by(.createdAt) | reverse | .[10:] | .[].tagName' |
+          while read -r old; do
+            gh release delete "$old" --cleanup-tag --yes || true
+          done
