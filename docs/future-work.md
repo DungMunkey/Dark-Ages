@@ -4,6 +4,10 @@ A running list of updates we will need or might want. Add to it freely; delete i
 
 ## Platform and libraries
 
+* **Display, scaling and resolution redesign.** A "scale" setting instead of "resolution", a 16 x TileSize by
+  10 x TileSize canvas without the black frame, windowed mode exactly the size of the game, and best-fit art. It is
+  fully worked out in [display-scaling-plan.md](display-scaling-plan.md) and waits on the SDL3 migration.
+
 * **Migrate to SDL3** (with SDL3_ttf and SDL3_mixer). It changes much of the API, so it is a real port. A smaller
   first step is to move to a current SDL2 2.x release.
 * **The SDL libraries are old.** SDL2 is 2.0.12 (2020), SDL2_ttf is 2.0.12 (2015), and the FreeType and zlib DLLs
