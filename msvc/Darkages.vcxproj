@@ -51,7 +51,7 @@
     <DASDLTTF>$(DAThirdParty)SDL2_ttf-2.0.12\</DASDLTTF>
     <DASDLMixer>$(DAThirdParty)SDL2_mixer-2.8.1\</DASDLMixer>
     <!-- CI sets this (e.g. /p:DAVersionSuffix=-dev.47+a1b2c3d) so the title screen shows which build it is. -->
-    <DAVersionDefine Condition="'$(DAVersionSuffix)'!=''">DA_VERSION_SUFFIX=\"$(DAVersionSuffix)\";</DAVersionDefine>
+    <DAVersionDefine Condition="'$(DAVersionSuffix)'!=''">DA_VERSION_SUFFIX="$(DAVersionSuffix)";</DAVersionDefine>
   </PropertyGroup>
   <PropertyGroup>
     <!-- The exe is built straight into game/ so it runs against the real assets with no copying; objects and
