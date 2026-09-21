@@ -1,6 +1,8 @@
-# Reusable build: builds the game and packs the distributable zip with tools/package.ps1.
-# It is called by dev.yml (every push to dev), release.yml (manual release) and pr.yml (pull requests);
-# it does not publish anything itself. The zip is handed to the caller as the "package" artifact.
+# Reusable build: builds the game for Windows (tools/package.ps1 -> a zip) and for Linux (tools/package-linux.sh ->
+# a tar.gz), in parallel. It is called by dev.yml (every push to dev), release.yml (manual release) and pr.yml
+# (pull requests); it does not publish anything itself. The two archives are handed to the caller as the
+# "package" (Windows) and "package-linux" artifacts. If either build fails, this whole workflow fails, so nothing
+# is published unless both platforms built.
 name: Build
 
 on:
@@ -85,6 +87,55 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: package
+          path: dist/*
+          if-no-files-found: error
+          retention-days: ${{ inputs.artifact_retention_days }}
+
+  linux:
+    runs-on: ubuntu-22.04   # an older glibc (2.35) than the newest image, so the binary runs on most current distributions
+    timeout-minutes: 45
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      # SDL2, SDL2_ttf and SDL2_mixer are compiled from source and linked into the game (see CMakeLists.txt), so all
+      # that is needed here is what SDL itself needs in order to build its X11, Wayland, audio and OpenGL backends.
+      # They are loaded at run time, so the finished game does not need these packages.
+      - name: Install what SDL needs to build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config \
+            libasound2-dev libpulse-dev libudev-dev libdbus-1-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxxf86vm-dev \
+            libxkbcommon-dev libwayland-dev wayland-protocols libdecor-0-dev \
+            libgl1-mesa-dev libegl1-mesa-dev libgles2-mesa-dev libdrm-dev libgbm-dev
+
+      # tools/get-deps.sh verifies every download against a pinned SHA-256, so the cache only saves time.
+      - name: Cache the SDL sources
+        uses: actions/cache@v4
+        with:
+          path: third_party
+          key: sdl-linux-${{ hashFiles('tools/get-deps.sh') }}
+
+      - name: Build and package
+        env:
+          CHANNEL: ${{ inputs.channel }}
+          BUILD_NUMBER: ${{ inputs.build_number }}
+        run: |
+          suffix=""
+          if [ -n "$CHANNEL" ]; then
+            suffix="-${CHANNEL}.${BUILD_NUMBER}+$(git rev-parse --short=7 HEAD)"
+          fi
+          echo "Version suffix: '$suffix'"
+          ./tools/package-linux.sh --suffix "$suffix"
+
+      - name: Keep the archive for the next job
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-linux
           path: dist/*
           if-no-files-found: error
           retention-days: ${{ inputs.artifact_retention_days }}

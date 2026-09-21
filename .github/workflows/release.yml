@@ -62,10 +62,11 @@ jobs:
           ref: ${{ needs.build.outputs.sha }}
           fetch-depth: 0
 
-      - name: Fetch the zip made by the build job
+      - name: Fetch the archives made by the build jobs (Windows zip and Linux tar.gz)
         uses: actions/download-artifact@v4
         with:
-          name: package
+          pattern: package*
+          merge-multiple: true
           path: dist
 
       - name: Publish the pre-release
@@ -90,18 +91,22 @@ jobs:
           {
             echo "Dark Ages ${VERSION}"
             echo
-            echo "Download the zip, extract the whole folder, and run \`Darkages.exe\` (64-bit Windows 10 or later). The README inside explains the rest."
+            echo "**Windows** (64-bit, Windows 10 or later): download the \`.zip\`, extract the whole folder, and run \`Darkages.exe\`."
+            echo
+            echo "**Linux** (x86_64): download the \`.tar.gz\`, extract it, and run \`./Darkages\` from inside the folder. SDL is built in, so nothing needs installing."
+            echo
+            echo "The README inside each download explains the rest."
             echo
             echo "### ${heading}"
             echo "${changes}"
             echo
-            echo "### SHA-256 of the zip"
+            echo "### SHA-256 of the downloads"
             echo '```'
             cat dist/*.sha256
             echo '```'
           } > notes.md
 
-          gh release create "$tag" dist/*.zip dist/*.sha256 \
+          gh release create "$tag" dist/*.zip dist/*.tar.gz dist/*.sha256 \
             --target "$SHA" --prerelease \
             --title "Dark Ages ${VERSION}" \
             --notes-file notes.md
