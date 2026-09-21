@@ -1,6 +1,6 @@
 # Dark Ages: The Continents
 
-A classic tile-based role-playing game for Windows, written in C++ with SDL2.
+A classic tile-based role-playing game for Windows and Linux, written in C++ with SDL2.
 
 ## Download
 
@@ -16,9 +16,15 @@ ignores pre-releases, so use the Releases page rather than that link.)
 
 ## Playing
 
-Download the zip, **extract the whole folder** somewhere you can write to (not "Program Files"), and run
-`Darkages.exe`. It needs 64-bit Windows 10 or later and nothing else. Save games and settings are kept in that
-folder, next to the exe. The zip contains a README with the controls.
+**Windows:** download the `.zip`, **extract the whole folder** somewhere you can write to (not "Program Files"),
+and run `Darkages.exe`. It needs 64-bit Windows 10 or later and nothing else.
+
+**Linux (x86_64):** download the `.tar.gz`, extract it (`tar -xzf DarkAges-*-linux64.tar.gz`), and run `./Darkages`
+from inside the folder. SDL is built into the program, so nothing needs installing beyond a desktop with X11 or
+Wayland and sound (PulseAudio, PipeWire or ALSA).
+
+Save games and settings are kept in that folder, next to the program, and each download contains a README with the
+controls.
 
 ## Building from source (Windows)
 
@@ -49,6 +55,28 @@ workload.
 
    The result is `dist\DarkAges-<version>-win64.zip` with a `.sha256` file next to it.
 
+## Building from source (Linux)
+
+You need a C++17 compiler, CMake, and the development packages SDL needs to build (X11, Wayland, ALSA, PulseAudio,
+OpenGL, ...); the exact `apt` list used by the automated build is in `.github/workflows/build.yml`.
+
+```
+tools/get-deps.sh                      # downloads the SDL sources (checked against pinned SHA-256 values)
+tools/package-linux.sh                 # builds everything and makes dist/DarkAges-<version>-linux64.tar.gz
+```
+
+To just build and run (the program is written to `game/`, next to the assets):
+
+```
+cmake -S . -B build/linux -DCMAKE_BUILD_TYPE=Release -DDA_SDL_SOURCE_DIR=third_party/linux
+cmake --build build/linux --parallel
+cd game && ./Darkages
+```
+
+`-DDA_SDL_SOURCE_DIR=...` builds SDL2, SDL2_ttf and SDL2_mixer from source and links them in statically, which is
+what the releases do. Leave it out to use the SDL development packages installed on your machine instead (SDL2_mixer
+2.6 or newer, plus `pkg-config`).
+
 ## Repository layout
 
 | Folder | Contents |
@@ -57,17 +85,17 @@ workload.
 | `game/` | Everything the game loads at run time (`Font`, `Gfx`, `Maps`, `Music`, `Mods`). Building puts the exe and DLLs here too; your saves and `darkages.cfg` appear here when you play. |
 | `msvc/` | The Visual Studio 2022 solution and project |
 | `sources/` | Art, audio and font sources the game itself never loads (the FontForge project, GIMP files for mods, MIDI files, ...) |
-| `tools/` | `get-deps.ps1` (fetch SDL), `package.ps1` (build the zip), and the README that goes in the zip |
+| `tools/` | `get-deps.ps1` / `get-deps.sh` (fetch SDL), `package.ps1` / `package-linux.sh` (build the Windows zip / Linux archive), and the READMEs that go in them |
 | `docs/` | [How releases work](docs/releasing.md) and [ideas for future work](docs/future-work.md) |
 | `.github/workflows/` | The automated builds |
-| `Makefile` | For a future Linux build. It does not compile yet. |
+| `CMakeLists.txt` | The Linux build |
 
 ## Mods
 
 Each folder in `game/Mods` is a mod that can replace the game's graphics, maps and music, and is chosen from the
 Options menu (it takes effect on the next start). A mod holds its own `Gfx`, `Maps` and `Music` files plus a
 `mod.cfg`; anything a mod doesn't provide falls back to the base game. `game/Mods/Project32` is a full example.
-Every mod in `game/Mods` is included in the zips, and the `darkages.cfg` in the zips selects `Project32`, so that
+Every mod in `game/Mods` is included in the downloads, and the `darkages.cfg` in them selects `Project32`, so that
 is the first thing players see.
 
 ## Branches
@@ -78,4 +106,4 @@ is the first thing players see.
 ## License
 
 The game's code is under the [Apache License 2.0](LICENSE). It uses SDL2, SDL2_ttf and SDL2_mixer; their licenses
-are included in every zip as `THIRD-PARTY.txt`.
+are included in every download as `THIRD-PARTY.txt`.

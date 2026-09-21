@@ -10,10 +10,17 @@ A running list of updates we will need or might want. Add to it freely; delete i
   that come with it date from 2015. SDL2 2.0.12 also has a bug that already bit us: `SDL_GetBasePath()` returns
   the wrong folder when the exe's path is long. `src/Darkages.cpp` works around it on Windows with
   `GetModuleFileNameW`; a newer SDL would let us drop that.
-* **Linux build.** The `Makefile` points at the new layout but cannot compile: `src/CMods.cpp` uses Windows-only
-  calls (`FindFirstFileA`), and there may be more (`fopen` text modes, path separators). A working Linux build
-  should also get a CI job and its own zip, named like `DarkAges-<version>-linux64.tar.gz`. The names of the
-  map files in the code already match the files' exact case, which Linux needs.
+* **Windows could use the newer SDL2 too.** The Linux build already uses SDL2 2.32.10, SDL2_ttf 2.24.0 and
+  SDL2_mixer 2.8.1. The game was run on those exact versions (built statically on Windows) and its title screen
+  renders correctly on SDL's Direct3D 11 and software renderers. Two things to know before switching Windows over:
+  SDL 2.32 multiplies the rectangle given to `SDL_RenderSetViewport` by the current render scale (2.0.12 did not),
+  which the game is unaffected by, since every viewport call (all in `CDisplay.cpp`) is made while the scale is 1; and on the
+  machine used for that test, even a minimal SDL 2.32 program showed nothing on the Direct3D 9 and OpenGL backends
+  (2.32 picks Direct3D 9 first on Windows), so re-check on other hardware, and consider the hint
+  `SDL_HINT_RENDER_DRIVER=direct3d11` if needed.
+* **Test the Linux build on real systems.** It has been cross-compiled and packaged, but running it needs a Linux
+  machine or WSL2: check X11 and Wayland, PulseAudio/PipeWire/ALSA, and the default OpenGL renderer. An AppImage or
+  Flatpak could follow, as could an ARM64 build.
 * **macOS build**, if there is interest.
 * **Windows on ARM**: the project is x64 only.
 
