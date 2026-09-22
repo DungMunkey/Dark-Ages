@@ -13,7 +13,7 @@ COptions::COptions(CDisplay* d, CMusic* m, CFont* f, CGfxCollection* g, sConf* c
   active=false;
   tmpVol=conf->vol;
   tmpFull=conf->fullScreen;
-  tmpScreen=display->currentScreenMode;
+  tmpScale=conf->scaleN;
   tmpVSync=conf->vSync;
 
   mods=CMods::listMods();
@@ -43,17 +43,17 @@ bool COptions::logic(optAction a){
       if(selection==1){
         conf->vol=tmpVol;
       } else if(selection == 2){
-        SDL_SetWindowSize(display->window, display->screenModes[tmpScreen].w, display->screenModes[tmpScreen].h);
-        display->currentScreenMode=tmpScreen;
-        conf->w=display->screenModes[tmpScreen].w;
-        conf->h=display->screenModes[tmpScreen].h;
+        conf->scaleN=tmpScale;
+        //no-op in fullscreen (SDL ignores it there), but SDL remembers it for when the player returns
+        //to windowed - see display-scaling-plan.md section 4.3.
+        SDL_SetWindowSize(display->window, display->canvasW*tmpScale, display->canvasH*tmpScale);
         SDL_GetWindowSize(display->window, &display->screenWidth, &display->screenHeight);
         display->computeLayout();
       } else if(selection==3){
         conf->fullScreen=tmpFull;
         SDL_SetWindowFullscreen(display->window, tmpFull); //borderless desktop fullscreen (no fullscreen mode is ever set)
         //Fullscreen resizes to the desktop resolution asynchronously to this call: wait for it to finish, then re-query
-        //the real size rather than assuming conf->w/h still match it.
+        //the real size rather than assuming the windowed canvas*scaleN size still applies.
         SDL_SyncWindow(display->window);
         SDL_GetWindowSize(display->window, &display->screenWidth, &display->screenHeight);
         display->computeLayout();
@@ -69,7 +69,7 @@ bool COptions::logic(optAction a){
       if(selection==1){
         tmpVol=conf->vol;
       } else if(selection==2){
-        tmpScreen=display->currentScreenMode;
+        tmpScale=conf->scaleN;
       } else if(selection==3){
         tmpFull=conf->fullScreen;
       } else if(selection == 4){
@@ -90,8 +90,8 @@ bool COptions::logic(optAction a){
     if(selection == 1 && tmpVol > 0) {
       tmpVol--;
       music->setVolume(tmpVol);
-    } else if(selection == 2 && tmpScreen > 0){
-      tmpScreen--;
+    } else if(selection == 2 && tmpScale > display->minScale){
+      tmpScale--;
     } else if(selection == 3){
       tmpFull=false;
     } else if(selection == 4){
@@ -105,8 +105,8 @@ bool COptions::logic(optAction a){
     if(selection == 1 && tmpVol <10) {
       tmpVol++;
       music->setVolume(tmpVol);
-    } else if(selection == 2 && tmpScreen<display->screenModes.size() - 1){
-      tmpScreen++;
+    } else if(selection == 2 && tmpScale < display->maxScale){
+      tmpScale++;
     } else if(selection == 3){
       tmpFull=true;
     } else if(selection == 4){
@@ -131,6 +131,7 @@ bool COptions::logic(optAction a){
 
 void COptions::render(){
   SDL_FRect r;
+  char scaleStr[32];
 
   //SDL_SetRenderTarget(display->renderer, canvas);
   display->clearScreen();
@@ -174,14 +175,14 @@ void COptions::render(){
     }
   }
 
-  //draw resolution indicators
+  //draw scale indicators
   if(selection == 2 && active){
     r.w = (float)(display->S(16)); r.h = (float)(display->S(16));
-    if(tmpScreen > 0) {
+    if(tmpScale > display->minScale) {
       r.x = (float)(display->S(400)); r.y = (float)(display->S(94));
       SDL_RenderTexture(display->renderer, gfx->extra->texture, gfx->extra->getTile(3), &r);
     }
-    if(tmpScreen<display->screenModes.size() - 1){
+    if(tmpScale < display->maxScale){
       r.x = (float)(display->S(590)); r.y = (float)(display->S(94));
       SDL_RenderTexture(display->renderer, gfx->extra->texture, gfx->extra->getTile(2), &r);
     }
@@ -235,8 +236,9 @@ void COptions::render(){
     r.w = (float)(display->S(16)); r.h = (float)(display->S(16)); r.x = (float)(display->S(414) + (i - 1) * display->S(18)); r.y = (float)(display->S(69));
     SDL_RenderFillRect(display->renderer, &r);
   }
-  font->render(display->S(40), display->S(90), "Screen Res:");
-  font->render(display->S(430), display->S(90), display->screenModes[tmpScreen].name);
+  sprintf(scaleStr, "%d", tmpScale);
+  font->render(display->S(40), display->S(90), "Scale:");
+  font->render(display->S(430), display->S(90), scaleStr);
 
   font->render(display->S(40), display->S(115), "Fullscreen:");
   if(tmpFull) font->render(display->S(450), display->S(115), "Yes");

@@ -27,7 +27,7 @@ public:
   CMusic* music;
 
   int selection;
-  int tmpScreen;
+  int tmpScale;
   bool tmpFull;
   bool tmpVSync;
   int tmpVol;

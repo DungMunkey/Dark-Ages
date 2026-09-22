@@ -82,9 +82,12 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
 
   display->setFont(&font); //so beginUIPass() can force the right font size on entry
 
-  //canvas + layout must exist before init(), since init() sizes the font using display->uiScale/worldScale
-  canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, display->S(640), display->S(400));
-  display->setCanvasSize(display->S(640), display->S(400));
+  //The canvas render-target texture, sized to match display->canvasW/H - CDisplay::init() already
+  //computed and applied that size (display-scaling-plan.md section 4.1) before this constructor runs,
+  //since window sizing itself now depends on it (see CDisplay::init()'s scaleN handling). This texture
+  //just needs to exist before CDarkages::init() below, which sizes the font using
+  //display->uiScale/worldScale.
+  canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, display->canvasW, display->canvasH);
 
   init();
   renderCount=0;
@@ -2026,12 +2029,6 @@ void CDarkages::render(){
   int highX, highY;
   int tileSize = modSettings.tileSize;
   SDL_FRect r;
-  //SDL_Rect vp;
-
-  //set the viewport for the game
-  //SDL_GetRenderViewport(display->renderer, &vp);
-  //r.x=10; r.y=10; r.w=300; r.h=180;
-  //SDL_SetRenderViewport(display->renderer, &r);
 
   //The camera's own position stays in a fixed 40-per-tile coordinate space regardless of the mod's visual tile
   //size. Convert its exact (fractional) position to canvas pixels with a SINGLE rounding. Truncating to whole
@@ -2048,26 +2045,34 @@ void CDarkages::render(){
   offX = scrollX - a * tileSize;
   offY = scrollY - b * tileSize;
 
-  lowX = a - 7;
-  highX = a + 8+1;
+  //Canvas is 16x10 tiles (display->canvasW/H); tile (a,b) - the one under the camera - is drawn at the
+  //canvas center minus offX/offY, the same reference point the player sprite uses below. With
+  //offX/offY each somewhere in [0, tileSize), a loop sized to exactly the visible 16x10 can leave up
+  //to half a tile of canvas uncovered at one edge - the removed black "blinds" used to paper over
+  //exactly that gap. The margin needed on the high (right/bottom) side is HALF A TILE MORE than on the
+  //low (left/top) side, since the low side's worst case is offset 0 while the high side's worst case
+  //is offset (tileSize - 1), almost a full tile further: low side needs ceil(canvas half-width in
+  //tiles) tiles of margin, high side needs one more than that. See display-scaling-plan.md section 4.1
+  //for the derivation (an earlier version of this margin, committed and caught by the author in play,
+  //had the high side one tile short - a blank row would open up at the bottom of the canvas as the
+  //player moved down, then vanish the instant the move completed).
+  lowX = a - 8;
+  highX = a + 10;
 
-  lowY = b - 4;
-  highY = b + 5+1;
+  lowY = b - 5;
+  highY = b + 7;
 
   r.h = (float)(tileSize);
   r.w = (float)(tileSize);
-
-  //printf("A: %d, B: %d, lowX: %d, lowY: %d\n", a, b, lowX, lowY);
 
   SDL_SetRenderTarget(display->renderer, canvas);
 
   SDL_RenderClear(display->renderer);
   SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
   for (j = lowY; j<highY; j++){
-    r.y = (float)(tileSize * (j - lowY) - offY + tileSize/2);
+    r.y = (float)(tileSize * (j - b) - offY + (display->canvasH - tileSize) / 2);
     for (i = lowX; i<highX; i++){
-      //printf("tile: %d,%d\n,", i, j);
-      r.x = (float)(tileSize * (i - lowX) - offX + tileSize/2);
+      r.x = (float)(tileSize * (i - a) - offX + (display->canvasW - tileSize) / 2);
       if (i < 0 || i >= world[curMap].szX || j < 0 || j >= world[curMap].szY){
         SDL_RenderFillRect(display->renderer, &r);
       } else {
@@ -2080,7 +2085,7 @@ void CDarkages::render(){
 
   //special effect to begin game
   if(fadeIn>0){
-    r.x = (float)(0); r.y = (float)(0); r.w = (float)(display->S(640)); r.h = (float)(display->S(400));
+    r.x = (float)(0); r.y = (float)(0); r.w = (float)(display->canvasW); r.h = (float)(display->canvasH);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, fadeIn);
     SDL_RenderFillRect(display->renderer, &r);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
@@ -2088,64 +2093,46 @@ void CDarkages::render(){
     r.w = (float)(tileSize);
   }
 
-  //draw player
-  r.x = (float)(display->S(300));
-  r.y = (float)(display->S(180));
+  //draw player - centered on the canvas, the same reference point the tile loop above scrolls around
+  r.x = (float)((display->canvasW - tileSize) / 2);
+  r.y = (float)((display->canvasH - tileSize) / 2);
   if(idlePlaying && gfx.heroIdle != NULL){
     SDL_RenderTexture(display->renderer, gfx.heroIdle->texture, gfx.heroIdle->getTile(idleTile(idleAnimIndex, idleFrame)), &r);
   } else {
     SDL_RenderTexture(display->renderer, gfx.player->texture, gfx.player->getTile(heroTile(playerDir, playerAnim)), &r);
   }
 
-  //open viewport back up
-  //SDL_SetRenderViewport(display->renderer, &vp);
-
-  //if dead, or at an endgame stage, paste that full-screen image over the tiles. An image the canvas is a
-  //whole-number multiple of (the original game's 320x200 art on a TileSize 40 canvas) is stretched over the
-  //canvas as always; any other size or shape would be distorted or resampled unevenly that way, so it is
-  //instead drawn further down at its own aspect ratio over the whole window at a whole-number scale - see
-  //renderFullScreenImage(). Applies to the death image as well as the endgame ones.
   //A dialogue line added with script.addBlackText() blanks the whole scene to black while it is on screen: no
   //full-screen image, and the world and hero are painted over.
   bool sceneBlack = (showText && script.frontIsBlack());
   CGraphic* fsImg = sceneBlack ? NULL : currentFullScreenImage();
-  bool fsImgFullWindow = (fsImg != NULL && !fitsCanvasInWholeScale(fsImg));
-  if(fsImg != NULL && !fsImgFullWindow){
-    r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->S(400)); r.w = (float)(display->S(640));
-    SDL_RenderTexture(display->renderer, fsImg->texture, fsImg->getTile(0), &r);
-  }
   if(sceneBlack){
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
-    r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->S(400)); r.w = (float)(display->S(640));
+    r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->canvasH); r.w = (float)(display->canvasW);
     SDL_RenderFillRect(display->renderer, &r);
   }
 
-  //render blinds (skipped while a full-window image is up, since it doesn't sit inside this frame)
-  if(!fsImgFullWindow){
-    r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->S(20)); r.w = (float)(display->S(640));
-    SDL_RenderFillRect(display->renderer, &r);
-    r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->S(400)); r.w = (float)(display->S(20));
-    SDL_RenderFillRect(display->renderer, &r);
-    r.x = (float)(0); r.y = (float)(display->S(400)-display->S(20)); r.h = (float)(display->S(20)); r.w = (float)(display->S(640));
-    SDL_RenderFillRect(display->renderer, &r);
-    r.x = (float)(display->S(640)-display->S(20)); r.y = (float)(0); r.h = (float)(display->S(400)); r.w = (float)(display->S(20));
-    SDL_RenderFillRect(display->renderer, &r);
-  }
+  //The black "blinds" that used to hide the outer half-tile band on every edge are gone (see
+  //display-scaling-plan.md section 3 decision 3): the extra half tile on each side of the hero is now
+  //part of the view. The wider tile loop above already covers the whole canvas at every scroll offset,
+  //so there is nothing left to draw here.
 
-  //world/tile rendering (including the player sprite, death/endgame overlays and the border "blinds"
-  //above) is done onto the canvas at the mod's own native tile-art resolution - that part is unchanged.
-  //Everything below is procedurally-drawn UI content (text, bevel boxes, selection highlights), which
-  //renders separately, directly onto the backbuffer at display->uiScale - a fixed multiplier based on
-  //the reference 640x400 UI space rather than the mod's TileSize, so it stays crisp regardless of which
-  //mod is loaded. See CDisplay::beginUIPass()/computeLayout() for how the two scales are kept separate.
+  //world/tile rendering (including the player sprite) is done onto the canvas at the mod's own native
+  //tile-art resolution - that part is unchanged. Everything below is procedurally-drawn UI content
+  //(text, bevel boxes, selection highlights), which renders separately, directly onto the backbuffer at
+  //display->uiScale - a fixed multiplier based on the reference 640x400 UI space rather than the mod's
+  //TileSize, so it stays crisp regardless of which mod is loaded. See
+  //CDisplay::beginUIPass()/computeLayout() for how the two scales are kept separate.
   SDL_SetRenderTarget(display->renderer, NULL);
   display->clearScreen();
   SDL_FRect worldDst;
   SDL_RectToFRect(&display->worldRect, &worldDst);
   SDL_RenderTexture(display->renderer, canvas, NULL, &worldDst);
 
-  //a death/endgame image that doesn't fit the canvas goes over the whole window, under any dialogue text drawn below
-  if(fsImgFullWindow) renderFullScreenImage(fsImg);
+  //A death/endgame image, if any, replaces the world view entirely: drawn at its own aspect ratio over
+  //the whole window at the largest whole-number scale that fits (display-scaling-plan.md section 4.5),
+  //under any dialogue text drawn below.
+  if(fsImg != NULL) CWindow::renderFullScreenImage(display, fsImg);
 
   display->beginUIPass();
 
@@ -2186,51 +2173,6 @@ CGraphic* CDarkages::currentFullScreenImage(){
   return NULL;
 }
 
-//True when the world canvas is an exact whole-number multiple of g (same multiple on both axes). That's the case
-//for the original game's 320x200 art on a TileSize 40 canvas (2x), where drawing g stretched over the canvas
-//keeps every source pixel the same size. Anything else would be resampled by a fractional amount on the canvas
-//(e.g. a 640x400 image on a 512x320 canvas), so those go through renderFullScreenImage() instead.
-bool CDarkages::fitsCanvasInWholeScale(CGraphic* g){
-  SDL_FRect* t = g->getTile(0);
-  if(t == NULL || t->w <= 0 || t->h <= 0) return false;
-  int tw = (int)t->w, th = (int)t->h;
-  return display->canvasW % tw == 0 && display->canvasH % th == 0 && display->canvasW / tw == display->canvasH / th;
-}
-
-//Draws g at its own aspect ratio, centered in the window with black bars on whichever axis is left over.
-//The scale is worked out here from the image's size and the window's size (nothing is hard-coded per image):
-//the largest WHOLE-NUMBER multiple of the image that fits, drawn with nearest-neighbor, so every source pixel
-//is exactly the same size and the artwork is never filtered or resampled unevenly. Draws in raw backbuffer
-//coordinates (no viewport/scale), so it must be called between the canvas copy and beginUIPass().
-//The one case a whole-number multiple can't cover is an image larger than the window itself; it is then
-//shrunk to fit (still nearest-neighbor, never smoothed) rather than being cropped.
-void CDarkages::renderFullScreenImage(CGraphic* g){
-  SDL_FRect* src = g->getTile(0);
-  if(src == NULL || src->w <= 0 || src->h <= 0) return;
-
-  display->clearScreen();
-
-  int srcW = (int)src->w, srcH = (int)src->h;
-  double fit = (double)display->screenWidth / srcW;
-  double fitH = (double)display->screenHeight / srcH;
-  if(fitH < fit) fit = fitH;
-
-  int wholeScale = (int)fit; //largest whole-number multiple that fits (0 if the image is bigger than the window)
-
-  int dstW, dstH;
-  if(wholeScale >= 1){
-    dstW = srcW * wholeScale;
-    dstH = srcH * wholeScale;
-  } else {
-    dstW = (int)(srcW * fit + 0.5);
-    dstH = (int)(srcH * fit + 0.5);
-  }
-  //whole-number position and size, so nothing is ever drawn at a fractional pixel
-  SDL_FRect dst = { (float)((display->screenWidth - dstW) / 2), (float)((display->screenHeight - dstH) / 2), (float)dstW, (float)dstH };
-
-  SDL_SetTextureScaleMode(g->texture, SDL_SCALEMODE_NEAREST);
-  SDL_RenderTexture(display->renderer, g->texture, src, &dst);
-}
 
 bool CDarkages::renderCredits(){
 
@@ -2286,29 +2228,26 @@ void CDarkages::renderNew(){
   SDL_FRect r;
 
   display->clearScreen();
+  display->beginUIPass();
 
-  //player sprite is mod-native-scaled bitmap art, same treatment as the world canvas: position it in
-  //compat-local (mod-native pixel) coordinates, then convert to an absolute screen rect and draw it
-  //straight onto the backbuffer - see the note on compatRectToScreenRect() for why this must be an
-  //explicit conversion rather than SDL's own viewport+scale.
-  SDL_Rect local;
-  local.x = display->S(300);
-  local.y = display->S(180);
-  local.w = modSettings.tileSize;
-  local.h = modSettings.tileSize;
-  SDL_Rect screen = display->compatRectToScreenRect(local);
-  SDL_RectToFRect(&screen, &r);
+  //Hero preview sprite draws here, in the UI layer, centered in the fixed 640x400 reference space - the
+  //same reference point every other UI panel uses, and the same move made for the battle monster
+  //(decision 7 in display-scaling-plan.md). tileSize is a mod setting (mod.cfg) but is now just another
+  //UI-reference-space size, so the centering must be computed from it directly rather than reusing the
+  //old fixed 300/180 constants: those were only ever correct because the old world-space S() scaled
+  //them by the mod's own tile-size ratio, and a UI pass's S() does not.
+  int tileSize = modSettings.tileSize;
+  r.x = (float)(display->S((640 - tileSize) / 2));
+  r.y = (float)(display->S((400 - tileSize) / 2));
+  r.w = (float)(display->S(tileSize));
+  r.h = (float)(display->S(tileSize));
   SDL_RenderTexture(display->renderer, gfx.player->texture, gfx.player->getTile(heroTile(playerDir, playerAnim)), &r);
 
   //draw any text
-  if(showText){
-    display->beginUIPass();
-    renderText();
-    display->endUIPass();
-  }
+  if(showText) renderText();
 
+  display->endUIPass();
   SDL_RenderPresent(display->renderer);
-
 }
 
 /*

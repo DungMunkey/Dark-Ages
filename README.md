@@ -89,7 +89,7 @@ what the releases do. Leave it out to use the SDL3 development packages installe
 | `msvc/` | The Visual Studio 2022 solution and project |
 | `sources/` | Art, audio and font sources the game itself never loads (the FontForge project, GIMP files for mods, MIDI files, ...) |
 | `tools/` | `get-deps.ps1` / `get-deps.sh` (fetch SDL), `package.ps1` / `package-linux.sh` (build the Windows zip / Linux archive), and the READMEs that go in them |
-| `docs/` | [How releases work](docs/releasing.md) and [ideas for future work](docs/future-work.md) |
+| `docs/` | [How releases work](docs/releasing.md), [the modding guide](docs/mod-guide.md) and [ideas for future work](docs/future-work.md) |
 | `.github/workflows/` | The automated builds |
 | `CMakeLists.txt` | The Linux build |
 
@@ -97,7 +97,8 @@ what the releases do. Leave it out to use the SDL3 development packages installe
 
 Each folder in `game/Mods` is a mod that can replace the game's graphics, maps and music, and is chosen from the
 Options menu (it takes effect on the next start). A mod holds its own `Gfx`, `Maps` and `Music` files plus a
-`mod.cfg`; anything a mod doesn't provide falls back to the base game. `game/Mods/Project32` is a full example.
+`mod.cfg`; anything a mod doesn't provide falls back to the base game. `game/Mods/Project32` is a full example. See
+[the modding guide](docs/mod-guide.md) for `mod.cfg`'s keys and how to size a mod's art.
 Every mod in `game/Mods` is included in the downloads, and the `darkages.cfg` in them selects `Project32`, so that
 is the first thing players see.
 

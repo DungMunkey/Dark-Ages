@@ -244,7 +244,9 @@ the branch (`SDL3`, no parallel SDL2). Resolved during the port: the FreeType so
 * **The process is DPI-aware by default in SDL3** (confirmed by measurement): a 1280x1024 window is 1280x1024 physical
   pixels at 150% Windows scaling, where SDL2 let Windows stretch it to 1920x1536 with smoothing. Windows are therefore
   physically smaller on scaled displays than they were, which the display redesign will address.
-* Default resolution behavior is unchanged: 1280x1024, or the largest listed mode that fits inside the saved size.
+* Default resolution behavior was unchanged by the SDL3 port itself: 1280x1024, or the largest listed mode that fits
+  inside the saved size. **Superseded by the display-scaling redesign** (`docs/display-scaling-plan.md`), which
+  replaced the resolution list and the saved width/height with a whole-number scale setting.
 * SDL3_ttf and SDL3_mixer do not bundle FreeType, so `get-deps` fetches the fork at the pinned commit
   (`git init`, `git fetch --depth 1 <sha>`), which is what makes it reproducible. SDL3_mixer needs no external codec
   library (Ogg Vorbis through built-in stb_vorbis).

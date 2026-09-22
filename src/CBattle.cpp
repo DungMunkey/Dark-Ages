@@ -500,40 +500,23 @@ void CBattle::render(){
 
   display->clearScreen();
 
-  //Monster sprite is mod-native-scaled bitmap art, so it stays in the mod's own (worldScale) space -
-  //same reasoning as the world canvas. Its frame border is procedural (not bitmap), so it's drawn
-  //separately below, in the UI pass, at the UI layer's consistent stroke thickness - only its
-  //position/size (computed here, in compat-local coordinates) is derived from the sprite. Both the
-  //sprite and its frame go through the same explicit compatRectToScreenRect() conversion (see its
-  //note) so they land in exactly the same place relative to each other.
-  SDL_Rect monsterFrame;
-  int monsterSize = display->modSettings.monsterSize;
-  monsterFrame.x = display->S(10); monsterFrame.y = display->S(52);
-  monsterFrame.w = monsterSize+20; monsterFrame.h = monsterSize+20;
-  SDL_Rect monsterLocal;
-  monsterLocal.w = monsterSize;  monsterLocal.h = monsterSize;  monsterLocal.x = display->S(10)+10;  monsterLocal.y = display->S(52)+10;
-  SDL_Rect monsterScreen = display->compatRectToScreenRect(monsterLocal);
-  SDL_RectToFRect(&monsterScreen, &r);
-  if(curMon.hp <= curMon.maxHP / 2) SDL_RenderTexture(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx+1), &r);
-  else SDL_RenderTexture(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx), &r);
-
-  //Everything else here is procedural UI (borders, text, selection highlight) with no mod-native
-  //bitmap content, so it draws through the UI layer like the rest of the game's menus - consistent
-  //scale/crispness regardless of TileSize, independent of the monster art above.
+  //The monster sprite and everything else on this screen (its frame, the title and stats panels, text,
+  //selection highlight) all draw here, through the UI layer, at the same uiScale and in the same 640x400
+  //reference space. The sprite used to draw in the mod's own (worldScale) space instead - independently
+  //letterboxed from the UI layer, so it could end up a different size or offset and visibly drift away
+  //from its own frame at some window sizes. See "battle monster and hero preview" (decision 7) in
+  //display-scaling-plan.md for why this moved; monsterSize is a mod setting (mod.cfg) but is now just
+  //another UI-reference-space size, the same way the game's fixed 640x400 panels already are.
   display->beginUIPass();
 
-  //worldRect and uiRect are letterboxed independently, so they're not always the same width - a
-  //small-TileSize mod can make the world's fit wider than the UI layer's fixed 640x400 reference, in
-  //which case a monster near the world's edge converts to a screen position outside uiRect's bounds.
-  //beginUIPass()'s viewport would silently clip that, so open it back up to the full screen for this
-  //one absolute-screen-pixel rect (stroke thickness is unaffected - scale is still neutral here).
-  //No background fill here (drawBackground=false) - this is a picture frame around the monster
-  //sprite already drawn beneath it, not a dialog window, so the usual translucent fill would just
-  //dim the art it's framing.
-  monsterFrame = display->compatRectToScreenRect(monsterFrame);
-  display->beginUnclippedUI();
-  CWindow::renderBox(display, monsterFrame.x, monsterFrame.y, monsterFrame.w, monsterFrame.h, BevelSimple, SDL_Color{128,128,128,255}, false);
-  display->endUnclippedUI();
+  int monsterSize = display->modSettings.monsterSize;
+  r.x = (float)(display->S(20)); r.y = (float)(display->S(62)); r.w = (float)(display->S(monsterSize)); r.h = (float)(display->S(monsterSize));
+  if(curMon.hp <= curMon.maxHP / 2) SDL_RenderTexture(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx+1), &r);
+  else SDL_RenderTexture(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx), &r);
+  //No background fill here (drawBackground=false) - this is a picture frame around the monster sprite
+  //already drawn beneath it, not a dialog window, so the usual translucent fill would just dim the art
+  //it's framing.
+  CWindow::renderBox(display, display->S(10), display->S(52), display->S(monsterSize+20), display->S(monsterSize+20), BevelSimple, SDL_Color{128,128,128,255}, false);
 
   //Draw Title
   CWindow::renderBox(display, display->S(100), display->S(6), display->S(440), display->S(34));

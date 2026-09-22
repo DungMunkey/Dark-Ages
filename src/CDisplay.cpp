@@ -9,7 +9,8 @@ CDisplay::CDisplay(){
 
   screenHeight = 800; // 1050;
   screenWidth =  1280; // 1680;
-  currentScreenMode=0;
+  minScale=1;
+  maxScale=1;
   renderer=NULL;
   //screenSurface = NULL;
   window = NULL;
@@ -45,61 +46,44 @@ bool CDisplay::init(sConf& conf) {
     modSettings = CMods::loadModSettings(conf.modName);
     scale = modSettings.tileSize / 40.0;
 
-    //The list of window sizes offered in Options: every mode of the primary display that has the desktop's current pixel
-    //format and refresh rate, smallest first.
+    //World canvas size (display-scaling-plan.md section 4.1): 16 x TileSize by 10 x TileSize. Stored
+    //directly on `this` here because both the window sizing below and setCanvasSize() (called once the
+    //real window size is known, further down) need it; CDarkages' constructor, which used to compute
+    //this itself, now just reads it back off canvasW/H when it creates the canvas render-target texture
+    //at the same size.
+    canvasW = 16 * modSettings.tileSize;
+    canvasH = 10 * modSettings.tileSize;
+
     SDL_DisplayID displayId = SDL_GetPrimaryDisplay();
-    const SDL_DisplayMode* desktop = SDL_GetDesktopDisplayMode(displayId);
-    sDAVidMode vm;
-    char str[32];
-    bool exactMode=false; //did the display offer exactly the size saved in conf?
 
-    int modeCount = 0;
-    SDL_DisplayMode** modes = SDL_GetFullscreenDisplayModes(displayId, &modeCount);
-    if(modes != NULL && desktop != NULL){
-      for(int i=modeCount-1; i >=0; i--){ //SDL lists the largest mode first; the game's list runs smallest to largest
-        const SDL_DisplayMode* mode = modes[i];
-        if(mode->format != desktop->format || mode->refresh_rate != desktop->refresh_rate) continue;
-        vm.h=mode->h;
-        vm.w=mode->w;
-        sprintf(str, "%dx%d", mode->w, mode->h);
-        vm.name=str;
-        if(conf.w==vm.w && conf.h==vm.h){
-          currentScreenMode=screenModes.size();
-          exactMode=true;
-        }
-        screenModes.push_back(vm);
-      }
-    }
-    SDL_free(modes);
-    if(screenModes.empty()){ //no usable mode was reported: offer the desktop's own size (or a safe default) so the list is never empty
-      vm.w = (desktop != NULL) ? desktop->w : 1280;
-      vm.h = (desktop != NULL) ? desktop->h : 1024;
-      sprintf(str, "%dx%d", vm.w, vm.h);
-      vm.name=str;
-      screenModes.push_back(vm);
-      currentScreenMode=0;
-      exactMode=true;
-    }
-    if(!exactMode){
-      //The saved size isn't one this display offers - e.g. the default 1280x1024 on a small or high-refresh display, or a
-      //monitor that changed since the size was saved. Use the largest mode that fits inside it, or the smallest if none does.
-      int best=-1;
-      for(size_t i=0; i < screenModes.size(); i++){
-        if(screenModes[i].w > conf.w || screenModes[i].h > conf.h) continue;
-        if(best < 0 || screenModes[i].w*screenModes[i].h > screenModes[best].w*screenModes[best].h) best=(int)i;
-      }
-      currentScreenMode=(best >= 0) ? best : 0;
-    }
-    conf.w=screenModes[currentScreenMode].w;
-    conf.h=screenModes[currentScreenMode].h;
+    //The range Options offers for the scale setting (sConf::scaleN): the smallest whole number that
+    //makes the window at least 640x400 (so the UI layer always has room), and the largest that still
+    //fits the display's usable area (its bounds minus the taskbar and the like). Computed once here,
+    //since the canvas size can't change without a restart (the mod was just loaded above, once) and the
+    //game doesn't react to the display changing size while it runs.
+    double minScaleD = 640.0 / canvasW;
+    double minScaleD2 = 400.0 / canvasH;
+    if(minScaleD2 > minScaleD) minScaleD = minScaleD2;
+    minScale = (int)ceil(minScaleD);
+    if(minScale < 1) minScale = 1;
 
-    //for(int i=0; i < screenModes.size();i++){
-    //  printf("%s\n", &screenModes[i].name[0]);
-    //}
-    screenWidth=screenModes[currentScreenMode].w;
-    screenHeight=screenModes[currentScreenMode].h;
+    SDL_Rect usable = {0, 0, 0, 0};
+    SDL_GetDisplayUsableBounds(displayId, &usable);
+    if(usable.w <= 0 || usable.h <= 0){ usable.w = 1280; usable.h = 1024; } //nothing usable reported; fall back rather than a zero/negative maxScale
+    maxScale = usable.w / canvasW;
+    int maxScaleH = usable.h / canvasH;
+    if(maxScaleH < maxScale) maxScale = maxScaleH;
+    if(maxScale < minScale) maxScale = minScale; //a display too small to truly fit even the minimum: the window will exceed the usable area rather than the game refusing to run
+
+    if(conf.scaleN < minScale) conf.scaleN = minScale;
+    else if(conf.scaleN > maxScale) conf.scaleN = maxScale;
+
+    screenWidth = canvasW * conf.scaleN;
+    screenHeight = canvasH * conf.scaleN;
+
     //In SDL3 a fullscreen window with no fullscreen mode set is borderless "desktop" fullscreen - the same thing the
-    //game has always used (it never changes the display's resolution).
+    //game has always used (it never changes the display's resolution). It ignores the size passed to
+    //SDL_CreateWindow below; screenWidth/screenHeight are re-queried from the real window after creating it.
     SDL_WindowFlags wf = 0;
     if(conf.fullScreen) wf |= SDL_WINDOW_FULLSCREEN;
 
@@ -111,8 +95,9 @@ bool CDisplay::init(sConf& conf) {
 		}	else	{
 			//Desktop fullscreen ignores the w/h passed to SDL_CreateWindow and instead takes over the desktop at its own
 			//current resolution, so screenWidth/screenHeight (used everywhere below to compute the world/UI layout) must
-			//be re-queried from the real, resulting window size rather than trusted from the display-mode list picked above.
+			//be re-queried from the real, resulting window size rather than trusted from what was requested above.
 			SDL_GetWindowSize(window, &screenWidth, &screenHeight);
+      setCanvasSize(canvasW, canvasH); //now that screenWidth/screenHeight are the real, final values
 
       renderer = SDL_CreateRenderer(window, NULL);
 			if( renderer == NULL ) {
@@ -202,19 +187,3 @@ void CDisplay::endUIPass(){
   SDL_SetRenderViewport(renderer, NULL);
 }
 
-SDL_Rect CDisplay::compatRectToScreenRect(SDL_Rect r){
-  SDL_Rect result;
-  result.x = worldRect.x + r.x * worldScale;
-  result.y = worldRect.y + r.y * worldScale;
-  result.w = r.w * worldScale;
-  result.h = r.h * worldScale;
-  return result;
-}
-
-void CDisplay::beginUnclippedUI(){
-  SDL_SetRenderViewport(renderer, NULL);
-}
-
-void CDisplay::endUnclippedUI(){
-  SDL_SetRenderViewport(renderer, &uiRect);
-}

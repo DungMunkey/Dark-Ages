@@ -79,3 +79,31 @@ int CWindow::renderBox(CDisplay* display, int x, int y, int w, int h, eBevelStyl
 
   return totalStrokes - 1; //pixels from the outer edge to the innermost stroke
 }
+
+void CWindow::renderFullScreenImage(CDisplay* display, CGraphic* g){
+  SDL_FRect* src = g->getTile(0);
+  if(src == NULL || src->w <= 0 || src->h <= 0) return;
+
+  display->clearScreen();
+
+  int srcW = (int)src->w, srcH = (int)src->h;
+  double fit = (double)display->screenWidth / srcW;
+  double fitH = (double)display->screenHeight / srcH;
+  if(fitH < fit) fit = fitH;
+
+  int wholeScale = (int)fit; //largest whole-number multiple that fits (0 if the image is bigger than the window)
+
+  int dstW, dstH;
+  if(wholeScale >= 1){
+    dstW = srcW * wholeScale;
+    dstH = srcH * wholeScale;
+  } else {
+    dstW = (int)(srcW * fit + 0.5);
+    dstH = (int)(srcH * fit + 0.5);
+  }
+  //whole-number position and size, so nothing is ever drawn at a fractional pixel
+  SDL_FRect dst = { (float)((display->screenWidth - dstW) / 2), (float)((display->screenHeight - dstH) / 2), (float)dstW, (float)dstH };
+
+  SDL_SetTextureScaleMode(g->texture, SDL_SCALEMODE_NEAREST);
+  SDL_RenderTexture(display->renderer, g->texture, src, &dst);
+}

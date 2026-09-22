@@ -41,14 +41,14 @@ void CTitle::render(){
 
   display->clearScreen();
 
-  //The splash image is a fixed 640x400 asset (identical across every mod, not resized per TileSize the
-  //way tile/sprite art is), so unlike the battle/character-creation screens it has no mod-native
-  //resolution worth protecting - it draws through the UI layer at uiScale, same as the text/icon it's
-  //composited with, and gets the biggest crisp integer-scaled fit for whatever resolution is active.
-  display->beginUIPass();
+  //The title image can be any size a mod supplies (display-scaling-plan.md section 4.5): drawn at its
+  //own aspect ratio, the largest whole-number scale that fits the window, the same routine every other
+  //full-screen image in the game uses. The menu text below is positioned in the UI layer's own fixed
+  //640x400 reference space, entirely independent of the image's real size, so it stays in the same place
+  //on screen no matter what the mod's title image looks like.
+  CWindow::renderFullScreenImage(display, gfx->title);
 
-  r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->S(400)); r.w = (float)(display->S(640));
-  SDL_RenderTexture(display->renderer, gfx->title->texture, gfx->title->getTile(0), &r);
+  display->beginUIPass();
 
   font->setFontSize(display->S(16));
   font->render(display->S(10), display->S(380), DA_COPYRIGHT);
