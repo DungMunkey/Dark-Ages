@@ -292,8 +292,9 @@ no-fractional rule.
 * The exact maximum-scale rule: **implemented** as the largest N fitting `SDL_GetDisplayUsableBounds()` on the
   primary display; multi-monitor (which display to use if the window isn't on the primary one) is still open.
 * DPI awareness: settled by the SDL3 port (on by default); what remains is how the default scale accounts for it.
-* The config migration approach.
-* The SDL3 scope (its own discussion).
+* ~~The config migration approach.~~ **Done and play-tested** - see section 10 (4.2/4.3/4.6 writeup).
+* ~~The SDL3 scope (its own discussion).~~ **Done**, see [sdl3-migration-plan.md](sdl3-migration-plan.md) - this
+  bullet predates that work starting and was never removed once it was.
 
 ## 9. How to verify the work when it is done
 
