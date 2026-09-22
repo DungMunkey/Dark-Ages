@@ -76,12 +76,33 @@ int main(int argc, char* args[]) {
 
   srand(time(NULL));
 
-  //read any configurations
+  //read any configuration, migrating a pre-display-scaling-redesign file (see the DA_CFG_VERSION comment
+  //in Structs.h): peek the first field, which is a version marker in the current layout but was always
+  //a positive window width in the old one, so the two are never mistaken for each other.
   sConf conf;
   FILE* f;
   f=fopen("darkages.cfg", "rb");
   if(f!=NULL){
-    fread(&conf, sizeof(sConf), 1, f);
+    int marker=0;
+    if(fread(&marker, sizeof(marker), 1, f) == 1){
+      fseek(f, 0, SEEK_SET);
+      if(marker == DA_CFG_VERSION){
+        fread(&conf, sizeof(sConf), 1, f);
+      } else if(marker > 0){
+        sConfLegacy legacy;
+        if(fread(&legacy, sizeof(legacy), 1, f) == 1){
+          //Only what still applies carries over; the resolution it saved is meaningless now (window
+          //size follows the canvas and the scale setting instead), so conf keeps its default scaleN.
+          conf.vol=legacy.vol;
+          conf.fullScreen=legacy.fullScreen;
+          conf.vSync=legacy.vSync;
+          strncpy(conf.modName, legacy.modName, sizeof(conf.modName) - 1);
+          conf.modName[sizeof(conf.modName) - 1]=0;
+        }
+        //else: too short to be either format; conf keeps the defaults its constructor already set.
+      }
+      //else (marker == 0 or other garbage): unrecognized; conf keeps its defaults.
+    }
     fclose(f);
   }
 

@@ -4,14 +4,6 @@
 #include "Structs.h"
 #include <SDL3/SDL.h>
 #include <stdio.h>
-#include <string>
-#include <vector>
-
-typedef struct sDAVidMode{
-  int w;
-  int h;
-  std::string name;
-}sDAVidMode;
 
 class CFont; //forward declaration only - CFont.h includes CDisplay.h, so this avoids a circular include
 
@@ -23,16 +15,23 @@ public:
   //SDL_Surface*  screenSurface;
   SDL_Renderer* renderer;
   SDL_Window*   window;
-  
+
   bool init(sConf& conf);
   int  S(int refValue); //scales a 640x400-reference-resolution value to the active mod's tile size
-  std::vector<sDAVidMode> screenModes;
   int           screenHeight;
   int           screenWidth;
-  size_t        currentScreenMode;
   SDL_Color     txtColors[20];
   sModSettings  modSettings;
   double        scale;
+
+  //The range Options offers for sConf::scaleN, computed once in init() from canvasW/H and the display's
+  //usable area (so it never changes mid-session: the canvas size is fixed once the mod is loaded, and
+  //the game doesn't react to the display changing while it runs). minScale is the smallest whole number
+  //that makes the window at least 640x400 for the UI layer; maxScale is the largest that still fits the
+  //display's usable area (excluding the taskbar etc.), never below minScale even on a display too small
+  //to truly fit it.
+  int           minScale;
+  int           maxScale;
 
   //World canvas (tile-art, native TileSize-scaled) placement, and the separate UI layer's placement -
   //see computeLayout(). Both are integer multiples of their own reference size, letterboxed to fit

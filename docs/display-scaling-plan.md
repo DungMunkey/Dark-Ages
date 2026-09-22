@@ -1,13 +1,14 @@
 # Display, scaling and resolution: discussion record and plan
 
 **Status:** implementation started 2026-09-22, on branch `display-scaling` (from `dev`, after the SDL3 port). Done so
-far: the canvas/black-frame cleanup (section 4.1) and moving the battle monster and hero preview into the UI layer
-(originally deferred - see the correction to decision 7 below, folded in once it turned out to be the fix for the
-alignment bug found after the SDL3 port). Not started: the scale setting and window sizing (4.2-4.3), full-screen art
-best-fit (4.5), config versioning (4.6), mod guidelines (4.7). See "Implementation status" (section 10) for details
-and what still needs a human play-through. Recorded 2026-09-21 from a design discussion between the game's author and
-Claude; implementation notes added 2026-09-22. Everything under "How it works today" describes the code as of
-2026-09-21, before this section 10 work - the current code is now ahead of it in the areas section 10 covers.
+far: the canvas/black-frame cleanup (4.1), moving the battle monster and hero preview into the UI layer (originally
+deferred - see the correction to decision 7 below, folded in once it turned out to be the fix for the alignment bug
+found after the SDL3 port; play-tested and confirmed working, including a real bug the author caught - see section
+10), and the scale setting, window sizing and config versioning (4.2, 4.3, 4.6). Not started: full-screen art best-fit
+(4.5), mod guidelines (4.7). See "Implementation status" (section 10) for details and what still needs a human
+play-through. Recorded 2026-09-21 from a design discussion between the game's author and Claude; implementation notes
+added 2026-09-22. Everything under "How it works today" describes the code as of 2026-09-21, before this section 10
+work - the current code is now ahead of it in the areas section 10 covers.
 
 ## 1. Summary of what was decided
 
@@ -15,8 +16,8 @@ Claude; implementation notes added 2026-09-22. Everything under "How it works to
 | --- | --- |
 | Canvas size | 16 x TileSize by 10 x TileSize for every mod (base 640x400, 32 px 512x320, 48 px 768x480, 64 px 1024x640). No rule that anything be a multiple of 640x400. |
 | The black frame ("blinds") | Goes away. Leaning toward showing the extra half tiles at the edges (final feel to be playtested). Showing more than that was rejected. |
-| Resolution setting | Replaced by a **scale** setting. "Resolution" is meaningless because the display mode never changes. |
-| Windowed mode | Window is exactly the canvas times N (whole number). No black border. |
+| Resolution setting | **Done 2026-09-22.** Replaced by a **scale** setting. "Resolution" is meaningless because the display mode never changes. |
+| Windowed mode | **Done 2026-09-22.** Window is exactly the canvas times N (whole number). No black border. |
 | Fullscreen | Stays SDL's borderless "desktop fullscreen". Each layer takes the largest whole-number scale that fits. |
 | Fractional scaling | Not used anywhere, for any pixel art or full-screen image. Nearest-neighbor stays. |
 | UI layer | Stays independent of the world and canvas: fixed 640x400 design space, own whole-number scale, crisp text. No fractional UI scale, no separate player setting for UI scale. |
@@ -24,7 +25,7 @@ Claude; implementation notes added 2026-09-22. Everything under "How it works to
 | Title, story and death art | Keep their own best-fit whole-number sizing. Mods may supply a title screen of their own size. |
 | Mod guidelines | To be written for the typical tile sizes 32, 48 and 64. |
 | SDL3 | The migration comes first, as its own scoping discussion. DPI awareness is re-evaluated after it. |
-| Default scale | Undecided; to be based on display size. |
+| Default scale | **Done 2026-09-22, as a starting point:** fixed at 2, clamped into `[minScale, maxScale]` (so it drops to `minScale` if that's already above 2, e.g. small-tile mods on a small display). Choosing from the display size instead is still open - see section 10. |
 
 ## 2. How it works today
 
@@ -178,19 +179,20 @@ with no version. The release packages ship a `darkages.cfg` produced by `Darkage
 * Anything else expressed in `S(640)` / `S(400)` for the canvas (the fade-in rectangle, the full-screen-image overlay
   rectangle) becomes the canvas size.
 
-### 4.2 Scale N and window size
+### 4.2 Scale N and window size - **done 2026-09-22, see section 10**
 * Player setting: **scale N** (whole number). Windowed client size = `canvasW * N` by `canvasH * N`.
 * **Minimum N:** the window must be at least 640x400 for the UI, so `minN = ceil(max(640 / canvasW, 400 / canvasH))`
   (2 for 32 px mods, 1 for 40, 48 and 64 px).
 * **Maximum N:** the largest that fits the display's usable area (excluding the title bar and taskbar).
-* **Default N:** undecided. The author wants 2 as the general default but will consider choosing from the display size
-  (options: the largest N whose window fits within about 90% of the usable area, never below the minimum).
+* **Default N:** fixed at 2 for now (clamped into `[minN, maxN]`), as a starting point rather than the final word -
+  choosing from the display size is still open, see section 8.
 * The scale setting replaces the resolution list in the Options menu; `SDL_SetWindowSize` and the saved size are
   driven by N.
 
-### 4.3 Fullscreen
+### 4.3 Fullscreen - **done 2026-09-22 (unchanged in concept, re-verified against the new scale setting)**
 Unchanged in concept: borderless desktop fullscreen; the world takes `floor(min(W / canvasW, H / canvasH))` and the UI
-takes `floor(min(W / 640, H / 400))`, each centered. The N setting is ignored in fullscreen.
+takes `floor(min(W / 640, H / 400))`, each centered. The N setting is ignored in fullscreen (SDL_SetWindowSize has no
+effect while fullscreen, but SDL remembers it for when the player returns to windowed).
 
 ### 4.4 UI layer
 Unchanged (section 2.3). At scale N the UI scale is `floor(min(W / 640, H / 400))` of the window.
@@ -203,10 +205,11 @@ Unchanged (section 2.3). At scale N the UI scale is `floor(min(W / 640, H / 400)
   placed relative to the UI layer, not to the image.
 * Mod guideline: author full-screen art at the mod's canvas size (16T x 10T), or half of it, so it scales exactly.
 
-### 4.6 Configuration
+### 4.6 Configuration - **done 2026-09-22, see section 10**
 Width and height stop being meaningful, so the `darkages.cfg` layout changes. Add a version field (or migrate) so old
 files are recognized, and update `Darkages --write-default-config`, the package scripts and the player READMEs. This is
-also the moment to address the "raw struct, no version" item in `docs/future-work.md`.
+also the moment to address the "raw struct, no version" item in `docs/future-work.md` (partially - see that file for
+what's still open).
 
 ### 4.7 Mod guidelines to write (tile sizes 32, 48, 64)
 Canvas sizes, the minimum scale, what does and does not have to change with tile size (tile and sprite sheets do; the
@@ -265,19 +268,23 @@ no-fractional rule.
 
 1. SDL3 scoping discussion, then the migration (its own project). **Done.**
 2. Decide DPI awareness in the light of SDL3. **Done** (SDL3 is DPI-aware by default; see 2.8).
-3. Canvas cleanup: 16T x 10T, remove the frame, cover the canvas with tiles; playtest the half-tile reveal. **Code
-   done 2026-09-22** (plus the battle monster/hero preview move, folded in - see section 10); **playtest still
-   needed.**
-4. Scale setting, window sizing, minimum and maximum N, default N, config versioning. **Not started.**
+3. Canvas cleanup: 16T x 10T, remove the frame, cover the canvas with tiles; playtest the half-tile reveal. **Done and
+   play-tested 2026-09-22** (plus the battle monster/hero preview move, folded in - see section 10). A real bug in
+   the canvas-coverage margin was found by the author playing and fixed the same day (commit `75c2c0a`; see section
+   10). The half-tile reveal itself and the battle-screen alignment were both confirmed good.
+4. Scale setting, window sizing, minimum and maximum N, default N, config versioning. **Code done 2026-09-22** (see
+   section 10); **not yet play-tested** (the author's checklist so far covered step 3's changes, not this step's).
 5. Full-screen art fitting and per-mod title size. **Not started.**
 6. Mod guidelines and docs. **Not started** (this file's own updates are ongoing as each step lands).
 
 ## 8. Open questions
 
-* The default scale: fixed 2, or chosen from the display size (and how it treats high-DPI displays).
-* Whether the half tiles feel right in play, especially in mazes.
+* The default scale: **for now, fixed at 2** (clamped into range) - still open whether to choose it from the display
+  size instead (and how that would treat high-DPI displays).
+* ~~Whether the half tiles feel right in play, especially in mazes.~~ **Confirmed good** by the author 2026-09-22.
 * How a mod declares its title-screen size (or whether the image size alone is enough).
-* The exact maximum-scale rule (usable area, multi-monitor: which display).
+* The exact maximum-scale rule: **implemented** as the largest N fitting `SDL_GetDisplayUsableBounds()` on the
+  primary display; multi-monitor (which display to use if the window isn't on the primary one) is still open.
 * DPI awareness: settled by the SDL3 port (on by default); what remains is how the default scale accounts for it.
 * The config migration approach.
 * The SDL3 scope (its own discussion).
@@ -295,9 +302,10 @@ no-fractional rule.
 
 ## 10. Implementation status (2026-09-22)
 
-On branch `display-scaling`, from `dev`. Debug and Release both build clean (only the three pre-existing warnings);
-the exe starts and reaches the title screen. The gameplay, battle and new-character screens this section covers have
-**not** been play-tested yet - they need the author, since reaching them needs game input.
+On branch `display-scaling`, from `dev`. Debug and Release both build clean. The canvas/black-frame cleanup and the
+battle monster/hero preview UI-layer move (both below) have been **play-tested by the author and confirmed working**,
+including catching a real bug (see 4.1 below). The scale setting/window sizing/config versioning work (section "4.2,
+4.3, 4.6", further down) has **not** been play-tested yet.
 
 **4.1 Canvas and tiles - done:**
 
@@ -328,9 +336,8 @@ the exe starts and reaches the title screen. The gameplay, battle and new-charac
 * The hero's canvas position is now `(canvasW - tileSize) / 2, (canvasH - tileSize) / 2` computed directly, rather
   than `S(300), S(180)` - still numerically identical for every tile size, but no longer relies on `S()`'s
   mod-native scale factor, matching how the tile loop above now reads.
-* **Still to verify (needs the author):** the half-tile reveal in play, especially in mazes (section 3 decision 3,
-  section 8's open question) - this is the actual gameplay-visible change from this step, and the reason the plan
-  called out playtesting it specifically.
+* **Confirmed by the author in play (2026-09-22):** the half-tile reveal (section 3 decision 3, section 8) feels
+  right, including in mazes - the reason the plan called out playtesting it specifically.
 
 **Decision 7 (battle monster + hero preview) - done, folded in ahead of schedule:**
 
@@ -352,5 +359,40 @@ the exe starts and reaches the title screen. The gameplay, battle and new-charac
   callers were these two screens) and have been removed, along with `beginCompatPass()`/`endCompatPass()`'s
   now-stale doc comments elsewhere.
 
-**Not started:** 4.2 (scale N / window sizing), 4.3 (fullscreen - unchanged in concept but should be re-verified once
-4.2 lands), 4.5 (full-screen art best-fit), 4.6 (config versioning), 4.7 (mod guidelines).
+**4.2, 4.3, 4.6 (scale N, window sizing, config versioning) - code done, not yet play-tested:**
+
+* `CDisplay::init()` now computes `canvasW`/`canvasH` itself (`16 * tileSize`, `10 * tileSize`) right after loading
+  the mod, before creating the window - it needs them to size the window - and calls `setCanvasSize()` once the real
+  window size is known, so `CDarkages`' constructor no longer computes the canvas size or calls `setCanvasSize()`
+  itself; it just reads `display->canvasW`/`canvasH` back to create the canvas texture at the same size.
+* `minScale`/`maxScale` (new `CDisplay` members) are computed once in `init()`: `minScale = ceil(max(640/canvasW,
+  400/canvasH))` (2 for 32 px mods, 1 for 40/48/64 px, matching the plan); `maxScale` is the largest N whose window
+  fits `SDL_GetDisplayUsableBounds()` on the primary display, never below `minScale`. `conf.scaleN` is clamped into
+  this range on load, so an old or out-of-range value (e.g. a config carried over to a smaller display, or a
+  different mod with a different canvas) can never produce a window bigger than the display or smaller than the UI
+  needs.
+* Windowed client size is `canvasW * conf.scaleN` by `canvasH * conf.scaleN`, verified directly (Project32, 32 px
+  tiles, scale 2: 1024x640 window, confirmed via `GetClientRect` - the first measurement attempt read 682x426
+  because the querying script itself wasn't DPI-aware, a measurement artifact rather than a game bug; a DPI-aware
+  query on the same running window read the correct 1024x640). Fullscreen is unaffected in concept (4.3): SDL
+  ignores the requested size while fullscreen, and `SDL_SetWindowSize` while fullscreen (from changing the scale
+  setting without leaving fullscreen) has no visible effect but is remembered for when the player returns to
+  windowed, same as the old resolution list already relied on.
+* Options' "Screen Res:" menu item is now "Scale:", cycling `conf.scaleN` between `minScale` and `maxScale` instead
+  of an index into a resolution list; it shows both the number and the resulting window size (e.g. `2 (1024x640)`).
+* **Config versioning:** `sConf` gains `cfgVersion` (`DA_CFG_VERSION = -1`, `Structs.h`) as its first field, and `w`/
+  `h` are replaced by `scaleN`. A pre-redesign `darkages.cfg`'s first field was always a positive window width, so
+  `Darkages.cpp`'s read peeks that one field to tell old files from new ones apart, with no ambiguity possible (never
+  negative in the old format, always negative in the new one). An old file's volume, fullscreen, vsync and mod
+  selection carry over; its saved resolution is dropped (meaningless now) in favor of the default `scaleN`.
+  Verified against the actual `darkages.cfg` already in `game/` (a real pre-redesign file, `w=1920, h=1080`): the
+  game read it, migrated it, and opened at the correct `1024x640` (default scale 2, Project32's canvas). Verified
+  the new format round-trips too: `--write-default-config` produces a file starting with the correct `cfgVersion`
+  marker and `scaleN=2`, and the game reads that back correctly as well. (The live-run write-back path, on normal
+  exit through the game's own menu, was not exercised by this testing, since reaching it needs game input; the
+  read/migrate and `--write-default-config` paths cover the same `fwrite(&conf, sizeof(sConf), 1, f)` call site, so
+  this is considered low-risk, but it's worth the author confirming a real save-and-reload during play-testing.)
+* `future-work.md`'s "raw struct, no version" item is updated to note `sConf` now has a version marker (though it's
+  still a raw struct dump depending on compiler padding, and `da1save` - save games - has none of this yet).
+
+**Not started:** 4.5 (full-screen art best-fit), 4.7 (mod guidelines).

@@ -82,16 +82,12 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
 
   display->setFont(&font); //so beginUIPass() can force the right font size on entry
 
-  //canvas + layout must exist before init(), since init() sizes the font using display->uiScale/worldScale.
-  //Canvas is 16 x TileSize by 10 x TileSize (the display-scaling redesign's canvas size; see
-  //display-scaling-plan.md section 4.1) - numerically identical to the old S(640) x S(400) for every
-  //tile size, since S(640) = round(640 * TileSize/40) = 16 * TileSize exactly (640/40 = 16 with no
-  //remainder), but expressed directly so it no longer depends on S()'s fractional native-mod scale.
-  //display->modSettings, not this->modSettings, because CDarkages::init() (which sets the latter)
-  //hasn't run yet.
-  int tileSize = display->modSettings.tileSize;
-  canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 16*tileSize, 10*tileSize);
-  display->setCanvasSize(16*tileSize, 10*tileSize);
+  //The canvas render-target texture, sized to match display->canvasW/H - CDisplay::init() already
+  //computed and applied that size (display-scaling-plan.md section 4.1) before this constructor runs,
+  //since window sizing itself now depends on it (see CDisplay::init()'s scaleN handling). This texture
+  //just needs to exist before CDarkages::init() below, which sizes the font using
+  //display->uiScale/worldScale.
+  canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, display->canvasW, display->canvasH);
 
   init();
   renderCount=0;

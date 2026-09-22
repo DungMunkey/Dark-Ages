@@ -4,9 +4,11 @@ A running list of updates we will need or might want. Add to it freely; delete i
 
 ## Platform and libraries
 
-* **Display, scaling and resolution redesign.** A "scale" setting instead of "resolution", a 16 x TileSize by
-  10 x TileSize canvas without the black frame, windowed mode exactly the size of the game, and best-fit art. It is
-  fully worked out in [display-scaling-plan.md](display-scaling-plan.md) and waits on the SDL3 migration.
+* **Display, scaling and resolution redesign - in progress.** A "scale" setting instead of "resolution", a
+  16 x TileSize by 10 x TileSize canvas without the black frame, windowed mode exactly the size of the game, and
+  best-fit art. Canvas/black-frame cleanup and the scale setting/window sizing/config versioning are done, on branch
+  `display-scaling`; full-screen art best-fit and mod guidelines are not started. See
+  [display-scaling-plan.md](display-scaling-plan.md) (section 10) for status.
 
 * **SDL3 port: finish testing and merge.** The port (SDL3, SDL3_ttf and SDL3_mixer, statically linked on both
   platforms, like-for-like) is done on the `SDL3` branch; see [sdl3-migration-plan.md](sdl3-migration-plan.md) for
@@ -29,8 +31,13 @@ A running list of updates we will need or might want. Add to it freely; delete i
 ## Code
 
 * **Save and config files are raw C structs** written with `fwrite` (`sConf`, `da1save`). They depend on the
-  compiler's padding and are not versioned. A versioned, explicit format would survive changes and compilers
-  (and matters for a Linux port).
+  compiler's padding and (except `sConf`, now - see below) are not versioned. A versioned, explicit format would
+  survive changes and compilers (and matters for a Linux port).
+  * `sConf` (`darkages.cfg`) got a version marker as part of the display-scaling redesign (`DA_CFG_VERSION` in
+    `Structs.h`), so a config from before that redesign is recognized and migrated (`Darkages.cpp`'s read logic) -
+    but it is still a raw struct dump underneath, still depends on the compiler's padding being identical to the
+    build that wrote it, and only handles this one past layout change, not compiler/platform portability in general.
+  * `da1save` (save games) has none of this yet.
 * **Compiler warnings.** Three long-standing ones: `size_t` to `int` conversions in `COptions.cpp` (lines 15 and
   80) and `time_t` to `unsigned int` in the `srand` call in `Darkages.cpp`.
 * **`CDarkages.cpp` is about 170 KB** and holds most of the game logic and its hard-coded data (dialogue, items,
