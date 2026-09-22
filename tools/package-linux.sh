@@ -11,7 +11,7 @@
 #
 # It never contains source code, build files, saves, or art-source files (.xcf .psd .wav .mid ...). Only that fixed
 # list is copied - not "everything in game/" - and darkages.cfg is generated fresh by the built game
-# (Darkages --write-default-config), never copied from game/. A <archive>.sha256 file is written next to the archive.
+# (Darkages --write-default-config), never copied from game/.
 #
 # Usage: tools/package-linux.sh [--suffix -dev.47+a1b2c3d] [--default-mod Project32] [--output dir] [--skip-build]
 #
@@ -155,19 +155,22 @@ mkdir -p "$output"
 output="$(cd "$output" && pwd)"
 chmod -R u+rwX,go+rX,go-w "$stage"
 chmod 755 "$stage/Darkages"
-rm -f "$output/$archive_name" "$output/$archive_name.sha256"
+rm -f "$output/$archive_name"
 tar -C "$stage_root" --sort=name --owner=0 --group=0 --numeric-owner -czf "$output/$archive_name" DarkAges
-if command -v sha256sum >/dev/null 2>&1; then
-  ( cd "$output" && sha256sum "$archive_name" > "$archive_name.sha256" )
-else
-  ( cd "$output" && shasum -a 256 "$archive_name" > "$archive_name.sha256" )
-fi
 
 count="$(find "$stage" -type f | wc -l)"
 size="$(du -m "$output/$archive_name" | cut -f1)"
 echo
 echo "Created $output/$archive_name  (${size} MB, ${count} files)"
-echo "SHA-256  $(cut -d' ' -f1 "$output/$archive_name.sha256")"
+# GitHub computes and shows its own SHA-256 digest for each release asset, generated from the bytes it
+# actually stored - checking a download against that is at least as good as checking it against a
+# checksum file we publish ourselves from the same build, and does not have a downloaded-file-verifies-
+# itself problem. So no separate .sha256 file: see the discussion recorded in docs/releasing.md.
+if command -v sha256sum >/dev/null 2>&1; then
+  echo "SHA-256  $(cd "$output" && sha256sum "$archive_name" | cut -d' ' -f1)"
+else
+  echo "SHA-256  $(cd "$output" && shasum -a 256 "$archive_name" | cut -d' ' -f1)"
+fi
 
 # hand the results to a GitHub Actions workflow, if that is what is running us
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
@@ -175,6 +178,5 @@ if [ -n "${GITHUB_OUTPUT:-}" ]; then
     echo "version=$version"
     echo "archive_name=$archive_name"
     echo "archive_path=$output/$archive_name"
-    echo "sha_path=$output/$archive_name.sha256"
   } >> "$GITHUB_OUTPUT"
 fi

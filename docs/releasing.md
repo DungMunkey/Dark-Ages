@@ -1,7 +1,11 @@
 # How builds and releases work
 
 There are two kinds of published builds. Both are GitHub *pre-releases* at first, and each carries two downloads,
-one per platform, plus a `.sha256` checksum file for each:
+one per platform. There's no separate `.sha256` file for either: GitHub already computes and shows its own SHA-256
+digest for each release asset, generated from the bytes it stored, so a downloaded file can be checked against that
+directly. A checksum file we published ourselves alongside the download would come from the very same build and the
+very same release - no more trustworthy than the download it's checking, and it would need its own way to be
+verified in turn.
 
 | Platform | Download | Made by (the same script you can run locally) |
 | --- | --- | --- |
@@ -22,7 +26,7 @@ published if both succeed**: if either platform fails, nothing is published.
   (`47` is the workflow's run number, `a1b2c3d` the commit). It is shown on the title screen and in the credits,
   and at the top of each download's README, which also carries a "development build" warning.
 * **Where:** a pre-release with tag `dev-47`, titled "Dev build 47 (...)". Its notes list the commits since the
-  previous dev build, plus the SHA-256 of the downloads.
+  previous dev build.
 * **Retention:** the newest 10 dev builds are kept. Older ones, and their tags, are deleted automatically.
 
 Pull requests to `dev` or `master` get a build-only check for both platforms (nothing is published; the archives

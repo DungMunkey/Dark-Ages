@@ -22,8 +22,6 @@
   Note: mods that exist only on your machine (game/Mods/Test, Test2) are inside game/Mods, so a
   zip made locally includes them. CI builds from a clean checkout and does not have them.
 
-  A <zip>.sha256 checksum file is written next to the zip.
-
 .PARAMETER VersionSuffix
   Appended to the base version from src/Version.h, e.g. "-dev.47+a1b2c3d". Leave empty for a
   release build.
@@ -33,7 +31,7 @@
   in game/Mods. Default: Project32
 
 .PARAMETER OutputDir
-  Where the zip and checksum go. Default: <repo>/dist
+  Where the zip goes. Default: <repo>/dist
 
 .PARAMETER SkipBuild
   Package whatever is already built in game/ (still requires third_party/ for the notices).
@@ -223,19 +221,18 @@ try {
   }
 } finally { $archive.Dispose() }
 
-$hash    = (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
-$shaPath = $zipPath + '.sha256'
-[IO.File]::WriteAllText($shaPath, "$hash  $zipName`n", (New-Object Text.ASCIIEncoding))
-
 $fileCount = (Get-ChildItem $stageFull -Recurse -File).Count
 Write-Host ''
 Write-Host ("Created {0}  ({1:N1} MB, {2} files)" -f $zipPath, ((Get-Item $zipPath).Length / 1MB), $fileCount)
-Write-Host ("SHA-256  {0}" -f $hash)
+# GitHub computes and shows its own SHA-256 digest for each release asset, generated from the bytes it
+# actually stored - checking a download against that is at least as good as checking it against a
+# checksum file we publish ourselves from the same build, and does not have a downloaded-file-verifies-
+# itself problem. So no separate .sha256 file: see the discussion recorded in docs/releasing.md.
+Write-Host ("SHA-256  {0}" -f (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLowerInvariant())
 
 # Hand the results to a GitHub Actions workflow, if that is what is running us.
 if ($env:GITHUB_OUTPUT) {
   Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$version"
   Add-Content -Path $env:GITHUB_OUTPUT -Value "zip_name=$zipName"
   Add-Content -Path $env:GITHUB_OUTPUT -Value "zip_path=$zipPath"
-  Add-Content -Path $env:GITHUB_OUTPUT -Value "sha_path=$shaPath"
 }

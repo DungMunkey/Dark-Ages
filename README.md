@@ -56,7 +56,7 @@ Windows' build tools cannot open paths over 260 characters.
    powershell -ExecutionPolicy Bypass -File tools\package.ps1
    ```
 
-   The result is `dist\DarkAges-<version>-win64.zip` with a `.sha256` file next to it.
+   The result is `dist\DarkAges-<version>-win64.zip`.
 
 ## Building from source (Linux)
 

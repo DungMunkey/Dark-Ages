@@ -37,8 +37,9 @@ WINDOWS WARNS ABOUT THIS FILE
 
   The game is not code-signed, so Windows SmartScreen may say it "protected
   your PC" the first time you run it. Choose "More info", then "Run anyway".
-  If your browser flagged the download, keep it - the checksum published next
-  to the download lets you verify it is intact.
+  If your browser flagged the download, keep it - GitHub shows a SHA-256
+  checksum for the download on its release page, which you can use to check
+  it downloaded intact.
 
 LICENSE
 

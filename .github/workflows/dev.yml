@@ -76,18 +76,13 @@ jobs:
             echo
             echo "### ${heading}"
             echo "${changes}"
-            echo
-            echo "### SHA-256 of the downloads"
-            echo '```'
-            cat dist/*.sha256
-            echo '```'
           } > notes.md
 
           # re-running a failed run must not trip over its own tag
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release delete "$tag" --cleanup-tag --yes
           fi
-          gh release create "$tag" dist/*.zip dist/*.tar.gz dist/*.sha256 \
+          gh release create "$tag" dist/*.zip dist/*.tar.gz \
             --target "$SHA" --prerelease \
             --title "Dev build ${RUN_NUMBER} (${VERSION})" \
             --notes-file notes.md
