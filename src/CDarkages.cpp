@@ -1718,8 +1718,16 @@ bool CDarkages::newGame(){
         //Select surfaces based on key press
         switch(e.key.key)  {
         case SDLK_ESCAPE:
+          //Same cleanup as the SDLK_RETURN path below, minus setting hero.name: without it,
+          //showTextInput/showText/SDL's text-input mode all stayed on past this function returning,
+          //surviving back through the title screen into a loaded game - where the main loop's own
+          //SDLK_RETURN handling, seeing showTextInput still true, assumed it could only mean the
+          //hermit's riddle (the only other place that sets it), and fed the name the player had typed
+          //into that instead. Found by the author: New Game, Escape before naming, then Load Game.
+          SDL_StopTextInput(display->window);
+          showTextInput=false;
+          showText=false;
           return false;
-          break;
         case SDLK_BACKSPACE:
           if(showTextInput && userText.size()>0) userText.pop_back();
           break;
