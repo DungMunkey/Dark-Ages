@@ -1,14 +1,19 @@
 # Display, scaling and resolution: discussion record and plan
 
-**Status:** all of "The plan" (section 4) is implemented, on branch `display-scaling` (from `dev`, after the SDL3
-port), not yet merged or pushed. Canvas/black-frame cleanup, the battle monster/hero preview UI-layer move (4.1, plus
-decision 7, pulled forward from "deferred" - see below) and the scale setting/window sizing/config versioning (4.2,
-4.3, 4.6) are done and **play-tested by the author**, including two real bugs the author caught in play and had
-fixed the same day. Full-screen art best-fit (4.5) and the mod guidelines (4.7, [mod-guide.md](mod-guide.md)) are
-done but **not yet play-tested** - reaching the death/endgame screens needs game input. See "Implementation status"
-(section 10) for the detail. Recorded 2026-09-21 from a design discussion between the game's author and Claude;
-implementation notes added through 2026-09-22. Everything under "How it works today" describes the code as of
-2026-09-21, before any of section 10's work - the current code is ahead of it everywhere section 10 covers.
+**Status: all of "The plan" (section 4) is implemented AND play-tested by the author, 2026-09-22.** On branch
+`display-scaling` (from `dev`, after the SDL3 port), not yet merged or pushed. Canvas/black-frame cleanup, the
+battle monster/hero preview UI-layer move (4.1, plus decision 7, pulled forward from "deferred"), the scale
+setting/window sizing/config versioning (4.2, 4.3, 4.6), and full-screen art best-fit (4.5, including fullscreen
+mode itself and the UI) are all confirmed working in play - including a real tile-loop margin bug the author caught
+along the way, fixed the same day (section 10). Two other bugs surfaced during this same testing period but were
+unrelated to this redesign: the SDL3 viewport+scale bug (found during the SDL3 port itself, before this branch) and
+a naming-input state leak (`61eed14`/`2ee7130`, pre-existing, unrelated to display scaling) - both already fixed.
+The one item that can never be tested is a 64 px tile mod: none exists
+locally and the author does not plan to make one - not treated as a real gap. Multi-monitor behavior is explicitly
+out of scope by the author's decision (section 8). See "Implementation status" (section 10) for the full detail.
+Recorded 2026-09-21 from a design discussion between the game's author and Claude; implementation and play-test
+notes added through 2026-09-22. Everything under "How it works today" describes the code as of 2026-09-21, before
+any of section 10's work - the current code is ahead of it everywhere section 10 covers.
 
 ## 1. Summary of what was decided
 
@@ -276,9 +281,8 @@ no-fractional rule.
 4. Scale setting, window sizing, minimum and maximum N, default N, config versioning. **Done and play-tested
    2026-09-22** - confirmed working, including a live in-game exit writing `scaleN=3` back to `darkages.cfg` after
    the author changed it in Options (the one path this session's own testing couldn't exercise; see section 10).
-5. Full-screen art fitting and per-mod title size. **Done 2026-09-22**, see section 10. Verified the title screen
-   renders correctly (unchanged for the existing 640x400 art, as expected); death/endgame art shares the same
-   routine but hasn't been seen in play yet.
+5. Full-screen art fitting and per-mod title size. **Done and play-tested 2026-09-22**, see section 10 - the author
+   confirmed fullscreen art (title, death, endgame, story) all look good.
 6. Mod guidelines and docs. **Done 2026-09-22**: [docs/mod-guide.md](mod-guide.md).
 
 ## 8. Open questions
@@ -290,7 +294,8 @@ no-fractional rule.
   implementation:** the image's own size is enough - `CWindow::renderFullScreenImage` reads the texture's actual
   dimensions directly, so no declaration is needed.
 * The exact maximum-scale rule: **implemented** as the largest N fitting `SDL_GetDisplayUsableBounds()` on the
-  primary display; multi-monitor (which display to use if the window isn't on the primary one) is still open.
+  primary display. **Multi-monitor is out of scope by the author's decision (2026-09-22)** - always use the primary
+  display; don't pursue "which display" logic.
 * DPI awareness: settled by the SDL3 port (on by default); what remains is how the default scale accounts for it.
 * ~~The config migration approach.~~ **Done and play-tested** - see section 10 (4.2/4.3/4.6 writeup).
 * ~~The SDL3 scope (its own discussion).~~ **Done**, see [sdl3-migration-plan.md](sdl3-migration-plan.md) - this
@@ -299,13 +304,18 @@ no-fractional rule.
 ## 9. How to verify the work when it is done
 
 * Windowed client size equals canvas x N for the base game and for 32, 48 and 64 px test mods (the local `Test2` mod is
-  48 px; Project32 is 32 px).
+  48 px; Project32 is 32 px). **Confirmed** for the base game, 32 px and 48 px. **64 px has no local test mod and the
+  author does not plan to make one** - untestable in practice, not a real gap.
 * The world is one uniform whole-number scale (no uneven pixel runs) at each N, and in fullscreen on several display
-  sizes and Windows scale factors.
-* Title, death, endgame and story art are at the best whole-number fit at every window size.
+  sizes and Windows scale factors. **Confirmed** by the author 2026-09-22 (fullscreen looks good).
+* Title, death, endgame and story art are at the best whole-number fit at every window size. **Confirmed** by the
+  author 2026-09-22 ("fullscreen art" looks good) - covers death/endgame/story, which hadn't been seen in play before.
 * No black frame; tiles cover the canvas at every scroll offset (test at offsets 0, 1 and tileSize - 1 in both axes).
+  **Confirmed** (see the bottom-margin bug found and fixed in section 10 - now correct).
 * UI text is crisp (multiples of 16 px) and the UI never overflows the window (test the minimum N for 32 px mods).
-* Old `darkages.cfg` files load correctly after the layout change.
+  **Confirmed** by the author 2026-09-22.
+* Old `darkages.cfg` files load correctly after the layout change. **Confirmed**, including a real migrated file and
+  a live write-back (section 10).
 
 ## 10. Implementation status (2026-09-22)
 
@@ -405,7 +415,7 @@ including catching a real bug (see 4.1 below). The scale setting/window sizing/c
 * `future-work.md`'s "raw struct, no version" item is updated to note `sConf` now has a version marker (though it's
   still a raw struct dump depending on compiler padding, and `da1save` - save games - has none of this yet).
 
-**4.5, 4.7 (full-screen art best-fit, mod guidelines) - done, not yet play-tested:**
+**4.5, 4.7 (full-screen art best-fit, mod guidelines) - done and play-tested:**
 
 * **Unified every full-screen image (title, death, endgame, explosion, story) onto one routine**, rather than the
   title using the UI layer's own fit and death/endgame either drawing onto the canvas (when they happened to be a
@@ -419,9 +429,9 @@ including catching a real bug (see 4.1 below). The scale setting/window sizing/c
   layer" and the new "best-fit directly to the window" formulas are mathematically identical for them
   (`uiScale = floor(min(W/640, H/400))` is exactly the fit formula for a 640x400 image) - confirmed by a window
   screenshot (`PrintWindow`, captured directly from the window's own content rather than the screen, so there was
-  no risk of capturing anything else on screen) showing the title screen rendering identically to before. Death and
-  endgame art share the same routine but weren't seen rendered in this testing pass, since reaching them needs game
-  input.
+  no risk of capturing anything else on screen) showing the title screen rendering identically to before. **The
+  author has since confirmed title, death, endgame and story art, plus fullscreen mode itself and the UI, all look
+  good in play (2026-09-22).**
 * `CTitle::render()` now positions the menu text and version/copyright line in the UI layer's own fixed 640x400
   space, independent of the title image's actual size - the mechanical part of letting mods supply a title image of
   any size, which was the other half of 4.5.
@@ -431,5 +441,6 @@ including catching a real bug (see 4.1 below). The scale setting/window sizing/c
   table, and full-screen art sizing guidance with the exact filename-to-screen mapping (read from
   `CGfxCollection.cpp`). Also closes the "Document mod.cfg" item in `future-work.md`.
 
-All of "The plan" (section 4) is now implemented. What's left is play-testing 4.5 (death/endgame screens) and,
-eventually, the still-open items in section 8 below, merging `display-scaling` into `dev`, and pushing.
+All of "The plan" (section 4) is now implemented and play-tested. What's left: the default-scale-by-display-size
+question (section 8, deliberately deferred), and merging `display-scaling` into `dev` and pushing, both the
+author's call.
