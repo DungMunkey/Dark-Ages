@@ -168,12 +168,8 @@ void CDisplay::computeLayout(){
   uiRect.x = (screenWidth - uiRect.w) / 2;
   uiRect.y = (screenHeight - uiRect.h) / 2;
 
-  //Canonical font sizes for each pass. worldFontPx mirrors S(32) (the mod's own native scale, same as
-  //before this whole rescale existed), floored so a small-tile mod's font can never render at fewer
-  //native pixels than the well-tested TileSize=40 baseline. uiFontPx is the same idea but built purely
-  //from uiScale, since UI-pass text is never touched by the mod's tile size at all.
-  worldFontPx = S(32);
-  if(worldFontPx < 32) worldFontPx = 32;
+  //Canonical UI-pass font size, built purely from uiScale since UI-pass text is never touched by the
+  //mod's tile size at all.
   uiFontPx = (int)(32.0 * uiScale + 0.5);
   if(uiFontPx < 32) uiFontPx = 32;
 }
@@ -203,17 +199,6 @@ void CDisplay::beginUIPass(){
 
 void CDisplay::endUIPass(){
   scale = savedScale;
-  SDL_SetRenderViewport(renderer, NULL);
-}
-
-void CDisplay::beginCompatPass(){
-  SDL_SetRenderViewport(renderer, &worldRect);
-  SDL_SetRenderScale(renderer, (float)worldScale, (float)worldScale);
-  if(font != NULL) font->setFontSize(worldFontPx);
-}
-
-void CDisplay::endCompatPass(){
-  SDL_SetRenderScale(renderer, 1.0f, 1.0f);
   SDL_SetRenderViewport(renderer, NULL);
 }
 

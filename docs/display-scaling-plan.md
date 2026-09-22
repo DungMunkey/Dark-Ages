@@ -47,10 +47,13 @@ names are given instead of line numbers so the references survive edits.
 * **UI layer:** all procedural UI (text, bevel boxes, menus) is drawn straight to the backbuffer inside `uiRect` at
   `uiScale = floor(min(W / 640, H / 400))`, in a fixed 640x400 design space. `S(x)` in the UI pass multiplies by
   `uiScale`. Text is drawn at `32 * uiScale` px.
-* `beginUIPass` / `endUIPass` and `beginCompatPass` / `endCompatPass` switch between them. Because the two rects are
-  letterboxed independently, they are not always the same size for mods whose canvas is not 640x400.
+* `beginUIPass` / `endUIPass` switch drawing into the UI layer. A few screens (the battle monster sprite, the
+  new-game hero preview - see 2.7) draw world-layer content straight onto the backbuffer instead of through the
+  canvas texture; `compatRectToScreenRect` converts their coordinates explicitly rather than through SDL's own
+  viewport/scale (see the **SDL3 viewport+scale bug** note in 2.7). Because the two rects are letterboxed
+  independently, they are not always the same size for mods whose canvas is not 640x400.
 * `CDisplay::clearScreen` fills a rect instead of calling `SDL_RenderClear` (a workaround from SDL 2.0.12 that the
-  SDL3 port kept as is). SDL3 does not multiply viewport rectangles by the render scale.
+  SDL3 port kept as is).
 
 ### 2.4 The black frame ("blinds")
 * `CDarkages::render` draws a 16x10-tile grid, offset by half a tile, onto the canvas, with the hero sprite at
@@ -93,11 +96,24 @@ names are given instead of line numbers so the references survive edits.
   the tile size continuously, which is one reason the UI is kept independent of the canvas.
 
 ### 2.7 Where the two layers meet
-* **Battle screen** (`CBattle::render`): the monster art is drawn in the world's coordinate space (compat pass) while
-  its frame and the neighboring panels use UI positions. The code has an explicit workaround (the "unclipped UI" pass
-  and `compatRectToScreenRect`) for the case where the two rects differ.
-* **New-game hero preview** (`CDarkages::renderNew`): the hero sprite is drawn in the compat pass at `S(300), S(180)`.
-* Both work acceptably today. See the decision in section 3.
+* **Battle screen** (`CBattle::render`): the monster art is drawn in the world's coordinate space while its frame and
+  the neighboring panels use UI positions. The code has an explicit workaround (the "unclipped UI" pass) for the
+  case where the two rects differ.
+* **New-game hero preview** (`CDarkages::renderNew`): the hero sprite is drawn in the world's coordinate space at
+  `S(300), S(180)`.
+* Both work correctly, but not for free: see the SDL3 viewport+scale bug below.
+* **SDL3 viewport+scale bug (found and fixed 2026-09-21):** these two screens used to set the position of that
+  world-space content by combining `SDL_SetRenderViewport` (offset to `worldRect`) with a non-1
+  `SDL_SetRenderScale` (`worldScale`) and drawing in local coordinates, the way `beginUIPass` uses the viewport
+  alone. An isolated offscreen test found that SDL3 3.4.16 multiplies the *viewport's own offset* by the render
+  scale when both are set together - the same bug the migration plan's proof of concept had checked and believed
+  fixed from SDL 2.32, just for the viewport rectangle itself rather than the coordinates drawn through it. The
+  error grows with `worldRect`'s offset and `worldScale`, which is why it went unnoticed until it pushed the hero
+  preview off-screen and visibly separated the battle monster from its frame (the frame was never affected, since
+  it was already computed with the explicit `compatRectToScreenRect` conversion rather than SDL's own transform).
+  Both screens now use that same explicit conversion and draw with the viewport left at its default and the scale
+  left neutral; `beginCompatPass`/`endCompatPass` were removed since nothing else used them. See the SDL3 migration
+  plan (section 10) for the reproduction.
 
 ### 2.8 DPI
 * **Update:** the SDL3 port is done and **confirmed** that SDL3 makes the process DPI-aware by default (a 1280x1024

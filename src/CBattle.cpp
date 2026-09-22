@@ -503,16 +503,19 @@ void CBattle::render(){
   //Monster sprite is mod-native-scaled bitmap art, so it stays in the mod's own (worldScale) space -
   //same reasoning as the world canvas. Its frame border is procedural (not bitmap), so it's drawn
   //separately below, in the UI pass, at the UI layer's consistent stroke thickness - only its
-  //position/size (computed here, in compat-pass-local coordinates) is derived from the sprite.
+  //position/size (computed here, in compat-local coordinates) is derived from the sprite. Both the
+  //sprite and its frame go through the same explicit compatRectToScreenRect() conversion (see its
+  //note) so they land in exactly the same place relative to each other.
   SDL_Rect monsterFrame;
-  display->beginCompatPass();
   int monsterSize = display->modSettings.monsterSize;
   monsterFrame.x = display->S(10); monsterFrame.y = display->S(52);
   monsterFrame.w = monsterSize+20; monsterFrame.h = monsterSize+20;
-  r.w = (float)(monsterSize);  r.h = (float)(monsterSize);  r.x = (float)(display->S(10)+10);  r.y = (float)(display->S(52)+10);
+  SDL_Rect monsterLocal;
+  monsterLocal.w = monsterSize;  monsterLocal.h = monsterSize;  monsterLocal.x = display->S(10)+10;  monsterLocal.y = display->S(52)+10;
+  SDL_Rect monsterScreen = display->compatRectToScreenRect(monsterLocal);
+  SDL_RectToFRect(&monsterScreen, &r);
   if(curMon.hp <= curMon.maxHP / 2) SDL_RenderTexture(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx+1), &r);
   else SDL_RenderTexture(display->renderer, gfx->monster->texture, gfx->monster->getTile(curMon.gfx), &r);
-  display->endCompatPass();
 
   //Everything else here is procedural UI (borders, text, selection highlight) with no mod-native
   //bitmap content, so it draws through the UI layer like the rest of the game's menus - consistent

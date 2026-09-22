@@ -44,17 +44,15 @@ public:
   int      uiScale;
   SDL_Rect uiRect;
 
-  //Canonical font sizes for each pass, computed alongside worldScale/uiScale - see computeLayout().
-  //beginUIPass()/beginCompatPass() force the font to the right one every time a pass starts, so
-  //leftover state from whichever *other* context last changed the font size (e.g. Options' or
-  //Title's temporary footnote-text downsizing, which each run under a different scale) can never
-  //leak into the wrong context.
-  int      worldFontPx;
+  //Canonical UI-pass font size, computed alongside uiScale - see computeLayout(). beginUIPass() forces
+  //the font to it every time a UI pass starts, so leftover state from whichever *other* context last
+  //changed the font size (e.g. Options' or Title's temporary footnote-text downsizing, which each run
+  //under a different scale) can never leak into the wrong context.
   int      uiFontPx;
   void setFont(CFont* f); //called once, after both CDisplay and the (single, shared) CFont exist
 
   void setCanvasSize(int w, int h); //stores the world canvas's native pixel size and computes the layout
-  void computeLayout(); //(re)computes worldScale/worldRect/uiScale/uiRect/worldFontPx/uiFontPx from canvasW/H + current screenWidth/Height - call again after any runtime resolution/fullscreen change
+  void computeLayout(); //(re)computes worldScale/worldRect/uiScale/uiRect/uiFontPx from canvasW/H + current screenWidth/Height - call again after any runtime resolution/fullscreen change
 
   //Wipes the ENTIRE backbuffer to black. Use this instead of SDL_RenderClear() for full-screen wipes: with SDL
   //2.0.12's Direct3D renderer, SDL_RenderClear() only clears the region of whichever viewport was last drawn
@@ -68,18 +66,17 @@ public:
   void beginUIPass();
   void endUIPass();
 
-  //Brackets legacy screens (title splash, battle sprites) that still draw mod-native-scaled bitmap
-  //content directly to the backbuffer, the way SDL_RenderSetLogicalSize used to do for every draw
-  //call. Unlike beginUIPass(), this uses SDL's own render scale, since that content's positions
-  //aren't pre-multiplied by worldScale the way S()-based UI coordinates are pre-multiplied by uiScale.
-  void beginCompatPass();
-  void endCompatPass();
-
-  //Converts a rect expressed in compat-pass local coordinates (as if drawn during beginCompatPass())
-  //into real, absolute screen pixels. Lets a procedural element (e.g. a bevel border) that must
-  //exactly frame a piece of mod-native bitmap art be drawn instead during beginUIPass() - which
-  //leaves SDL's own render scale neutral, so the border's stroke thickness matches every other UI
-  //border's, rather than being magnified by the mod's own worldScale.
+  //Converts a rect expressed in "compat-local" coordinates - mod-native pixels, the same space the
+  //world canvas and its S(32) font size use - into real, absolute screen pixels: worldRect's origin
+  //plus the rect scaled by worldScale. Used for legacy screens (the new-character hero preview, the
+  //battle monster sprite and its frame) that draw mod-native-scaled bitmap content, or a border that
+  //must exactly frame it, straight onto the backbuffer instead of through the world canvas texture.
+  //Do the scaling here rather than with SDL's own SDL_SetRenderScale plus a non-default
+  //SDL_SetRenderViewport: SDL3 3.4.16 was found to multiply the viewport's own offset by the render
+  //scale when both are set together (the same bug the display-scaling-plan.md notes SDL 2.32 had for
+  //the viewport rect itself), which pushed content drawn that way further from the screen origin than
+  //intended - see the SDL3 migration plan for how this was found and the two call sites it broke.
+  //Draw the resulting FRect (SDL_RectToFRect) with the default viewport and scale left neutral.
   SDL_Rect compatRectToScreenRect(SDL_Rect r);
 
   //worldRect and uiRect are each independently letterboxed to their own reference size, so they are

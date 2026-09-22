@@ -80,7 +80,7 @@ CDarkages::CDarkages(CDisplay* d, sConf* c){
   loadSave=NULL;
   conf=c;
 
-  display->setFont(&font); //so beginUIPass()/beginCompatPass() can each force the right font size on entry
+  display->setFont(&font); //so beginUIPass() can force the right font size on entry
 
   //canvas + layout must exist before init(), since init() sizes the font using display->uiScale/worldScale
   canvas = SDL_CreateTexture(display->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, display->S(640), display->S(400));
@@ -1553,8 +1553,8 @@ void CDarkages::init(){
   modSettings = display->modSettings;
   font.setDisplay(display);
   font.loadFont("Font/DA1qb.ttf");
-  //Font size is no longer set here - display->beginUIPass()/beginCompatPass() each force it to the
-  //right value (uiFontPx or worldFontPx) every time a pass starts, so whichever runs first wins.
+  //Font size is no longer set here - display->beginUIPass() forces it to uiFontPx every time a UI
+  //pass starts, so whichever runs first wins.
 
   gfx.loadGfx(display->renderer, conf->modName, modSettings.tileSize, modSettings.monsterSize, !modSettings.heroIdleAnimations.empty());
   world.loadMaps(conf->modName);
@@ -2279,14 +2279,18 @@ void CDarkages::renderNew(){
 
   display->clearScreen();
 
-  //player sprite is mod-native-scaled bitmap art, same treatment as the world canvas
-  display->beginCompatPass();
-  r.w = (float)(modSettings.tileSize);
-  r.h = (float)(modSettings.tileSize);
-  r.x = (float)(display->S(300));
-  r.y = (float)(display->S(180));
+  //player sprite is mod-native-scaled bitmap art, same treatment as the world canvas: position it in
+  //compat-local (mod-native pixel) coordinates, then convert to an absolute screen rect and draw it
+  //straight onto the backbuffer - see the note on compatRectToScreenRect() for why this must be an
+  //explicit conversion rather than SDL's own viewport+scale.
+  SDL_Rect local;
+  local.x = display->S(300);
+  local.y = display->S(180);
+  local.w = modSettings.tileSize;
+  local.h = modSettings.tileSize;
+  SDL_Rect screen = display->compatRectToScreenRect(local);
+  SDL_RectToFRect(&screen, &r);
   SDL_RenderTexture(display->renderer, gfx.player->texture, gfx.player->getTile(heroTile(playerDir, playerAnim)), &r);
-  display->endCompatPass();
 
   //draw any text
   if(showText){

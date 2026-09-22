@@ -1,8 +1,10 @@
 # SDL3 migration: scoping record and plan
 
 **Status:** ported on the `SDL3` branch (2026-09-21); it builds on Windows (Debug and Release), packages, and starts,
-and a clean-clone rehearsal of the CI build passed. A human play-through, the controller, and the Linux build are still
-untested: see section 10. Recorded 2026-09-21 from a design discussion between the game's author and Claude.
+and a clean-clone rehearsal of the CI build passed. During the author's first play-through, an SDL3 viewport+scale
+bug was found and fixed (the new-character and battle screens) - see section 10. The rest of a human play-through,
+the controller, and the Linux build are still untested: see section 10. Recorded 2026-09-21 from a design discussion
+between the game's author and Claude.
 The migration comes **before** the display and scaling redesign (see [display-scaling-plan.md](display-scaling-plan.md)).
 Facts marked "verified" were checked against the SDL3 headers or source, or by running a proof of concept; items marked
 "to confirm" are understood from the API but must be checked during the port.
@@ -74,8 +76,11 @@ stats, spell, battle, load/save and options screens. Almost every SDL2 name the 
   positions would blur pixel art.
 * `SDL_RenderSetViewport` (9) becomes `SDL_SetRenderViewport`; `SDL_RenderGetViewport` becomes `SDL_GetRenderViewport`;
   `SDL_RenderSetScale` (3) becomes `SDL_SetRenderScale`; `SDL_RenderSetLogicalSize` (2) becomes
-  `SDL_SetRenderLogicalPresentation`. **Verified:** SDL3 no longer multiplies the viewport rectangle by the render
-  scale (SDL 2.32 did), so the `CDisplay` pass functions are unaffected.
+  `SDL_SetRenderLogicalPresentation`. **Correction (see section 10):** this was originally recorded as verified
+  fixed from the SDL 2.32 viewport-times-scale bug; an isolated test after the port found SDL3 3.4.16 still
+  multiplies the viewport's own offset by the render scale when both are set together (just not the rectangle a
+  read-back of `SDL_GetRenderViewport` would show), which did affect two `CDisplay` call sites. Both were rewritten
+  to avoid the combination rather than rely on it.
 * `SDL_QueryTexture` (3) becomes `SDL_GetTextureSize`; `SDL_FreeSurface` (5) becomes `SDL_DestroySurface`;
   `SDL_MapRGB` now takes a pixel-format-details pointer and a palette (or use `SDL_MapSurfaceRGB`).
 * **Return values flip:** most SDL3 functions return `bool` (true = success) where SDL2 returned 0 for success. Every
@@ -220,6 +225,22 @@ the branch (`SDL3`, no parallel SDL2). Resolved during the port: the FreeType so
 
 **Findings worth remembering:**
 
+* **SDL3 3.4.16 multiplies the render viewport's offset by the render scale when both are set together, found and
+  fixed 2026-09-21.** Reported by the author as the new-character hero sprite drawn off-screen and the battle
+  monster sprite drawn away from its own frame. `CDisplay::beginCompatPass()`/`endCompatPass()` combined a
+  non-default `SDL_SetRenderViewport` (offset to `worldRect`) with a non-1 `SDL_SetRenderScale` (`worldScale`) so
+  that draw calls could use local, un-scaled coordinates - exactly the pattern the SDL 2.32 viewport bug affected,
+  which this plan's proof of concept had checked and recorded as fixed in SDL3 (see the correction on this in
+  section 4.1). It is fixed for the *viewport rectangle a caller reads back*, but an isolated offscreen test (draw
+  a rect at local (10,10) with viewport `(50,50,200,200)` and scale 2; expected screen position (70,70)) actually
+  landed at (120,120) - matching `(viewport.offset + local) * scale` rather than `viewport.offset + local * scale`.
+  This affected only the two call sites that used that combination (nothing else in the game does: the world map
+  renders to an off-screen canvas texture and blits it with an explicit rect, and the UI pass uses the viewport
+  alone with scale left at 1, which is why nothing else was affected). Fix: both call sites now compute the
+  destination rect explicitly with `CDisplay::compatRectToScreenRect()` (the same conversion the battle screen's
+  frame border already used, which is why the frame itself was never misplaced) and draw with the viewport at its
+  default and the scale left neutral; `beginCompatPass()`/`endCompatPass()` were removed as unused. See
+  `docs/display-scaling-plan.md` section 2.7 for the player-facing description.
 * **The process is DPI-aware by default in SDL3** (confirmed by measurement): a 1280x1024 window is 1280x1024 physical
   pixels at 150% Windows scaling, where SDL2 let Windows stretch it to 1920x1536 with smoothing. Windows are therefore
   physically smaller on scaled displays than they were, which the display redesign will address.
