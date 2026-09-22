@@ -1,9 +1,13 @@
 # Display, scaling and resolution: discussion record and plan
 
-**Status:** discussion only. Nothing described in "The plan" has been built. It is deliberately parked until after the
-SDL3 migration has been scoped and done (see "Sequence"). Recorded 2026-09-21 from a design discussion between the
-game's author and Claude. Everything under "How it works today" was checked against the code on that date; function
-names are given instead of line numbers so the references survive edits.
+**Status:** implementation started 2026-09-22, on branch `display-scaling` (from `dev`, after the SDL3 port). Done so
+far: the canvas/black-frame cleanup (section 4.1) and moving the battle monster and hero preview into the UI layer
+(originally deferred - see the correction to decision 7 below, folded in once it turned out to be the fix for the
+alignment bug found after the SDL3 port). Not started: the scale setting and window sizing (4.2-4.3), full-screen art
+best-fit (4.5), config versioning (4.6), mod guidelines (4.7). See "Implementation status" (section 10) for details
+and what still needs a human play-through. Recorded 2026-09-21 from a design discussion between the game's author and
+Claude; implementation notes added 2026-09-22. Everything under "How it works today" describes the code as of
+2026-09-21, before this section 10 work - the current code is now ahead of it in the areas section 10 covers.
 
 ## 1. Summary of what was decided
 
@@ -16,7 +20,7 @@ names are given instead of line numbers so the references survive edits.
 | Fullscreen | Stays SDL's borderless "desktop fullscreen". Each layer takes the largest whole-number scale that fits. |
 | Fractional scaling | Not used anywhere, for any pixel art or full-screen image. Nearest-neighbor stays. |
 | UI layer | Stays independent of the world and canvas: fixed 640x400 design space, own whole-number scale, crisp text. No fractional UI scale, no separate player setting for UI scale. |
-| Battle monster and new-game hero preview | Stay as they are. May be revisited later. |
+| Battle monster and new-game hero preview | **Done 2026-09-22** (correction to the original decision - see section 10): moved into the UI layer. This turned out to fix the alignment bug the SDL3 port's viewport+scale fix exposed, so it was done as part of this work rather than deferred. |
 | Title, story and death art | Keep their own best-fit whole-number sizing. Mods may supply a title screen of their own size. |
 | Mod guidelines | To be written for the typical tile sizes 32, 48 and 64. |
 | SDL3 | The migration comes first, as its own scoping discussion. DPI awareness is re-evaluated after it. |
@@ -151,8 +155,12 @@ with no version. The release packages ship a `darkages.cfg` produced by `Darkage
 6. **The UI stays independent** (fixed 640x400 design space, own whole-number scale). A proposal to lay the UI out on a
    character grid tied to the canvas was withdrawn as unnecessary: the current UI already works for any canvas as long
    as the window is at least 640x400. No fractional UI scale; no separate player setting for it.
-7. **The battle monster and hero preview stay as they are.** Moving them into the UI layer as pictures placed at
-   whole-number scales was discussed as a cleaner design and deferred; the author may revisit.
+7. **The battle monster and hero preview stay as they are** - originally. Moving them into the UI layer as pictures
+   placed at whole-number scales was discussed as a cleaner design and deferred. **Superseded 2026-09-22:** after the
+   SDL3 port's viewport+scale fix, the author found the battle screen's frames and panels misaligned differently at
+   different resolutions - the world layer and the UI layer are independently letterboxed and only coincidentally
+   line up. Moving the monster and hero preview into the UI layer, as this decision's "cleaner design" already
+   proposed, is exactly the fix, so it was done as part of this work rather than deferred. See section 10.
 8. **Mods may supply their own title-screen size.** Title, death and story art keep their own best-fit rule.
 9. **SDL3 first.** The author considers the migration inevitable; it is its own discussion and comes before this work.
    The layout math could go on either side of it, but `CDisplay` is where much of the port lands, so doing the port
@@ -160,7 +168,7 @@ with no version. The release packages ship a `darkages.cfg` produced by `Darkage
 
 ## 4. The plan
 
-### 4.1 Canvas and tiles
+### 4.1 Canvas and tiles - **done 2026-09-22, see section 10**
 * Canvas = `16 * tileSize` by `10 * tileSize` (`CDarkages` setup and `CDisplay::setCanvasSize`), replacing `S(640)` x
   `S(400)`. The hero is drawn at the center: `((canvasW - T) / 2, (canvasH - T) / 2)`, which equals today's
   `S(300), S(180)` for 40 px and 32 px tiles.
@@ -255,12 +263,14 @@ no-fractional rule.
 
 ## 7. Sequence
 
-1. SDL3 scoping discussion, then the migration (its own project).
-2. Decide DPI awareness in the light of SDL3.
-3. Canvas cleanup: 16T x 10T, remove the frame, cover the canvas with tiles; playtest the half-tile reveal.
-4. Scale setting, window sizing, minimum and maximum N, default N, config versioning.
-5. Full-screen art fitting and per-mod title size.
-6. Mod guidelines and docs.
+1. SDL3 scoping discussion, then the migration (its own project). **Done.**
+2. Decide DPI awareness in the light of SDL3. **Done** (SDL3 is DPI-aware by default; see 2.8).
+3. Canvas cleanup: 16T x 10T, remove the frame, cover the canvas with tiles; playtest the half-tile reveal. **Code
+   done 2026-09-22** (plus the battle monster/hero preview move, folded in - see section 10); **playtest still
+   needed.**
+4. Scale setting, window sizing, minimum and maximum N, default N, config versioning. **Not started.**
+5. Full-screen art fitting and per-mod title size. **Not started.**
+6. Mod guidelines and docs. **Not started** (this file's own updates are ongoing as each step lands).
 
 ## 8. Open questions
 
@@ -282,3 +292,58 @@ no-fractional rule.
 * No black frame; tiles cover the canvas at every scroll offset (test at offsets 0, 1 and tileSize - 1 in both axes).
 * UI text is crisp (multiples of 16 px) and the UI never overflows the window (test the minimum N for 32 px mods).
 * Old `darkages.cfg` files load correctly after the layout change.
+
+## 10. Implementation status (2026-09-22)
+
+On branch `display-scaling`, from `dev`. Debug and Release both build clean (only the three pre-existing warnings);
+the exe starts and reaches the title screen. The gameplay, battle and new-character screens this section covers have
+**not** been play-tested yet - they need the author, since reaching them needs game input.
+
+**4.1 Canvas and tiles - done:**
+
+* `CDarkages`' constructor creates the canvas at `16 * tileSize` x `10 * tileSize` directly, using
+  `display->modSettings.tileSize` (not `this->modSettings`, which `CDarkages::init()` hasn't set yet at that point).
+  This is numerically identical to the old `S(640)` x `S(400)` for every tile size (`S(640) = round(640 *
+  TileSize/40) = 16 * TileSize` exactly, since 640/40 = 16 with no remainder), so `worldRect`/`worldScale` are
+  unaffected - only what gets *drawn* on the canvas changes.
+* **The tile loop needed a wider margin than the plan's "one or two more columns and rows" estimate, not just the
+  black rectangles deleted.** Working through the exact pixel math: the old loop (7 tiles left of the camera tile, 8
+  right; 4 above, 5 below - 16x10 total, matching the canvas exactly) only covers the *canvas* fully at one specific
+  scroll offset. At other offsets (the sub-tile scroll position, always somewhere in `[0, tileSize)`) it falls up to
+  half a tile short of one edge - which the black frame's half-tile-wide rectangles happened to hide exactly. Solving
+  for the margin that covers all offsets on both axes gives 8 tiles left / 10 right and 5 above / 6 below (18x11
+  total, one or two more than the plan estimated in the direction that matters). The loop's position formula was also
+  decoupled from its own bounds (it now positions each tile from `(i - a)`/`(j - b)` - the camera tile - and the
+  canvas's own half-size, rather than from the loop's start `lowX`/`lowY`), so tile positions no longer shift if the
+  bounds are widened again later.
+* The four black "blinds" rectangles are deleted. The fade-in rectangle and the full-screen-image overlay rectangle
+  (both still drawn onto the canvas render target) now use `display->canvasW`/`canvasH` instead of `S(640)`/`S(400)`.
+* The hero's canvas position is now `(canvasW - tileSize) / 2, (canvasH - tileSize) / 2` computed directly, rather
+  than `S(300), S(180)` - still numerically identical for every tile size, but no longer relies on `S()`'s
+  mod-native scale factor, matching how the tile loop above now reads.
+* **Still to verify (needs the author):** the half-tile reveal in play, especially in mazes (section 3 decision 3,
+  section 8's open question) - this is the actual gameplay-visible change from this step, and the reason the plan
+  called out playtesting it specifically.
+
+**Decision 7 (battle monster + hero preview) - done, folded in ahead of schedule:**
+
+* Both now draw entirely within `beginUIPass()`/`endUIPass()`, using `display->S()` for every position *and* size,
+  exactly like the title box, stats panel and every other UI element on their screens - no more separate
+  world-space/UI-space split for these two screens.
+* `monsterSize` and `tileSize` (both mod settings, from `mod.cfg`) are now treated as UI-reference-space pixel
+  counts scaled by `uiScale`, the same way the fixed 640x400 title image already is, rather than mod-native pixels
+  scaled by `worldScale`.
+* **This needed one real fix, not just a mechanical move:** the hero preview's old position, `S(300), S(180)`, was
+  only correct because the *old* `S()` (mod-native scale) happened to center it within the mod's own variable-size
+  world canvas. The *new* `S()` (uiScale, during a UI pass) has no notion of the mod's canvas size at all, so reusing
+  those constants would have centered the hero correctly only for 40 px tiles and put it visibly off-center for every
+  other tile size. The position is now computed as `(640 - tileSize) / 2, (400 - tileSize) / 2` - centered in the
+  fixed 640x400 UI reference space instead, consistent with everything else in that layer. The battle monster frame's
+  position (`10, 52`) needed no equivalent fix, since it was always a fixed UI-panel anchor, not a canvas-centered
+  value.
+* `CDisplay::compatRectToScreenRect()`, `beginUnclippedUI()` and `endUnclippedUI()` are now unused (their only
+  callers were these two screens) and have been removed, along with `beginCompatPass()`/`endCompatPass()`'s
+  now-stale doc comments elsewhere.
+
+**Not started:** 4.2 (scale N / window sizing), 4.3 (fullscreen - unchanged in concept but should be re-verified once
+4.2 lands), 4.5 (full-screen art best-fit), 4.6 (config versioning), 4.7 (mod guidelines).

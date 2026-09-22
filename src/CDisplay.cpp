@@ -202,19 +202,3 @@ void CDisplay::endUIPass(){
   SDL_SetRenderViewport(renderer, NULL);
 }
 
-SDL_Rect CDisplay::compatRectToScreenRect(SDL_Rect r){
-  SDL_Rect result;
-  result.x = worldRect.x + r.x * worldScale;
-  result.y = worldRect.y + r.y * worldScale;
-  result.w = r.w * worldScale;
-  result.h = r.h * worldScale;
-  return result;
-}
-
-void CDisplay::beginUnclippedUI(){
-  SDL_SetRenderViewport(renderer, NULL);
-}
-
-void CDisplay::endUnclippedUI(){
-  SDL_SetRenderViewport(renderer, &uiRect);
-}

@@ -60,33 +60,13 @@ public:
   //uiRect, like a full-window endgame image or a wider world view, survived into later screens.
   void clearScreen();
 
-  //Brackets UI-space drawing (text, bevel boxes, selection rects) directly onto the current render
-  //target (expected to be the backbuffer): temporarily repoints S() at uiScale instead of the mod's
-  //native scale, and restricts drawing to uiRect so it lands in the right letterboxed position.
+  //Brackets UI-space drawing (text, bevel boxes, selection rects, and - since the display-scaling
+  //redesign moved them here, see decision 7 in display-scaling-plan.md - the battle monster sprite and
+  //the new-character hero preview) directly onto the current render target (expected to be the
+  //backbuffer): temporarily repoints S() at uiScale instead of the mod's native scale, and restricts
+  //drawing to uiRect so it lands in the right letterboxed position.
   void beginUIPass();
   void endUIPass();
-
-  //Converts a rect expressed in "compat-local" coordinates - mod-native pixels, the same space the
-  //world canvas and its S(32) font size use - into real, absolute screen pixels: worldRect's origin
-  //plus the rect scaled by worldScale. Used for legacy screens (the new-character hero preview, the
-  //battle monster sprite and its frame) that draw mod-native-scaled bitmap content, or a border that
-  //must exactly frame it, straight onto the backbuffer instead of through the world canvas texture.
-  //Do the scaling here rather than with SDL's own SDL_SetRenderScale plus a non-default
-  //SDL_SetRenderViewport: SDL3 3.4.16 was found to multiply the viewport's own offset by the render
-  //scale when both are set together (the same bug the display-scaling-plan.md notes SDL 2.32 had for
-  //the viewport rect itself), which pushed content drawn that way further from the screen origin than
-  //intended - see the SDL3 migration plan for how this was found and the two call sites it broke.
-  //Draw the resulting FRect (SDL_RectToFRect) with the default viewport and scale left neutral.
-  SDL_Rect compatRectToScreenRect(SDL_Rect r);
-
-  //worldRect and uiRect are each independently letterboxed to their own reference size, so they are
-  //not guaranteed to be the same width/height - a worldRect wider than uiRect means a rect converted
-  //by compatRectToScreenRect() can legitimately fall outside uiRect's bounds (e.g. content near the
-  //world's own left/right edge). Since beginUIPass() clips drawing to uiRect, call this pair around
-  //drawing such a rect to temporarily lift that clip back to the full screen - scale stays neutral
-  //(so stroke thickness is unaffected), only the viewport widens.
-  void beginUnclippedUI();
-  void endUnclippedUI();
 
 private:
   double savedScale;
