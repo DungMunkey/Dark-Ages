@@ -2094,20 +2094,10 @@ void CDarkages::render(){
     SDL_RenderTexture(display->renderer, gfx.player->texture, gfx.player->getTile(heroTile(playerDir, playerAnim)), &r);
   }
 
-  //if dead, or at an endgame stage, paste that full-screen image over the tiles. An image the canvas is a
-  //whole-number multiple of (the original game's 320x200 art on a TileSize 40 canvas) is stretched over the
-  //canvas as always; any other size or shape would be distorted or resampled unevenly that way, so it is
-  //instead drawn further down at its own aspect ratio over the whole window at a whole-number scale - see
-  //renderFullScreenImage(). Applies to the death image as well as the endgame ones.
   //A dialogue line added with script.addBlackText() blanks the whole scene to black while it is on screen: no
   //full-screen image, and the world and hero are painted over.
   bool sceneBlack = (showText && script.frontIsBlack());
   CGraphic* fsImg = sceneBlack ? NULL : currentFullScreenImage();
-  bool fsImgFullWindow = (fsImg != NULL && !fitsCanvasInWholeScale(fsImg));
-  if(fsImg != NULL && !fsImgFullWindow){
-    r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->canvasH); r.w = (float)(display->canvasW);
-    SDL_RenderTexture(display->renderer, fsImg->texture, fsImg->getTile(0), &r);
-  }
   if(sceneBlack){
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
     r.x = (float)(0); r.y = (float)(0); r.h = (float)(display->canvasH); r.w = (float)(display->canvasW);
@@ -2119,20 +2109,22 @@ void CDarkages::render(){
   //part of the view. The wider tile loop above already covers the whole canvas at every scroll offset,
   //so there is nothing left to draw here.
 
-  //world/tile rendering (including the player sprite and death/endgame overlays) is done onto the
-  //canvas at the mod's own native tile-art resolution - that part is unchanged.
-  //Everything below is procedurally-drawn UI content (text, bevel boxes, selection highlights), which
-  //renders separately, directly onto the backbuffer at display->uiScale - a fixed multiplier based on
-  //the reference 640x400 UI space rather than the mod's TileSize, so it stays crisp regardless of which
-  //mod is loaded. See CDisplay::beginUIPass()/computeLayout() for how the two scales are kept separate.
+  //world/tile rendering (including the player sprite) is done onto the canvas at the mod's own native
+  //tile-art resolution - that part is unchanged. Everything below is procedurally-drawn UI content
+  //(text, bevel boxes, selection highlights), which renders separately, directly onto the backbuffer at
+  //display->uiScale - a fixed multiplier based on the reference 640x400 UI space rather than the mod's
+  //TileSize, so it stays crisp regardless of which mod is loaded. See
+  //CDisplay::beginUIPass()/computeLayout() for how the two scales are kept separate.
   SDL_SetRenderTarget(display->renderer, NULL);
   display->clearScreen();
   SDL_FRect worldDst;
   SDL_RectToFRect(&display->worldRect, &worldDst);
   SDL_RenderTexture(display->renderer, canvas, NULL, &worldDst);
 
-  //a death/endgame image that doesn't fit the canvas goes over the whole window, under any dialogue text drawn below
-  if(fsImgFullWindow) renderFullScreenImage(fsImg);
+  //A death/endgame image, if any, replaces the world view entirely: drawn at its own aspect ratio over
+  //the whole window at the largest whole-number scale that fits (display-scaling-plan.md section 4.5),
+  //under any dialogue text drawn below.
+  if(fsImg != NULL) CWindow::renderFullScreenImage(display, fsImg);
 
   display->beginUIPass();
 
@@ -2173,51 +2165,6 @@ CGraphic* CDarkages::currentFullScreenImage(){
   return NULL;
 }
 
-//True when the world canvas is an exact whole-number multiple of g (same multiple on both axes). That's the case
-//for the original game's 320x200 art on a TileSize 40 canvas (2x), where drawing g stretched over the canvas
-//keeps every source pixel the same size. Anything else would be resampled by a fractional amount on the canvas
-//(e.g. a 640x400 image on a 512x320 canvas), so those go through renderFullScreenImage() instead.
-bool CDarkages::fitsCanvasInWholeScale(CGraphic* g){
-  SDL_FRect* t = g->getTile(0);
-  if(t == NULL || t->w <= 0 || t->h <= 0) return false;
-  int tw = (int)t->w, th = (int)t->h;
-  return display->canvasW % tw == 0 && display->canvasH % th == 0 && display->canvasW / tw == display->canvasH / th;
-}
-
-//Draws g at its own aspect ratio, centered in the window with black bars on whichever axis is left over.
-//The scale is worked out here from the image's size and the window's size (nothing is hard-coded per image):
-//the largest WHOLE-NUMBER multiple of the image that fits, drawn with nearest-neighbor, so every source pixel
-//is exactly the same size and the artwork is never filtered or resampled unevenly. Draws in raw backbuffer
-//coordinates (no viewport/scale), so it must be called between the canvas copy and beginUIPass().
-//The one case a whole-number multiple can't cover is an image larger than the window itself; it is then
-//shrunk to fit (still nearest-neighbor, never smoothed) rather than being cropped.
-void CDarkages::renderFullScreenImage(CGraphic* g){
-  SDL_FRect* src = g->getTile(0);
-  if(src == NULL || src->w <= 0 || src->h <= 0) return;
-
-  display->clearScreen();
-
-  int srcW = (int)src->w, srcH = (int)src->h;
-  double fit = (double)display->screenWidth / srcW;
-  double fitH = (double)display->screenHeight / srcH;
-  if(fitH < fit) fit = fitH;
-
-  int wholeScale = (int)fit; //largest whole-number multiple that fits (0 if the image is bigger than the window)
-
-  int dstW, dstH;
-  if(wholeScale >= 1){
-    dstW = srcW * wholeScale;
-    dstH = srcH * wholeScale;
-  } else {
-    dstW = (int)(srcW * fit + 0.5);
-    dstH = (int)(srcH * fit + 0.5);
-  }
-  //whole-number position and size, so nothing is ever drawn at a fractional pixel
-  SDL_FRect dst = { (float)((display->screenWidth - dstW) / 2), (float)((display->screenHeight - dstH) / 2), (float)dstW, (float)dstH };
-
-  SDL_SetTextureScaleMode(g->texture, SDL_SCALEMODE_NEAREST);
-  SDL_RenderTexture(display->renderer, g->texture, src, &dst);
-}
 
 bool CDarkages::renderCredits(){
 

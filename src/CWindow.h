@@ -35,6 +35,18 @@ public:
   //boxes, but should be turned off for a frame drawn around content that's already been rendered
   //underneath it (e.g. a picture frame around a sprite), since the fill would otherwise dim it.
   static int renderBox(CDisplay* display, int x, int y, int w, int h, eBevelStyle style = BevelSimple, SDL_Color baseColor = SDL_Color{128,128,128,255}, bool drawBackground = true);
+
+  //Draws g at its own aspect ratio, centered on the whole window (not the mod's canvas) with black bars
+  //on whichever axis is left over: the largest whole-number multiple of the image that fits, nearest-
+  //neighbor, so every source pixel is exactly the same size and the art is never filtered or resampled
+  //unevenly. The one case a whole-number multiple can't cover is an image larger than the window itself;
+  //it is then shrunk to fit (still nearest-neighbor, never smoothed) rather than cropped.
+  //Wipes the whole screen first (CDisplay::clearScreen()), so whatever was drawn before this call is
+  //replaced, not overlaid - draw anything meant to sit on top of it (dialogue text, a title menu)
+  //afterward. Draws in raw backbuffer coordinates (no viewport/scale), so call it before beginUIPass()
+  //if that content follows. Used for every full-screen image in the game (title, death, endgame, story) -
+  //see display-scaling-plan.md section 4.5 for why they all go through the same routine.
+  static void renderFullScreenImage(CDisplay* display, CGraphic* g);
 };
 
 #endif
