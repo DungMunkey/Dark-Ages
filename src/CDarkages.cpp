@@ -1,6 +1,7 @@
 #include "CInput.h"
 #include "CDarkages.h"
 #include "CWindow.h"
+#include <cmath> //floor() in render()'s scroll-position math; some MSVC header pulls this in transitively, GCC does not
 
 using namespace std;
 
