@@ -2042,17 +2042,21 @@ void CDarkages::render(){
   offY = scrollY - b * tileSize;
 
   //Canvas is 16x10 tiles (display->canvasW/H); tile (a,b) - the one under the camera - is drawn at the
-  //canvas center minus offX/offY, the same reference point the player sprite uses below. Loop one tile
-  //further out than the visible 16x10 on the low (top/left) side and two further out on the high
-  //(bottom/right) side: with offX/offY each somewhere in [0, tileSize), a loop sized to exactly the
-  //visible 16x10 can leave up to half a tile of canvas uncovered at one edge. The removed black
-  //"blinds" used to paper over exactly that gap; see display-scaling-plan.md section 4.1 for the exact
-  //margin this needs (7.5 tiles either side of center at offset 0, rounding out to whole tiles).
+  //canvas center minus offX/offY, the same reference point the player sprite uses below. With
+  //offX/offY each somewhere in [0, tileSize), a loop sized to exactly the visible 16x10 can leave up
+  //to half a tile of canvas uncovered at one edge - the removed black "blinds" used to paper over
+  //exactly that gap. The margin needed on the high (right/bottom) side is HALF A TILE MORE than on the
+  //low (left/top) side, since the low side's worst case is offset 0 while the high side's worst case
+  //is offset (tileSize - 1), almost a full tile further: low side needs ceil(canvas half-width in
+  //tiles) tiles of margin, high side needs one more than that. See display-scaling-plan.md section 4.1
+  //for the derivation (an earlier version of this margin, committed and caught by the author in play,
+  //had the high side one tile short - a blank row would open up at the bottom of the canvas as the
+  //player moved down, then vanish the instant the move completed).
   lowX = a - 8;
   highX = a + 10;
 
   lowY = b - 5;
-  highY = b + 6;
+  highY = b + 7;
 
   r.h = (float)(tileSize);
   r.w = (float)(tileSize);

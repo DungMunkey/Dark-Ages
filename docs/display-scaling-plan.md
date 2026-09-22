@@ -311,11 +311,18 @@ the exe starts and reaches the title screen. The gameplay, battle and new-charac
   right; 4 above, 5 below - 16x10 total, matching the canvas exactly) only covers the *canvas* fully at one specific
   scroll offset. At other offsets (the sub-tile scroll position, always somewhere in `[0, tileSize)`) it falls up to
   half a tile short of one edge - which the black frame's half-tile-wide rectangles happened to hide exactly. Solving
-  for the margin that covers all offsets on both axes gives 8 tiles left / 10 right and 5 above / 6 below (18x11
-  total, one or two more than the plan estimated in the direction that matters). The loop's position formula was also
-  decoupled from its own bounds (it now positions each tile from `(i - a)`/`(j - b)` - the camera tile - and the
-  canvas's own half-size, rather than from the loop's start `lowX`/`lowY`), so tile positions no longer shift if the
-  bounds are widened again later.
+  for the margin that covers all offsets on both axes gives 8 tiles left / 10 right and 5 above / 7 below (18x12
+  total): the low (left/top) side's worst case is offset 0 and needs `ceil(half the canvas, in tiles)` = 8 / 5
+  tiles; the high (right/bottom) side's worst case is offset `tileSize - 1`, nearly a whole tile further, and needs
+  one more than that - 10 / 7. **A first version of this (committed, then caught by the author playing the actual
+  game) used 6 for the bottom margin instead of 7** - an arithmetic slip in the derivation (a Y-axis figure copied
+  from the X-axis one without re-deriving it for the canvas's different height), one tile short rather than the
+  "one or two more" the rest of the margins got right. It showed as a blank row opening up at the bottom of the
+  canvas while scrolling down, closing the instant the movement completed (max offset resets to 0 exactly when the
+  camera tile advances) - i.e. exactly the shape of an off-by-one in a scroll-margin calculation. Fixed to 7.
+  The loop's position formula was also decoupled from its own bounds (it now positions each tile from
+  `(i - a)`/`(j - b)` - the camera tile - and the canvas's own half-size, rather than from the loop's start
+  `lowX`/`lowY`), so tile positions no longer shift if the bounds are widened again later.
 * The four black "blinds" rectangles are deleted. The fade-in rectangle and the full-screen-image overlay rectangle
   (both still drawn onto the canvas render target) now use `display->canvasW`/`canvasH` instead of `S(640)`/`S(400)`.
 * The hero's canvas position is now `(canvasW - tileSize) / 2, (canvasH - tileSize) / 2` computed directly, rather
