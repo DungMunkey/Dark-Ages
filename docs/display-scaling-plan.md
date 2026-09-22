@@ -379,7 +379,8 @@ including catching a real bug (see 4.1 below). The scale setting/window sizing/c
   setting without leaving fullscreen) has no visible effect but is remembered for when the player returns to
   windowed, same as the old resolution list already relied on.
 * Options' "Screen Res:" menu item is now "Scale:", cycling `conf.scaleN` between `minScale` and `maxScale` instead
-  of an index into a resolution list; it shows both the number and the resulting window size (e.g. `2 (1024x640)`).
+  of an index into a resolution list. It first showed the resulting window size alongside the number (e.g.
+  `2 (1024x640)`); the author found that unnecessary after trying it, so it's just the number now.
 * **Config versioning:** `sConf` gains `cfgVersion` (`DA_CFG_VERSION = -1`, `Structs.h`) as its first field, and `w`/
   `h` are replaced by `scaleN`. A pre-redesign `darkages.cfg`'s first field was always a positive window width, so
   `Darkages.cpp`'s read peeks that one field to tell old files from new ones apart, with no ambiguity possible (never

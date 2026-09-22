@@ -236,7 +236,7 @@ void COptions::render(){
     r.w = (float)(display->S(16)); r.h = (float)(display->S(16)); r.x = (float)(display->S(414) + (i - 1) * display->S(18)); r.y = (float)(display->S(69));
     SDL_RenderFillRect(display->renderer, &r);
   }
-  sprintf(scaleStr, "%d (%dx%d)", tmpScale, display->canvasW*tmpScale, display->canvasH*tmpScale);
+  sprintf(scaleStr, "%d", tmpScale);
   font->render(display->S(40), display->S(90), "Scale:");
   font->render(display->S(430), display->S(90), scaleStr);
 
