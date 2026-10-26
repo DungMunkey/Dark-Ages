@@ -762,7 +762,7 @@ void CDarkages::changeMap(int key){
     } 
     break;
   case 50: curMap=31; eBattleNum=1; cam.setPos(46,100); playerDir=0; break;
-  case 51: curMap = 21; cam.setPos(32, 21); playerDir = 0; eBattleNum=0; break;
+  case 51: curMap = 21; cam.setPos(31, 21); playerDir = 0; eBattleNum=0; break; //laendlich by ferry
   case 58: 
     if(cam.getTileY() >= 84 && cam.getTileY() <= 86 && cam.getTileX() >= 125 && cam.getTileX() <= 127){
       if(hero.spells[6]){ //wizard tower. Needs magiccount>6
