@@ -1153,6 +1153,7 @@ int CDarkages::checkAction(int map, int x, int y){
       if (j != y && i != x) continue;  //do not check corners
       if (i == x && j == y) continue;  //do not check center
       k=world[map].getTile(i, j);
+      if(k == 272) return 102; //Project32's mod tile 272 talks like vanilla NPC tile 102
       if(k >= 0 && k < 150 && actionTile[k] > 0) return actionTile[k]; //actionTile only covers vanilla's reserved tile ID range (0-149); mod tiles (150+) are decorative-only for now
     }
   }
