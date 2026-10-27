@@ -3365,6 +3365,8 @@ void CDarkages::setText(int i){
   case 102:
     if(curMap == 19) { //garrison welcome
       script.addText("Welcome to Castle Garrison! This is the capital of the lower region.");
+    } else if(curMap == 42) { //wisp random banter
+      setRandomBanter();
     }
     break;
   case 103:
